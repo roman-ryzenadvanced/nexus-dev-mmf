@@ -7,7 +7,111 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] — 2026-06-15
+## [3.1.0] — 2026-06-15
+
+### 🚀 Major New Feature: Code Review Engine (Adapted from Alibaba Open Code Review)
+
+Integrated the code review concepts and prompts from [Alibaba Open Code Review](https://github.com/alibaba/open-code-review) into the Nexus multi-model fusion pipeline. This brings professional-grade, multi-model code review capabilities to Nexus-Dev MMFE, leveraging the same 6 GLM models for intelligent, multi-perspective code analysis.
+
+#### Architecture Overview
+
+The code review engine uses a **5-phase pipeline** that leverages Nexus's multi-model fusion for deeper, more reliable reviews:
+
+```
+PLAN:     Fast model (glm-5) analyzes risks → structured review plan
+REVIEW:   Multiple models review in parallel with different specializations
+SYNTH:    Flagship model (glm-5.2) merges & deduplicates comments
+FILTER:   Independent model (glm-5.1) fact-checks comments against diff
+RE-LOC:   Fast model re-locates comments that failed line matching
+```
+
+With MTP enabled, phases overlap:
+- Plan + Review run concurrently (speculative review starts before plan completes)
+- Synthesis begins as soon as first reviews arrive (incremental)
+- Filter runs concurrently with synthesis
+
+#### Code Review Engine (`src/code-review/review-engine.ts`)
+- **`CodeReviewEngine`** — The core multi-model code review engine
+- **`review(request)`** — Process a code review request through the 5-phase pipeline
+- **`createCodeReviewEngine(config?)`** — Factory function
+- Model assignments: Plan → glm-5, Review → mode-dependent, Synthesis → glm-5.2, Filter → glm-5.1, Re-location → glm-5
+
+```javascript
+import { createCodeReviewEngine } from 'nexus-dev-mmf';
+
+const engine = createCodeReviewEngine({ mode: 'balanced', enableFilterPhase: true });
+const result = await engine.review({
+  id: 'review-1',
+  diff: unifiedDiffString,
+  changedFiles: ['src/foo.ts'],
+  currentFilePath: 'src/foo.ts',
+  requirementBackground: 'This change adds user authentication',
+});
+console.log(result.comments); // Filtered, deduplicated review comments
+console.log(result.summary);  // { filesReviewed, totalComments, highSeverity, ... }
+```
+
+#### Language-Specific Review Rules (`src/code-review/rules.ts`)
+- **14 language rule sets** adapted from open-code-review: default, TypeScript, JavaScript, Java, Kotlin, Rust, C++, C, Go, Python, properties, JSON, YAML, XML, ArkTS
+- Each rule set contains detailed checklists covering correctness, security, performance, maintainability, and language-specific best practices
+- **`detectLanguage(filePath)`** — Auto-detect review language from file extension
+- **`getReviewRule(language)`** — Get the review checklist for a language
+- **`getReviewRuleForFile(filePath)`** — Get the review rule auto-detected for a file
+
+#### Prompt Templates (`src/code-review/prompts.ts`)
+Adapted from open-code-review's `task_template.json`:
+- **MAIN_REVIEW_SYSTEM** — Primary code review system prompt with strict focus rules
+- **PLAN_REVIEW_SYSTEM** — Risk analysis and review planning prompt
+- **REVIEW_FILTER_SYSTEM** — Fact-checking prompt (falsify, not verify principle)
+- **RE_LOCATION_SYSTEM** — Line re-location prompt for unmatched comments
+- **SYNTHESIS_PROMPT** — Multi-model comment deduplication and merging
+- **`fillTemplate(template, values)`** — Template variable interpolation
+
+#### Diff Parser (`src/code-review/diff-parser.ts`)
+- **`parseDiff(diffText)`** — Parse unified diff into structured DiffHunk objects
+- **`getChangedFiles(diffText)`** — Extract list of changed file paths
+- **`findCodeInDiff(hunks, filePath, codeSnippet)`** — Locate code snippets in diff for comment anchoring
+- **`getFileDiff(hunks, filePath)`** — Get reconstructed diff for a specific file
+- **`getTotalChangedLines(hunks)`** — Count total changed lines (for plan phase threshold)
+
+#### Code Review Types (`src/code-review/types.ts`)
+- **`ReviewComment`** — A single review finding with severity, location, and suggestion
+- **`DiffHunk`** / **`DiffLine`** — Parsed unified diff structure
+- **`CodeReviewRequest`** — Input to the review engine (diff + context + options)
+- **`CodeReviewResult`** — Output with comments, plan, summary, and metrics
+- **`ReviewPlan`** / **`ReviewPlanIssue`** — Risk analysis plan from plan phase
+- **`ReviewLanguage`** — 14 supported languages for review rules
+- **`CodeReviewConfig`** — Configuration with `DEFAULT_CODE_REVIEW_CONFIG`
+
+#### Code Review CLI (`scripts/code-review.mjs`)
+- Multi-model code review from the command line
+- Flags: `--diff`, `--file`, `--mode`, `--no-filter`, `--no-plan`, `--plan`, `--mtp`, `--rule`, `--background`
+
+```bash
+node scripts/code-review.mjs                       # Review staged changes
+node scripts/code-review.mjs --diff HEAD~1         # Review last commit
+node scripts/code-review.mjs --diff main...HEAD    # Review branch vs main
+node scripts/code-review.mjs --mode quality --mtp  # Quality MTP review
+```
+
+### 🔧 Changed
+
+- **`ModelCapability`** — Added `'code-review'` to the capability union type
+- **All 6 models** — Added `'code-review'` to their capabilities arrays
+- **`Decomposer`** — Updated capability options list to include `code-review`
+- **`Orchestrator`** — Fixed TypeScript type error in MTP event callback (cast to `any`)
+- **`package.json`** — Updated version to 3.1.0
+- **Main exports** (`src/index.ts`) — Added all code review exports: `CodeReviewEngine`, `createCodeReviewEngine`, `getReviewRule`, `getReviewRuleForFile`, `detectLanguage`, `getSupportedLanguages`, `parseDiff`, `getChangedFiles`, `findCodeInDiff`, `fillTemplate`, plus all code review types
+
+### 📄 Attribution
+
+Code review prompts, rule checklists, and pipeline concepts adapted from [Alibaba Open Code Review](https://github.com/alibaba/open-code-review) (Apache-2.0 License). Key adaptations:
+- Go agent loop replaced with Nexus multi-model parallel execution
+- Single-model tool-calling replaced with multi-model fusion + synthesis
+- Anthropic/OpenAI client replaced with `z-ai-web-dev-sdk`
+- Memory compression removed (Nexus uses synthesis instead)
+- Re-location and review filter preserved as separate pipeline phases
+- Language rule checklists preserved verbatim
 
 ### 🚀 Major New Feature: MTP (Multi-Threaded Pipeline)
 

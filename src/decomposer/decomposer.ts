@@ -40,7 +40,7 @@ AVAILABLE MODELS AND THEIR STRENGTHS:
 - glm-5v-turbo: Accelerated feedback, vision support, quick iteration
 - glm-4.7: Creative generation, deep knowledge, sophisticated code synthesis
 
-CAPABILITY OPTIONS: reasoning, math, code, creative-writing, analysis, summarization, translation, extraction, planning, debugging, refactoring, documentation, conversation, long-context, vision, rapid-iteration
+CAPABILITY OPTIONS: reasoning, math, code, creative-writing, analysis, summarization, translation, extraction, planning, debugging, refactoring, documentation, conversation, long-context, vision, rapid-iteration, code-review
 
 Return ONLY the JSON array. No markdown, no explanation.`;
 

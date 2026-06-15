@@ -79,7 +79,7 @@ export class Orchestrator {
       // Wire up MTP events to the orchestrator event system
       this.mtpEngine.setEventCallback((type, data) => {
         if (this.config.enableEvents) {
-          this.events.emitNexusEvent(type, data.pipelineId as string, data);
+          this.events.emitNexusEvent(type as any, data.pipelineId as string, data);
         }
       });
 

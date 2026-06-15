@@ -34,7 +34,8 @@ export type ModelCapability =
   | 'conversation'
   | 'long-context'
   | 'vision'
-  | 'rapid-iteration';
+  | 'rapid-iteration'
+  | 'code-review';
 
 /**
  * The canonical model registry for Nexus-Dev MMFE.
@@ -46,7 +47,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5.2-1m',
     name: 'GLM 5.2 (1M Context)',
     tier: 'flagship',
-    capabilities: ['reasoning', 'math', 'code', 'analysis', 'long-context', 'planning'],
+    capabilities: ['reasoning', 'math', 'code', 'analysis', 'long-context', 'planning', 'code-review'],
     contextWindow: 1_000_000,
     speedRank: 5,
     qualityRank: 1,
@@ -60,7 +61,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5.2',
     name: 'GLM 5.2',
     tier: 'flagship',
-    capabilities: ['reasoning', 'math', 'code', 'analysis', 'planning', 'debugging'],
+    capabilities: ['reasoning', 'math', 'code', 'analysis', 'planning', 'debugging', 'code-review'],
     contextWindow: 128_000,
     speedRank: 3,
     qualityRank: 1,
@@ -74,7 +75,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5.1',
     name: 'GLM 5.1',
     tier: 'standard',
-    capabilities: ['conversation', 'translation', 'summarization', 'extraction', 'creative-writing'],
+    capabilities: ['conversation', 'translation', 'summarization', 'extraction', 'creative-writing', 'code-review'],
     contextWindow: 128_000,
     speedRank: 3,
     qualityRank: 2,
@@ -88,7 +89,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5',
     name: 'GLM 5',
     tier: 'fast',
-    capabilities: ['code', 'debugging', 'rapid-iteration', 'summarization', 'extraction'],
+    capabilities: ['code', 'debugging', 'rapid-iteration', 'summarization', 'extraction', 'code-review'],
     contextWindow: 32_000,
     speedRank: 1,
     qualityRank: 3,
@@ -102,7 +103,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5v-turbo',
     name: 'GLM 5V Turbo',
     tier: 'fast',
-    capabilities: ['rapid-iteration', 'code', 'debugging', 'vision'],
+    capabilities: ['rapid-iteration', 'code', 'debugging', 'vision', 'code-review'],
     contextWindow: 32_000,
     speedRank: 1,
     qualityRank: 3,
@@ -116,7 +117,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-4.7',
     name: 'GLM 4.7',
     tier: 'creative',
-    capabilities: ['creative-writing', 'code', 'documentation', 'refactoring', 'analysis'],
+    capabilities: ['creative-writing', 'code', 'documentation', 'refactoring', 'analysis', 'code-review'],
     contextWindow: 128_000,
     speedRank: 4,
     qualityRank: 2,

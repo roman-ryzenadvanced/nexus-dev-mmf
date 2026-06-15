@@ -1,5 +1,5 @@
 /**
- * Nexus-Dev MMFE — Main Entry Point (v3.0.0)
+ * Nexus-Dev MMFE — Main Entry Point (v3.1.0)
  * Exports the full public API of the Multi-Model Fusion Engine.
  */
 
@@ -22,6 +22,12 @@ export { EmbeddingSimilarity } from './core/embedding-similarity.js';
 
 // v3.0 modules — MTP (Multi-Threaded Pipeline)
 export { MTPEngine } from './core/mtp-engine.js';
+
+// v3.1 modules — Code Review (adapted from Alibaba Open Code Review)
+export { CodeReviewEngine, createCodeReviewEngine } from './code-review/review-engine.js';
+export { getReviewRule, getReviewRuleForFile, detectLanguage, getSupportedLanguages } from './code-review/rules.js';
+export { parseDiff, getChangedFiles, findCodeInDiff } from './code-review/diff-parser.js';
+export { fillTemplate } from './code-review/prompts.js';
 
 // Types
 export type {
@@ -75,6 +81,22 @@ export type {
 } from './core/mtp-types.js';
 
 export { DEFAULT_MTP_CONFIG } from './core/mtp-types.js';
+
+// Code Review types
+export type {
+  ReviewComment,
+  DiffHunk,
+  DiffLine,
+  CodeReviewRequest,
+  CodeReviewResult,
+  ReviewPlan,
+  ReviewPlanIssue,
+  ToolGuidanceItem,
+  ReviewLanguage,
+  CodeReviewConfig,
+} from './code-review/types.js';
+
+export { DEFAULT_CODE_REVIEW_CONFIG } from './code-review/types.js';
 
 export {
   MODEL_REGISTRY,
