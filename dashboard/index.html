@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus-Dev MMFE — Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
+    --text: #e6edf3; --text2: #8b949e; --accent: #58a6ff; --accent2: #3fb950;
+    --warning: #d29922; --error: #f85149; --creative: #bc8cff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  .header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 24px; display:flex; align-items:center; gap:16px; }
+  .header h1 { font-size:20px; font-weight:600; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:12px; background:var(--accent); color:#fff; font-weight:600; }
+  .version { font-size:12px; color:var(--text2); }
+  .container { max-width:1400px; margin:0 auto; padding:24px; }
+  .grid { display:grid; gap:20px; }
+  .grid-4 { grid-template-columns:repeat(4,1fr); }
+  .grid-3 { grid-template-columns:repeat(3,1fr); }
+  .grid-2 { grid-template-columns:repeat(2,1fr); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px; }
+  .card h2 { font-size:14px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; }
+  .stat-value { font-size:32px; font-weight:700; line-height:1.2; }
+  .stat-label { font-size:13px; color:var(--text2); margin-top:4px; }
+  .pipeline-stages { display:flex; gap:4px; margin-top:12px; }
+  .stage { flex:1; padding:8px 4px; text-align:center; font-size:11px; border-radius:4px; background:var(--surface2); color:var(--text2); }
+  .stage.active { background:var(--accent); color:#fff; }
+  .stage.completed { background:var(--accent2); color:#fff; }
+  .stage.failed { background:var(--error); color:#fff; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:8px 12px; color:var(--text2); border-bottom:1px solid var(--border); font-weight:500; }
+  td { padding:8px 12px; border-bottom:1px solid var(--border); }
+  tr:hover { background:var(--surface2); }
+  .model-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .model-badge.flagship { background:rgba(88,166,255,0.15); color:var(--accent); }
+  .model-badge.standard { background:rgba(210,153,34,0.15); color:var(--warning); }
+  .model-badge.fast { background:rgba(63,185,80,0.15); color:var(--accent2); }
+  .model-badge.creative { background:rgba(188,140,255,0.15); color:var(--creative); }
+  .quality-bar { width:100%; height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  .quality-fill { height:100%; border-radius:3px; transition:width 0.5s; }
+  .quality-fill.high { background:var(--accent2); }
+  .quality-fill.mid { background:var(--warning); }
+  .quality-fill.low { background:var(--error); }
+  .mode-tag { font-size:11px; padding:2px 8px; border-radius:4px; font-weight:600; }
+  .mode-tag.speed { background:rgba(63,185,80,0.15); color:var(--accent2); }
+  .mode-tag.quality { background:rgba(88,166,255,0.15); color:var(--accent); }
+  .mode-tag.balanced { background:rgba(210,153,34,0.15); color:var(--warning); }
+  .mode-tag.creative { background:rgba(188,140,255,0.15); color:var(--creative); }
+  .log-entry { padding:6px 12px; border-left:3px solid var(--border); margin-bottom:3px; font-size:12px; font-family:'SFMono-Regular',Consolas,monospace; }
+  .log-entry .time { color:var(--text2); margin-right:8px; }
+  .btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { opacity:0.9; }
+  .query-input { width:100%; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:14px; outline:none; }
+  .query-input:focus { border-color:var(--accent); }
+  .flex { display:flex; } .flex-between { display:flex; justify-content:space-between; align-items:center; }
+  .gap-8 { gap:8px; } .mt-12 { margin-top:12px; } .mb-20 { margin-bottom:20px; }
+  @media (max-width:1024px) { .grid-4{grid-template-columns:repeat(2,1fr)} .grid-3{grid-template-columns:1fr} }
+  @media (max-width:640px) { .grid-4,.grid-2{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🧠 Nexus-Dev MMFE</h1>
+  <span class="badge">LIVE</span>
+  <span class="version">v2.1.0</span>
+  <div style="flex:1"></div>
+  <span id="clock" style="font-size:13px;color:var(--text2);font-family:monospace"></span>
+</div>
+<div class="container">
+  <div class="grid grid-4 mb-20">
+    <div class="card"><h2>Total Pipelines</h2><div class="stat-value" id="stat-pipelines">0</div><div class="stat-label">Lifetime executions</div></div>
+    <div class="card"><h2>Avg Quality</h2><div class="stat-value" id="stat-quality">—</div><div class="stat-label">Score / 100</div></div>
+    <div class="card"><h2>Avg Latency</h2><div class="stat-value" id="stat-latency">—</div><div class="stat-label">Milliseconds</div></div>
+    <div class="card"><h2>Success Rate</h2><div class="stat-value" id="stat-success">—</div><div class="stat-label">Subtask completion</div></div>
+  </div>
+  <div class="grid grid-2 mb-20">
+    <div class="card">
+      <div class="flex-between"><h2>Active Pipeline</h2><span class="mode-tag balanced" id="pipeline-mode">balanced</span></div>
+      <div id="pipeline-query" style="font-size:14px;margin:12px 0;color:var(--text2)">No active pipeline</div>
+      <div class="pipeline-stages" id="pipeline-stages">
+        <div class="stage">Received</div><div class="stage">Decomposing</div><div class="stage">Routing</div>
+        <div class="stage">Executing</div><div class="stage">Synthesizing</div><div class="stage">Completed</div>
+      </div>
+      <div class="mt-12 flex-between" style="font-size:12px;color:var(--text2)">
+        <span>Subtasks: <strong id="pipeline-subtasks">0</strong></span>
+        <span>Models: <strong id="pipeline-models">—</strong></span>
+        <span>Cost: <strong id="pipeline-cost">0</strong></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Model Performance</h2>
+      <table><thead><tr><th>Model</th><th>Tier</th><th>Calls</th><th>Avg Time</th><th>Reliability</th></tr></thead>
+      <tbody id="model-perf-table"><tr><td colspan="5" style="color:var(--text2);text-align:center">No data yet</td></tr></tbody></table>
+    </div>
+  </div>
+  <div class="grid grid-2 mb-20">
+    <div class="card">
+      <h2>Model Registry</h2>
+      <table><thead><tr><th>Model</th><th>Capabilities</th><th>Speed</th><th>Quality</th><th>Cost</th></tr></thead>
+      <tbody id="model-registry-table"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Cost & Embeddings</h2>
+      <div id="cost-breakdown">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Total Cost Weight</span><strong id="total-cost">0.0</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Avg Cost / Pipeline</span><strong id="avg-cost">0.0</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Budget Limit</span><strong id="budget-limit">∞</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text2)">Embedding Records</span><strong id="embedding-count">0</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-2 mb-20">
+    <div class="card">
+      <h2>Pipeline History</h2>
+      <div id="pipeline-history" style="max-height:320px;overflow-y:auto"><div style="color:var(--text2);text-align:center;padding:20px">No pipeline history yet</div></div>
+    </div>
+    <div class="card">
+      <h2>Event Log</h2>
+      <div id="event-log" style="max-height:320px;overflow-y:auto"><div style="color:var(--text2);text-align:center;padding:20px">No events yet</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Run Query</h2>
+    <div class="flex gap-8" style="margin-bottom:12px">
+      <select id="query-mode" style="padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+        <option value="speed">⚡ Speed</option><option value="balanced" selected>⚖️ Balanced</option>
+        <option value="quality">🏆 Quality</option><option value="creative">🎨 Creative</option>
+      </select>
+      <input id="budget-input" class="query-input" placeholder="Max cost weight (optional)" style="width:200px">
+    </div>
+    <textarea id="query-input" class="query-input" rows="3" placeholder="Enter your query here..."></textarea>
+    <div class="mt-12 flex gap-8">
+      <button class="btn btn-primary" onclick="runQuery()">▶ Run Pipeline</button>
+    </div>
+    <div id="query-result" class="mt-12" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;white-space:pre-wrap;max-height:300px;overflow-y:auto"></div>
+  </div>
+</div>
+<script>
+const S={pipelines:[],events:[],models:{'glm-5.2-1m':{name:'GLM 5.2 (1M)',tier:'flagship',caps:['reasoning','math','code','analysis','long-context','planning'],spd:5,qual:1,cost:3},'glm-5.2':{name:'GLM 5.2',tier:'flagship',caps:['reasoning','math','code','analysis','planning','debugging'],spd:3,qual:1,cost:2},'glm-5.1':{name:'GLM 5.1',tier:'standard',caps:['conversation','translation','summarization','extraction','creative-writing'],spd:3,qual:2,cost:1.5},'glm-5':{name:'GLM 5',tier:'fast',caps:['code','debugging','rapid-iteration','summarization','extraction'],spd:1,qual:3,cost:0.5},'glm-5v-turbo':{name:'GLM 5V Turbo',tier:'fast',caps:['rapid-iteration','code','debugging','vision'],spd:1,qual:3,cost:0.5},'glm-4.7':{name:'GLM 4.7',tier:'creative',caps:['creative-writing','code','documentation','refactoring','analysis'],spd:4,qual:2,cost:2}},perf:{},totalCost:0,embCount:0};
+function render(){
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString();
+  const n=S.pipelines.length;
+  document.getElementById('stat-pipelines').textContent=n;
+  if(n>0){const q=S.pipelines.reduce((s,p)=>s+p.q,0)/n;document.getElementById('stat-quality').textContent=q.toFixed(0);const l=S.pipelines.reduce((s,p)=>s+p.t,0)/n;document.getElementById('stat-latency').textContent=l>1000?(l/1000).toFixed(1)+'s':l.toFixed(0)+'ms';const ts=S.pipelines.reduce((s,p)=>s+p.subs,0),ss=S.pipelines.reduce((s,p)=>s+p.ok,0);document.getElementById('stat-success').textContent=ts>0?((ss/ts)*100).toFixed(0)+'%':'—'}
+  document.getElementById('model-registry-table').innerHTML=Object.entries(S.models).map(([id,m])=>`<tr><td><span class="model-badge ${m.tier}">${id}</span></td><td style="font-size:11px;color:var(--text2)">${m.caps.slice(0,3).join(', ')}${m.caps.length>3?'...':''}</td><td>${'●'.repeat(m.spd)}</td><td>${'●'.repeat(m.qual)}</td><td>${m.cost}×</td></tr>`).join('');
+  document.getElementById('total-cost').textContent=S.totalCost.toFixed(1);
+  document.getElementById('avg-cost').textContent=n>0?(S.totalCost/n).toFixed(1):'0.0';
+  document.getElementById('embedding-count').textContent=S.embCount;
+  const pe=Object.entries(S.perf);if(pe.length>0)document.getElementById('model-perf-table').innerHTML=pe.map(([id,p])=>{const m=S.models[id];return`<tr><td><span class="model-badge ${m?m.tier:'standard'}">${id}</span></td><td>${m?m.tier:'—'}</td><td>${p.calls}</td><td>${p.avg>0?p.avg.toFixed(0)+'ms':'—'}</td><td>${p.calls>0?(p.ok/p.calls*100).toFixed(0)+'%':'—'}</td></tr>`}).join('');
+  if(S.pipelines.length>0)document.getElementById('pipeline-history').innerHTML=S.pipelines.slice(-10).reverse().map(p=>`<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div class="flex-between"><span style="font-size:13px;font-weight:500">${p.query.slice(0,60)}${p.query.length>60?'...':''}</span><span class="mode-tag ${p.mode}">${p.mode}</span></div><div style="font-size:12px;color:var(--text2);margin-top:4px">Quality: ${p.q}/100 | ${p.t}ms</div><div class="quality-bar" style="margin-top:6px"><div class="quality-fill ${p.q>=70?'high':p.q>=50?'mid':'low'}" style="width:${p.q}%"></div></div></div>`).join('');
+  if(S.events.length>0)document.getElementById('event-log').innerHTML=S.events.slice(-20).reverse().map(e=>`<div class="log-entry"><span class="time">${new Date(e.ts).toLocaleTimeString()}</span><strong>${e.type}</strong> ${e.model?`<span class="model-badge ${S.models[e.model]?.tier||'standard'}">${e.model}</span>`:''} ${e.stage?'→ '+e.stage:''}</div>`).join('');
+}
+function addPipeline(q,mode,quality,models,time,subs,ok){const c=models.reduce((s,m)=>s+(S.models[m]?.cost||1),0);S.pipelines.push({query:q,mode,q:quality,models,t,time,subs,ok});S.totalCost+=c;S.embCount+=subs;for(const m of models){if(!S.perf[m])S.perf[m]={calls:0,ok:0,avg:0};S.perf[m].calls++;S.perf[m].ok++;S.perf[m].avg=S.perf[m].avg===0?time/models.length:(S.perf[m].avg+time/models.length)/2}render()}
+function addEvent(type,data={}){S.events.push({type,ts:Date.now(),...data});render()}
+function updatePipelineUI(stage,query,mode){document.getElementById('pipeline-query').textContent=query||'No active pipeline';const me=document.getElementById('pipeline-mode');me.textContent=mode||'balanced';me.className=`mode-tag ${mode||'balanced'}`;const stages=document.querySelectorAll('#pipeline-stages .stage');const map=['received','decomposing','routing','executing','synthesizing','completed'];const ai=map.indexOf(stage);stages.forEach((el,i)=>{el.className='stage';if(i<ai)el.classList.add('completed');else if(i===ai)el.classList.add(stage==='failed'?'failed':'active')})}
+function runQuery(){const q=document.getElementById('query-input').value.trim();if(!q)return;const mode=document.getElementById('query-mode').value;updatePipelineUI('received',q,mode);addEvent('pipeline:started',{query:q});const stages=['decomposing','routing','executing','synthesizing'];let si=0;const models=mode==='speed'?['glm-5','glm-5v-turbo','glm-5.1']:mode==='quality'?['glm-5.2','glm-5.2-1m','glm-4.7']:mode==='creative'?['glm-4.7','glm-5.1','glm-5.2']:['glm-5.2','glm-5.1','glm-4.7'];const adv=()=>{if(si<stages.length){const s=stages[si];updatePipelineUI(s,q,mode);addEvent('pipeline:stage',{stage:s,model:models[si]});si++;setTimeout(adv,400+Math.random()*300)}else{const quality=60+Math.floor(Math.random()*35),time=3000+Math.floor(Math.random()*8000);updatePipelineUI('completed',q,mode);addPipeline(q,mode,quality,models,time,models.length,models.length);addEvent('pipeline:completed',{qualityScore:quality});document.getElementById('pipeline-subtasks').textContent=models.length;document.getElementById('pipeline-models').textContent=models.join(', ');document.getElementById('pipeline-cost').textContent=models.reduce((s,m)=>s+(S.models[m]?.cost||1),0).toFixed(1);const r=document.getElementById('query-result');r.style.display='block';r.textContent=`[Simulated] Fusion result for "${q}"\nMode: ${mode} | Quality: ${quality}/100 | Models: ${models.join(', ')} | Time: ${time}ms`}};setTimeout(adv,300)}
+render();setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString()},1000);
+setTimeout(()=>{addPipeline('Design a distributed cache system','quality',87,['glm-5.2','glm-4.7','glm-5.1'],12453,4,4);addPipeline('Write a Python REST API','speed',72,['glm-5','glm-5v-turbo'],4521,3,3);addPipeline('Explain the halting problem','balanced',91,['glm-5.2','glm-5.2-1m'],8932,2,2);addPipeline('Write a sci-fi story about AI','creative',84,['glm-4.7','glm-5.1'],6789,3,3);addPipeline('Debug this React component','speed',68,['glm-5','glm-5v-turbo'],3210,2,2);addPipeline('Analyze microservices patterns','quality',93,['glm-5.2-1m','glm-5.2'],15234,3,3);addEvent('pipeline:completed',{qualityScore:87});addEvent('subtask:completed',{model:'glm-5.2'});render()},500);
+</script>
+</body>
+</html>

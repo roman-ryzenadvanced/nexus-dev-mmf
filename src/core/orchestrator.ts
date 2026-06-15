@@ -1,11 +1,12 @@
 /**
- * Nexus-Dev MMFE — The Orchestrator (v2.0)
+ * Nexus-Dev MMFE — The Orchestrator (v2.1)
  * Central coordination engine with:
  *   - Pipeline events (streaming)
  *   - Performance tracking
  *   - Budget-aware routing
  *   - Multi-turn conversations
  *   - Custom model registration
+ *   - Embedding-based task similarity
  */
 
 import { uuidv4 } from './utils/uuid.js';
@@ -16,6 +17,7 @@ import { Synthesizer } from '../synthesis/synthesizer.js';
 import { NexusEventEmitter } from './events.js';
 import { PerformanceTracker } from './performance-tracker.js';
 import { ConversationManager } from './conversation.js';
+import { EmbeddingSimilarity } from './embedding-similarity.js';
 import { optimizeForBudget, calculateTotalCost } from './budget-routing.js';
 import { MODEL_REGISTRY } from './models.js';
 import {
@@ -36,6 +38,7 @@ export class Orchestrator {
   private events: NexusEventEmitter;
   private perfTracker: PerformanceTracker;
   private conversations: ConversationManager;
+  private embeddings: EmbeddingSimilarity;
 
   constructor(config?: Partial<NexusDevConfig>) {
     this.config = mergeConfig(config);
@@ -47,6 +50,7 @@ export class Orchestrator {
     this.events = new NexusEventEmitter();
     this.perfTracker = new PerformanceTracker();
     this.conversations = new ConversationManager();
+    this.embeddings = new EmbeddingSimilarity();
   }
 
   /**
@@ -126,7 +130,8 @@ export class Orchestrator {
         request.customSystemPrompt
       );
 
-      // Track performance and emit events
+      // Track performance, embeddings, and emit events
+      const subtaskMap = new Map(subtasks.map(s => [s.id, s]));
       for (const result of subTaskResults.values()) {
         if (result.success) {
           this.perfTracker.recordSuccess(
@@ -135,6 +140,17 @@ export class Orchestrator {
             undefined,
             result.tokenUsage?.total,
           );
+          // Record embedding for similarity matching
+          const subtask = subtaskMap.get(result.subTaskId);
+          if (subtask) {
+            this.embeddings.addRecord(
+              subtask.description,
+              result.modelId,
+              50, // Default quality; will be updated after synthesis
+              subtask.requiredCapabilities.map(c => c as string),
+              result.executionTimeMs,
+            );
+          }
           this.emitEvent('subtask:completed', requestId, {
             subTaskId: result.subTaskId,
             model: result.modelId,
@@ -228,6 +244,13 @@ export class Orchestrator {
    */
   getPerformanceTracker(): PerformanceTracker {
     return this.perfTracker;
+  }
+
+  /**
+   * Get the embedding similarity engine.
+   */
+  getEmbeddings(): EmbeddingSimilarity {
+    return this.embeddings;
   }
 
   /**

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] — 2026-06-15
+
+### 🚀 New Features
+
+#### Embedding-Based Task Similarity (`src/core/embedding-similarity.ts`)
+- **`EmbeddingSimilarity`** — Stores (embedding, modelId, qualityScore) tuples from successful subtask executions and retrieves the best historical model for new subtasks based on cosine similarity
+- **`addRecord(description, modelId, qualityScore, capabilities, executionTimeMs)`** — Store a new embedding record after successful execution
+- **`findSimilar(taskDescription, topK)`** — Find the most similar historical records, sorted by combined similarity × quality score
+- **`getRecommendedModel(taskDescription)`** — Get the single best model recommendation based on aggregated historical similarity data
+- **Pseudo-embedding generation** — Deterministic 128-dimensional hash-based vectors from task descriptions, with unigram and bigram features, normalized to unit vectors
+- **Cosine similarity** — Full vector similarity computation for matching
+- **`exportJSON()` / `importJSON(json)`** — Persist and restore embedding records
+- **Configurable** — `maxRecords` (default 5000), `similarityThreshold` (default 0.7)
+- **Orchestrator integration** — Embedding records are automatically created after each successful subtask execution
+- **`orchestrator.getEmbeddings()`** — Access the embedding similarity engine
+
+```javascript
+const embeddings = orch.getEmbeddings();
+const recommended = embeddings.getRecommendedModel('Implement a binary search tree');
+console.log(recommended); // 'glm-5.2' (based on historical performance)
+
+const similar = embeddings.findSimilar('Design a rate limiter', 5);
+for (const result of similar) {
+  console.log(`${result.modelId}: similarity=${result.similarity}, quality=${result.qualityScore}`);
+}
+```
+
+#### Web UI Dashboard (`dashboard/index.html`)
+- **Standalone HTML dashboard** — No dependencies, single file, dark theme
+- **Real-time pipeline visualization** — 6-stage progress indicator (Received → Decomposing → Routing → Executing → Synthesizing → Completed)
+- **4 KPI stat cards** — Total Pipelines, Avg Quality Score, Avg Latency, Success Rate
+- **Model Performance table** — Calls, avg time, reliability per model
+- **Model Registry table** — All 6 models with capabilities, speed/quality ranks, cost weights
+- **Cost & Embeddings panel** — Total cost weight, avg cost per pipeline, budget limit, embedding record count
+- **Pipeline History** — Last 10 pipelines with quality bars and mode tags
+- **Event Log** — Real-time event stream with timestamps and model badges
+- **Query Runner** — Mode selector, budget input, textarea, and simulated pipeline execution
+- **Demo data** — Pre-loaded with 6 sample pipelines and events on startup
+- **Responsive** — 4→2→1 column grid on smaller screens
+
+---
+
 ## [2.0.0] — 2026-06-15
 
 ### 🚀 Major New Features
