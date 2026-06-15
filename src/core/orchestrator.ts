@@ -1,6 +1,7 @@
 /**
- * Nexus-Dev MMFE — The Orchestrator (v3.0)
+ * Nexus-Dev MMFE — The Orchestrator (v4.0.0)
  * Central coordination engine with:
+ *   - Multi-provider support (ZAI, OpenAI, Anthropic, Google)
  *   - Pipeline events (streaming)
  *   - Performance tracking
  *   - Budget-aware routing
@@ -29,9 +30,11 @@ import {
 } from './types.js';
 import { NexusDevConfig, DEFAULT_CONFIG, mergeConfig } from './config.js';
 import { MTPEngine } from './mtp-engine.js';
+import { ProviderRouter, createProviderRouter } from '../providers/provider-router.js';
 
 export class Orchestrator {
   private config: NexusDevConfig;
+  private providerRouter: ProviderRouter;
   private decomposer: Decomposer;
   private router: AdaptiveRouter;
   private executor: ParallelExecutor;
@@ -45,10 +48,15 @@ export class Orchestrator {
 
   constructor(config?: Partial<NexusDevConfig>) {
     this.config = mergeConfig(config);
-    this.decomposer = new Decomposer(this.config);
+
+    // Initialize the provider router
+    this.providerRouter = createProviderRouter(this.config.providers);
+
+    // Initialize all components with the provider router
+    this.decomposer = new Decomposer(this.config, this.providerRouter);
     this.router = new AdaptiveRouter(this.config);
-    this.executor = new ParallelExecutor(this.config);
-    this.synthesizer = new Synthesizer(this.config);
+    this.executor = new ParallelExecutor(this.config, this.providerRouter);
+    this.synthesizer = new Synthesizer(this.config, this.providerRouter);
     this.pipelines = new Map();
     this.events = new NexusEventEmitter();
     this.perfTracker = new PerformanceTracker();
@@ -70,9 +78,22 @@ export class Orchestrator {
   }
 
   /**
+   * Initialize the provider router (must be called before first process).
+   * Auto-initializes if not called explicitly.
+   */
+  async initialize(): Promise<void> {
+    await this.providerRouter.initialize();
+  }
+
+  /**
    * Process a request through the full orchestration pipeline.
    */
   async process(query: string, options?: Partial<OrchestrationRequest>): Promise<OrchestrationResult> {
+    // Ensure providers are initialized
+    if (this.providerRouter.getActiveProviders().length === 0) {
+      await this.initialize();
+    }
+
     // ── MTP Fast Path ──
     // If MTP is enabled, use the hyperthreaded pipeline for dramatically faster processing
     if (this.config.enableMTP && this.mtpEngine) {
@@ -293,6 +314,13 @@ export class Orchestrator {
   }
 
   /**
+   * Get the provider router.
+   */
+  getProviderRouter(): ProviderRouter {
+    return this.providerRouter;
+  }
+
+  /**
    * Get the embedding similarity engine.
    */
   getEmbeddings(): EmbeddingSimilarity {
@@ -364,6 +392,13 @@ export class Orchestrator {
    */
   updateConfig(updates: Partial<NexusDevConfig>): void {
     Object.assign(this.config, updates);
+  }
+
+  /**
+   * Gracefully shut down the orchestrator and all providers.
+   */
+  async shutdown(): Promise<void> {
+    await this.providerRouter.shutdown();
   }
 
   /**

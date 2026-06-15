@@ -1,26 +1,22 @@
 /**
  * Nexus-Dev MMFE — Parallel Executor
- * Executes subtasks in parallel against selected models via z-ai-web-dev-sdk.
+ * Executes subtasks in parallel against selected models via the Provider Router.
+ * Supports multi-provider execution (ZAI, OpenAI, Anthropic, Google).
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
 import { SubTask, SubTaskResult, RoutingDecision } from '../core/types.js';
 import { MODEL_REGISTRY } from '../core/models.js';
 import { NexusDevConfig } from '../core/config.js';
+import { ProviderRouter } from '../providers/provider-router.js';
+import { ProviderMessage, ProviderCompletionOptions } from '../providers/types.js';
 
 export class ParallelExecutor {
-  private zai: ZAI | null = null;
+  private providerRouter: ProviderRouter;
   private config: NexusDevConfig;
 
-  constructor(config: NexusDevConfig) {
+  constructor(config: NexusDevConfig, providerRouter: ProviderRouter) {
     this.config = config;
-  }
-
-  private async getClient(): Promise<ZAI> {
-    if (!this.zai) {
-      this.zai = await ZAI.create();
-    }
-    return this.zai;
+    this.providerRouter = providerRouter;
   }
 
   /**
@@ -32,7 +28,6 @@ export class ParallelExecutor {
     routingDecisions: RoutingDecision[],
     systemPrompt?: string
   ): Promise<Map<string, SubTaskResult>> {
-    const client = await this.getClient();
     const results = new Map<string, SubTaskResult>();
     const routingMap = new Map(routingDecisions.map(r => [r.subTaskId, r]));
 
@@ -72,7 +67,7 @@ export class ParallelExecutor {
       }
 
       // Execute this wave in parallel (limited concurrency)
-      const batchResults = await this.executeWave(client, ready, routingMap, systemPrompt);
+      const batchResults = await this.executeWave(ready, routingMap, systemPrompt);
 
       for (const [id, result] of batchResults) {
         results.set(id, result);
@@ -88,7 +83,6 @@ export class ParallelExecutor {
    * Execute a wave of independent subtasks in parallel.
    */
   private async executeWave(
-    client: ZAI,
     tasks: SubTask[],
     routingMap: Map<string, RoutingDecision>,
     systemPrompt?: string
@@ -99,7 +93,7 @@ export class ParallelExecutor {
     // Process in batches to respect concurrency limits
     for (let i = 0; i < tasks.length; i += maxConcurrent) {
       const batch = tasks.slice(i, i + maxConcurrent);
-      const promises = batch.map(task => this.executeOne(client, task, routingMap, systemPrompt));
+      const promises = batch.map(task => this.executeOne(task, routingMap, systemPrompt));
       const batchResults = await Promise.allSettled(promises);
 
       for (let j = 0; j < batchResults.length; j++) {
@@ -126,10 +120,9 @@ export class ParallelExecutor {
   }
 
   /**
-   * Execute a single subtask against its assigned model.
+   * Execute a single subtask against its assigned model via the provider router.
    */
   private async executeOne(
-    client: ZAI,
     task: SubTask,
     routingMap: Map<string, RoutingDecision>,
     systemPrompt?: string
@@ -139,56 +132,56 @@ export class ParallelExecutor {
     const profile = MODEL_REGISTRY[modelId];
     const startTime = Date.now();
 
-    const messages = [];
+    const messages: ProviderMessage[] = [];
     if (systemPrompt) {
-      messages.push({ role: 'system' as const, content: systemPrompt });
+      messages.push({ role: 'system', content: systemPrompt });
     } else {
       messages.push({
-        role: 'system' as const,
+        role: 'system',
         content: `You are a specialized AI assistant handling subtask "${task.description}". Focus on producing a precise, self-contained result for this specific subtask. Be thorough but concise.`,
       });
     }
-    messages.push({ role: 'user' as const, content: task.input });
+    messages.push({ role: 'user', content: task.input });
 
-    const requestOptions: any = {
-      model: modelId,
-      messages,
+    const options: ProviderCompletionOptions = {
       temperature: 0.4,
+      enableThinking: profile?.supportsThinking && this.config.enableThinking,
     };
 
-    // Enable thinking for models that support it and when config allows
-    if (profile?.supportsThinking && this.config.enableThinking) {
-      requestOptions.thinking = { type: 'enabled' };
-    }
-
     try {
-      const response = await Promise.race([
-        client.chat.completions.create(requestOptions),
+      const result = await Promise.race([
+        this.providerRouter.completeWithFallback(
+          modelId,
+          messages,
+          options,
+          decision?.alternativeModels
+        ),
         this.createTimeout(task.timeout),
       ]);
 
-      const output = response.choices?.[0]?.message?.content ?? '';
+      const output = result.content;
       const executionTimeMs = Date.now() - startTime;
 
       // Retry with alternative model if output is suspiciously empty
       if (!output.trim() && this.config.enableRetry && decision?.alternativeModels?.length) {
-        return this.retryWithAlternative(client, task, decision.alternativeModels[0], startTime);
+        return this.retryWithAlternative(task, decision.alternativeModels[0], startTime);
       }
 
       return {
         subTaskId: task.id,
-        modelId,
+        modelId: result.model ?? modelId,
         success: true,
         output,
         executionTimeMs,
-        tokenUsage: response.usage ? {
-          prompt: response.usage.prompt_tokens ?? 0,
-          completion: response.usage.completion_tokens ?? 0,
-          total: response.usage.total_tokens ?? 0,
+        tokenUsage: result.usage ? {
+          prompt: result.usage.promptTokens,
+          completion: result.usage.completionTokens,
+          total: result.usage.totalTokens,
         } : undefined,
         metadata: {
           routingConfidence: decision?.confidence,
           modelProfile: profile?.tier,
+          provider: result.provider,
         },
       };
     } catch (error: any) {
@@ -196,7 +189,7 @@ export class ParallelExecutor {
 
       // Retry with alternative model
       if (this.config.enableRetry && decision?.alternativeModels?.length) {
-        return this.retryWithAlternative(client, task, decision.alternativeModels[0], startTime);
+        return this.retryWithAlternative(task, decision.alternativeModels[0], startTime);
       }
 
       return {
@@ -215,33 +208,32 @@ export class ParallelExecutor {
    * Retry a failed subtask with an alternative model.
    */
   private async retryWithAlternative(
-    client: ZAI,
     task: SubTask,
     alternativeModelId: string,
     originalStartTime: number
   ): Promise<SubTaskResult> {
-    const profile = MODEL_REGISTRY[alternativeModelId];
+    const messages: ProviderMessage[] = [
+      {
+        role: 'system',
+        content: `You are a specialized AI assistant handling subtask "${task.description}". Produce a precise, self-contained result.`,
+      },
+      { role: 'user', content: task.input },
+    ];
 
     try {
-      const response = await client.chat.completions.create({
-        model: alternativeModelId,
-        messages: [
-          {
-            role: 'system',
-            content: `You are a specialized AI assistant handling subtask "${task.description}". Produce a precise, self-contained result.`,
-          },
-          { role: 'user', content: task.input },
-        ],
-        temperature: 0.4,
-      });
+      const result = await this.providerRouter.complete(
+        alternativeModelId,
+        messages,
+        { temperature: 0.4 }
+      );
 
       return {
         subTaskId: task.id,
-        modelId: alternativeModelId,
+        modelId: result.model ?? alternativeModelId,
         success: true,
-        output: response.choices?.[0]?.message?.content ?? '',
+        output: result.content,
         executionTimeMs: Date.now() - originalStartTime,
-        metadata: { retry: true, originalModel: task.preferredModels[0] },
+        metadata: { retry: true, originalModel: task.preferredModels[0], provider: result.provider },
       };
     } catch (error: any) {
       return {

@@ -1,6 +1,7 @@
 /**
- * Nexus-Dev MMFE — Main Entry Point (v3.2.0)
+ * Nexus-Dev MMFE — Main Entry Point (v4.0.0)
  * Exports the full public API of the Multi-Model Fusion Engine.
+ * Now with multi-provider support (ZAI, OpenAI, Anthropic, Google).
  */
 
 // Core
@@ -28,6 +29,13 @@ export { CodeReviewEngine, createCodeReviewEngine } from './code-review/review-e
 export { getReviewRule, getReviewRuleForFile, detectLanguage, getSupportedLanguages } from './code-review/rules.js';
 export { parseDiff, getChangedFiles, findCodeInDiff } from './code-review/diff-parser.js';
 export { fillTemplate } from './code-review/prompts.js';
+
+// v4.0 modules — Multi-Provider Support
+export { ProviderRouter, createProviderRouter } from './providers/provider-router.js';
+export { ZAIProvider } from './providers/zai-provider.js';
+export { OpenAIProvider } from './providers/openai-provider.js';
+export { AnthropicProvider } from './providers/anthropic-provider.js';
+export { GoogleProvider } from './providers/google-provider.js';
 
 // Types
 export type {
@@ -126,12 +134,28 @@ export type {
 
 export { AI_SLOPE_PATTERNS, DEFAULT_DESIGN_SKILL_CONFIG } from './design-skill/types.js';
 
+// Multi-Provider types
+export type {
+  LLMProvider,
+  ProviderId,
+  ProviderConfig,
+  ProviderMessage,
+  ProviderCompletionOptions,
+  ProviderCompletionResult,
+  ProviderTokenUsage,
+  MultiProviderConfig,
+} from './providers/types.js';
+
+export { DEFAULT_MULTI_PROVIDER_CONFIG } from './providers/types.js';
+
 export {
   MODEL_REGISTRY,
   getModelIds,
   getModelsWithCapability,
   getModelsSortedBy,
+  getModelsByProvider,
   resolveModel,
+  getModelProvider,
 } from './core/models.js';
 
 // Config

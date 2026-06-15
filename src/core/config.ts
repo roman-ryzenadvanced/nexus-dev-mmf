@@ -1,6 +1,9 @@
 /**
  * Nexus-Dev MMFE — Configuration
+ * Updated for v4.0.0 with multi-provider support.
  */
+
+import { MultiProviderConfig, DEFAULT_MULTI_PROVIDER_CONFIG } from '../providers/types.js';
 
 export interface NexusDevConfig {
   /** Default execution mode */
@@ -59,6 +62,9 @@ export interface NexusDevConfig {
     /** Maximum speculative threads per pipeline */
     maxSpeculativeThreads: number;
   };
+
+  /** Multi-provider configuration */
+  providers: MultiProviderConfig;
 }
 
 export const DEFAULT_CONFIG: NexusDevConfig = {
@@ -84,6 +90,12 @@ export const DEFAULT_CONFIG: NexusDevConfig = {
     overlapDelayMs: 200,
     maxSpeculativeThreads: 4,
   },
+  providers: {
+    ...DEFAULT_MULTI_PROVIDER_CONFIG,
+    providers: {
+      zai: { provider: 'zai' },
+    },
+  },
 };
 
 /**
@@ -91,5 +103,17 @@ export const DEFAULT_CONFIG: NexusDevConfig = {
  */
 export function mergeConfig(partial?: Partial<NexusDevConfig>): NexusDevConfig {
   if (!partial) return { ...DEFAULT_CONFIG };
-  return { ...DEFAULT_CONFIG, ...partial };
+  return {
+    ...DEFAULT_CONFIG,
+    ...partial,
+    mtp: { ...DEFAULT_CONFIG.mtp, ...partial.mtp },
+    providers: {
+      ...DEFAULT_CONFIG.providers,
+      ...partial.providers,
+      providers: {
+        ...DEFAULT_CONFIG.providers.providers,
+        ...partial.providers?.providers,
+      },
+    },
+  };
 }

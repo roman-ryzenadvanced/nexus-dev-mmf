@@ -6,11 +6,11 @@
 
 **An intelligent multi-model orchestration framework that decomposes complex tasks, adaptively routes subtasks to the optimal GLM models, executes them in parallel, and synthesizes a single unified answer — with MTP hyperthreading, code review, and AI SLOPE elimination for design tasks.**
 
-[![Version](https://img.shields.io/badge/Version-v3.2.0-brightgreen.svg)](#v32-features)
+[![Version](https://img.shields.io/badge/Version-v4.0.0-brightgreen.svg)](#v40-features---multi-provider)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
-[![Models](https://img.shields.io/badge/Models-6%20GLM-orange.svg)](#supported-models)
+[![Models](https://img.shields.io/badge/Models-16%2B%20%7C%204%20Providers-orange.svg)](#supported-models)
 
 [Installation](#installation) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Agentic Tools](#using-nexus-with-agentic-tools) · [API Reference](#api-reference) · [CLI Reference](#cli-reference) · [Design Skill](#design-skill--ai-slope-elimination) · [Code Review](#code-review-engine) · [MTP](#mtp-multi-threaded-pipeline)
 
@@ -209,18 +209,161 @@ Request → [Analyze] → [Decompose] → [Route] → [Execute Wave 1] → [Exec
 
 ---
 
+## v4.0 Features — Multi-Provider
+
+Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables routing across multiple LLM providers — not just ZAI/GLM models. The same orchestration pipeline (decompose → route → execute → synthesize) now works with models from any provider.
+
+### Supported Providers
+
+| Provider | Adapter | Auth | Models |
+|----------|---------|------|--------|
+| **ZAI** (default) | `ZAIProvider` | Auto-detected via `z-ai-web-dev-sdk` | glm-5.2-1m, glm-5.2, glm-5.1, glm-5, glm-5v-turbo, glm-4.7 |
+| **OpenAI** | `OpenAIProvider` | `OPENAI_API_KEY` env var or config | gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini |
+| **Anthropic** | `AnthropicProvider` | `ANTHROPIC_API_KEY` env var or config | claude-opus-4, claude-sonnet-4, claude-haiku-3.5 |
+| **Google** | `GoogleProvider` | `GOOGLE_API_KEY` / `GEMINI_API_KEY` env var or config | gemini-2.5-pro, gemini-2.5-flash, gemini-2-flash |
+
+### Multi-Provider Configuration
+
+```javascript
+import { createOrchestrator } from 'nexus-dev-mmf';
+
+const orch = createOrchestrator({
+  providers: {
+    defaultProvider: 'zai',
+    enableFallback: true,
+    providers: {
+      zai: { provider: 'zai' },                                          // Auto-detected
+      openai: { provider: 'openai', apiKey: process.env.OPENAI_API_KEY },
+      anthropic: { provider: 'anthropic', apiKey: process.env.ANTHROPIC_API_KEY },
+      google: { provider: 'google', apiKey: process.env.GOOGLE_API_KEY },
+    },
+  },
+});
+
+await orch.initialize();  // Initialize all configured providers
+
+// Now the router can assign subtasks to any available model across providers
+const result = await orch.process('Explain quantum computing and write a Python simulation');
+// May route: reasoning → o3, code → gpt-4.1, creative-explanation → claude-sonnet-4
+```
+
+### Provider Prefix Routing
+
+You can explicitly route to a specific provider using the `provider/model` prefix:
+
+```javascript
+// Explicit provider routing
+const result = await orch.process('Analyze this code', {
+  customSystemPrompt: 'Use openai/o3 for deep reasoning on this task',
+});
+
+// In the model registry, models can be referenced with or without prefix:
+// "gpt-4o"           → routes to OpenAI (auto-detected from registry)
+// "openai/gpt-4o"    → explicitly routes to OpenAI
+// "claude-sonnet-4"  → routes to Anthropic (auto-detected from registry)
+```
+
+### Cross-Provider Pipeline
+
+The real power of multi-provider is mixing models from different providers in the same pipeline:
+
+```
+Task: "Design and implement a fintech API"
+├── Decompose: glm-5.2 (ZAI) — understands the full context
+├── Route: reasoning → o3 (OpenAI), code → gpt-4.1 (OpenAI), design → claude-sonnet-4 (Anthropic)
+├── Execute: All subtasks run in parallel across 3 providers
+├── Synthesize: gemini-2.5-pro (Google) — merges all results
+└── Quality Score: 92/100
+```
+
+### Environment Variables
+
+```bash
+# ZAI — auto-detected, no env vars needed in chat.z.ai
+# ZAI_PROVIDER_BASE_URL=https://custom-endpoint  # Optional override
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+# OPENAI_BASE_URL=https://api.openai.com/v1      # Optional override
+# OPENAI_ORG_ID=org-...                            # Optional
+
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_BASE_URL=https://api.anthropic.com/v1 # Optional override
+
+# Google
+GOOGLE_API_KEY=AIza...     # or GEMINI_API_KEY
+# GOOGLE_AI_BASE_URL=...   # Optional override
+```
+
+### Custom Provider
+
+You can implement your own provider by implementing the `LLMProvider` interface:
+
+```javascript
+import { LLMProvider, ProviderId, ProviderConfig, ProviderMessage, ProviderCompletionOptions, ProviderCompletionResult } from 'nexus-dev-mmf';
+
+class MyCustomProvider implements LLMProvider {
+  readonly providerId: ProviderId = 'zai';  // or register a new ID
+  readonly name = 'My Custom Provider';
+  readonly supportedModels = ['my-model-1'];
+  get isReady() { return true; }
+
+  async initialize(config: ProviderConfig) { /* ... */ }
+  async complete(model, messages, options) { /* ... */ }
+  async healthCheck() { return true; }
+  listModels() { return this.supportedModels; }
+  supportsModel(id) { return this.supportedModels.includes(id); }
+  async shutdown() { /* ... */ }
+}
+
+// Register with the orchestrator
+const orch = createOrchestrator({ /* ... */ });
+orch.getProviderRouter().registerProvider(new MyCustomProvider());
+```
+
+---
+
 ## Supported Models
 
 ### Model Profiles
+
+#### ZAI (GLM Models) — Default Provider
 
 | Model | Tier | Cost Weight | Context | Key Strengths |
 |-------|------|-------------|---------|---------------|
 | `glm-5.2-1m` | Flagship | 3.0 | 1M tokens | Advanced reasoning, complex decomposition, SLOPE detection, long-context analysis |
 | `glm-5.2` | Flagship | 2.0 | 128K tokens | High-performance baseline, design generation, balanced quality-speed |
 | `glm-5.1` | Standard | 1.5 | 128K tokens | Nuanced language, context sensitivity, design copy, multi-turn |
-| `glm-5` | Fast | 1.0 | 128K tokens | Speed, efficiency, rapid drafts, high-throughput tasks |
-| `glm-5v-turbo` | Fast | 1.0 | 128K tokens | Accelerated feedback, vision support, quick iteration |
-| `glm-4.7` | Creative | 1.2 | 128K tokens | Creative generation, deep knowledge, design systems, synthesis |
+| `glm-5` | Fast | 0.5 | 32K tokens | Speed, efficiency, rapid drafts, high-throughput tasks |
+| `glm-5v-turbo` | Fast | 0.5 | 32K tokens | Accelerated feedback, vision support, quick iteration |
+| `glm-4.7` | Creative | 2.0 | 128K tokens | Creative generation, deep knowledge, design systems, synthesis |
+
+#### OpenAI Models
+
+| Model | Tier | Cost Weight | Context | Key Strengths |
+|-------|------|-------------|---------|---------------|
+| `gpt-4o` | Flagship | 2.5 | 128K tokens | Multimodal, strong reasoning + code + vision |
+| `gpt-4.1` | Flagship | 2.0 | 1M tokens | High intelligence, complex instruction following, long context |
+| `gpt-4.1-mini` | Standard | 1.0 | 1M tokens | Balanced intelligence and speed, 1M context |
+| `o3` | Flagship | 4.0 | 200K tokens | Deep chain-of-thought reasoning, math, science, complex logic |
+| `o4-mini` | Standard | 1.5 | 200K tokens | Fast reasoning, good balance of capability and cost |
+
+#### Anthropic Models (Claude)
+
+| Model | Tier | Cost Weight | Context | Key Strengths |
+|-------|------|-------------|---------|---------------|
+| `claude-opus-4` | Flagship | 5.0 | 200K tokens | Most capable, complex reasoning, creative writing, SLOPE detection |
+| `claude-sonnet-4` | Flagship | 3.0 | 200K tokens | Balanced performance, excellent code and reasoning, design |
+| `claude-haiku-3.5` | Fast | 0.8 | 200K tokens | Fast and affordable, high-throughput tasks |
+
+#### Google Models (Gemini)
+
+| Model | Tier | Cost Weight | Context | Key Strengths |
+|-------|------|-------------|---------|---------------|
+| `gemini-2.5-pro` | Flagship | 3.0 | 1M tokens | 1M context + thinking, multimodal, complex reasoning |
+| `gemini-2.5-flash` | Fast | 0.5 | 1M tokens | Fast with 1M context + thinking, efficient |
+| `gemini-2-flash` | Fast | 0.3 | 1M tokens | Ultra-fast, simple tasks and vision at minimal cost |
 
 ### Capability Matrix
 
@@ -1688,6 +1831,14 @@ nexus-dev-mmf/
 │   │   └── adaptive-router.ts         # ARL scoring and routing
 │   ├── synthesis/
 │   │   └── synthesizer.ts             # Result synthesis + quality scoring
+│   ├── providers/                     # ★ v4.0: Multi-Provider Abstraction
+│   │   ├── types.ts                   # LLMProvider interface, ProviderConfig, etc.
+│   │   ├── provider-router.ts         # Unified provider router + registry
+│   │   ├── zai-provider.ts            # ZAI (GLM) adapter
+│   │   ├── openai-provider.ts         # OpenAI adapter (GPT-4o, o3, etc.)
+│   │   ├── anthropic-provider.ts      # Anthropic adapter (Claude)
+│   │   ├── google-provider.ts         # Google adapter (Gemini)
+│   │   └── index.ts                   # Module exports
 │   ├── code-review/
 │   │   ├── types.ts                   # Review type definitions
 │   │   ├── review-engine.ts           # 5-phase review pipeline

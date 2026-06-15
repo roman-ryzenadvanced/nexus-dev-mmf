@@ -1,17 +1,19 @@
 ---
 name: nexus-dev-mmf
-version: 3.2.0
+version: 4.0.0
 description: |
   Multi-Model Fusion Engine (MMFE) — An adaptive multi-model orchestrator that decomposes complex tasks,
-  routes subtasks to the optimal GLM models via z-ai-web-dev-sdk, executes in parallel, and synthesizes
-  unified results. Includes MTP hyperthreading, code review (from Alibaba Open Code Review), and design
-  skill with AI SLOPE elimination (from UI/UX Pro Max Skill). Use when you need to leverage multiple AI
-  models simultaneously for superior output quality, when tasks are complex enough to benefit from
-  decomposition, or when you want intelligent model selection based on task characteristics.
-  Supports speed/quality/balanced/creative modes.
+  routes subtasks to the optimal models across multiple providers (ZAI/GLM, OpenAI, Anthropic, Google),
+  executes in parallel, and synthesizes unified results. Includes MTP hyperthreading, code review
+  (from Alibaba Open Code Review), design skill with AI SLOPE elimination (from UI/UX Pro Max Skill),
+  and a provider abstraction layer supporting 4 LLM providers and 16+ models.
+  Use when you need to leverage multiple AI models simultaneously for superior output quality, when tasks
+  are complex enough to benefit from decomposition, or when you want intelligent model selection based on
+  task characteristics. Supports speed/quality/balanced/creative modes.
   Triggers: "multi-model", "fusion", "orchestrator", "parallel AI", "decompose and route",
   "use multiple models", "best model for", "ensemble AI", "AI team", "design", "code review",
-  "AI SLOPE", "design system", "多模型", "融合引擎", "并行执行".
+  "AI SLOPE", "design system", "multi-provider", "openai", "claude", "gemini", "gpt",
+  "多模型", "融合引擎", "并行执行".
 license: MIT
 ---
 

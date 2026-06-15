@@ -2,11 +2,12 @@
  * Nexus-Dev MMFE — Synthesizer
  * Merges all subtask results into a unified, coherent final answer.
  * Uses a composite of multiple models for cross-validation and assembly.
+ * Updated for v4.0.0 with multi-provider support.
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
 import { SubTaskResult, OrchestrationRequest, OrchestrationResult, RoutingDecision } from '../core/types.js';
 import { NexusDevConfig } from '../core/config.js';
+import { ProviderRouter } from '../providers/provider-router.js';
 
 const SYNTHESIZER_SYSTEM_PROMPT = `You are a master synthesis engine. Your role is to combine the outputs of multiple specialized AI subtask processors into a single, coherent, and comprehensive final answer.
 
@@ -30,18 +31,28 @@ const QUALITY_SCORER_PROMPT = `You are a quality assessment engine. Score the fo
 Return ONLY a number between 0 and 100.`;
 
 export class Synthesizer {
-  private zai: ZAI | null = null;
+  private providerRouter: ProviderRouter;
   private config: NexusDevConfig;
+  private synthesisModel: string;
+  private qualityModel: string;
+  private refinementModel: string;
 
-  constructor(config: NexusDevConfig) {
+  constructor(config: NexusDevConfig, providerRouter: ProviderRouter) {
     this.config = config;
+    this.providerRouter = providerRouter;
+    // Default models for synthesis stages (can be overridden)
+    this.synthesisModel = 'glm-5.2';
+    this.qualityModel = 'glm-5';
+    this.refinementModel = 'glm-4.7';
   }
 
-  private async getClient(): Promise<ZAI> {
-    if (!this.zai) {
-      this.zai = await ZAI.create();
-    }
-    return this.zai;
+  /**
+   * Set custom models for synthesis stages.
+   */
+  setModels(synthesis?: string, quality?: string, refinement?: string): void {
+    if (synthesis) this.synthesisModel = synthesis;
+    if (quality) this.qualityModel = quality;
+    if (refinement) this.refinementModel = refinement;
   }
 
   /**
@@ -53,8 +64,6 @@ export class Synthesizer {
     routingDecisions: RoutingDecision[],
     totalExecutionTimeMs: number
   ): Promise<OrchestrationResult> {
-    const client = await this.getClient();
-
     // Collect successful results
     const successfulResults = Array.from(subTaskResults.values()).filter(r => r.success);
     const failedResults = Array.from(subTaskResults.values()).filter(r => !r.success);
@@ -87,24 +96,26 @@ export class Synthesizer {
 
     // Primary synthesis
     const startTime = Date.now();
-    const synthesisResponse = await client.chat.completions.create({
-      model: 'glm-5.2',
-      messages: [
+    const synthesisResult = await this.providerRouter.complete(
+      this.synthesisModel,
+      [
         { role: 'system', content: SYNTHESIZER_SYSTEM_PROMPT },
         { role: 'user', content: synthesisInput },
       ],
-      thinking: { type: 'enabled' },
-      temperature: 0.5,
-    });
+      {
+        temperature: 0.5,
+        enableThinking: true,
+      }
+    );
 
-    let answer = synthesisResponse.choices?.[0]?.message?.content ?? '';
+    let answer = synthesisResult.content ?? '';
 
     // Quality scoring pass
-    const qualityScore = await this.scoreQuality(client, request.query, answer);
+    const qualityScore = await this.scoreQuality(request.query, answer);
 
     // Re-synthesis if quality is below threshold
     if (qualityScore < this.config.qualityThreshold && this.config.enableRetry) {
-      const refinedAnswer = await this.refineSynthesis(client, request.query, answer, qualityScore);
+      const refinedAnswer = await this.refineSynthesis(request.query, answer, qualityScore);
       if (refinedAnswer) {
         answer = refinedAnswer;
       }
@@ -118,7 +129,7 @@ export class Synthesizer {
       totalExecutionTimeMs: totalExecutionTimeMs + (Date.now() - startTime),
       modelsUsed: [...new Set([
         ...routingDecisions.map(r => r.selectedModel),
-        'glm-5.2', // synthesis model
+        this.synthesisModel,
       ])],
       decompositionStrategy: 'multi-model-parallel',
       synthesisStrategy: qualityScore < this.config.qualityThreshold ? 'refined' : 'primary',
@@ -166,22 +177,24 @@ export class Synthesizer {
   /**
    * Score the quality of the synthesized answer.
    */
-  private async scoreQuality(client: ZAI, query: string, answer: string): Promise<number> {
+  private async scoreQuality(query: string, answer: string): Promise<number> {
     try {
-      const response = await client.chat.completions.create({
-        model: 'glm-5',
-        messages: [
+      const result = await this.providerRouter.complete(
+        this.qualityModel,
+        [
           { role: 'system', content: QUALITY_SCORER_PROMPT },
           {
             role: 'user',
             content: `QUERY: ${query}\n\nRESPONSE:\n${answer}\n\nScore:`,
           },
         ],
-        temperature: 0.1,
-        max_tokens: 10,
-      });
+        {
+          temperature: 0.1,
+          maxTokens: 10,
+        }
+      );
 
-      const scoreStr = response.choices?.[0]?.message?.content?.trim() ?? '50';
+      const scoreStr = result.content?.trim() ?? '50';
       const score = parseInt(scoreStr.replace(/[^0-9]/g, ''), 10);
       return isNaN(score) ? 50 : Math.max(0, Math.min(100, score));
     } catch {
@@ -193,15 +206,14 @@ export class Synthesizer {
    * Attempt to refine the synthesis if quality is below threshold.
    */
   private async refineSynthesis(
-    client: ZAI,
     query: string,
     currentAnswer: string,
     currentScore: number
   ): Promise<string | null> {
     try {
-      const response = await client.chat.completions.create({
-        model: 'glm-4.7',
-        messages: [
+      const result = await this.providerRouter.complete(
+        this.refinementModel,
+        [
           {
             role: 'system',
             content: `You are a refinement specialist. The following answer scored ${currentScore}/100 on quality. Improve it by adding depth, fixing any gaps, and enhancing clarity and structure.`,
@@ -211,10 +223,12 @@ export class Synthesizer {
             content: `QUERY: ${query}\n\nCURRENT ANSWER (score ${currentScore}/100):\n${currentAnswer}\n\nProduce an improved version:`,
           },
         ],
-        temperature: 0.6,
-      });
+        {
+          temperature: 0.6,
+        }
+      );
 
-      return response.choices?.[0]?.message?.content ?? null;
+      return result.content ?? null;
     } catch {
       return null;
     }

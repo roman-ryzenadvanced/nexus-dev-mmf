@@ -2,12 +2,13 @@
  * Nexus-Dev MMFE — Decomposer
  * Breaks down complex requests into logically independent subtasks.
  * Uses the flagship model (glm-5.2) for intelligent decomposition.
+ * Updated for v4.0.0 with multi-provider support.
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
 import { SubTask, OrchestrationRequest } from '../core/types.js';
 import { MODEL_REGISTRY } from '../core/models.js';
 import { NexusDevConfig } from '../core/config.js';
+import { ProviderRouter } from '../providers/provider-router.js';
 
 const DECOMPOSER_SYSTEM_PROMPT = `You are a task decomposition specialist. Your job is to break down complex requests into smaller, independent subtasks that can be processed in parallel by specialized AI models.
 
@@ -33,12 +34,31 @@ OUTPUT FORMAT — Return a JSON array of subtask objects:
 ]
 
 AVAILABLE MODELS AND THEIR STRENGTHS:
+
+ZAI (GLM Models):
 - glm-5.2-1m: Advanced reasoning, 1M context, complex decomposition, long-document analysis
 - glm-5.2: Baseline high-performance, robust execution, balanced quality-speed
 - glm-5.1: Nuanced language, context sensitivity, summarization, translation
 - glm-5: Speed specialist, rapid drafts, high-throughput, boilerplate
 - glm-5v-turbo: Accelerated feedback, vision support, quick iteration
 - glm-4.7: Creative generation, deep knowledge, sophisticated code synthesis
+
+OpenAI:
+- gpt-4o: Flagship multimodal, strong reasoning + code + vision
+- gpt-4.1: High intelligence with 1M context, complex instruction following
+- gpt-4.1-mini: Balanced intelligence and speed with 1M context
+- o3: Deep reasoning model, best for math, science, complex logic
+- o4-mini: Fast reasoning, good balance of capability and cost
+
+Anthropic (Claude):
+- claude-opus-4: Most capable, complex reasoning, creative writing, design
+- claude-sonnet-4: Balanced performance, excellent for code and reasoning
+- claude-haiku-3.5: Fast and affordable, high-throughput tasks
+
+Google (Gemini):
+- gemini-2.5-pro: Flagship with 1M context + thinking, multimodal
+- gemini-2.5-flash: Fast with 1M context + thinking, efficient
+- gemini-2-flash: Ultra-fast, simple tasks and vision at minimal cost
 
 CAPABILITY OPTIONS: reasoning, math, code, creative-writing, analysis, summarization, translation, extraction, planning, debugging, refactoring, documentation, conversation, long-context, vision, rapid-iteration, code-review, design, slope-detection, design-system
 
@@ -47,31 +67,26 @@ If the request involves UI/UX design, visual design, landing page creation, dash
 - Add "design" capability to relevant subtasks
 - For design quality review subtasks, add "slope-detection" capability
 - For design system/token generation subtasks, add "design-system" capability
-- Design subtasks should prefer creative and flagship models (glm-4.7, glm-5.2)
+- Design subtasks should prefer creative and flagship models (glm-4.7, claude-sonnet-4, gemini-2.5-pro)
 
 Return ONLY the JSON array. No markdown, no explanation.`;
 
 export class Decomposer {
-  private zai: ZAI | null = null;
+  private providerRouter: ProviderRouter;
   private config: NexusDevConfig;
+  private decomposerModel: string;
 
-  constructor(config: NexusDevConfig) {
+  constructor(config: NexusDevConfig, providerRouter: ProviderRouter, decomposerModel?: string) {
     this.config = config;
-  }
-
-  private async getClient(): Promise<ZAI> {
-    if (!this.zai) {
-      this.zai = await ZAI.create();
-    }
-    return this.zai;
+    this.providerRouter = providerRouter;
+    // Default to glm-5.2 for decomposition, but can be overridden
+    this.decomposerModel = decomposerModel ?? 'glm-5.2';
   }
 
   /**
    * Decompose an orchestration request into subtasks.
    */
   async decompose(request: OrchestrationRequest): Promise<SubTask[]> {
-    const client = await this.getClient();
-
     const userPrompt = `DECOMPOSE THE FOLLOWING REQUEST:
 ${request.query}
 
@@ -81,17 +96,19 @@ MAX PARALLEL: ${request.maxParallelSubTasks ?? this.config.maxParallelSubTasks}
 
 Produce the subtask decomposition now.`;
 
-    const response = await client.chat.completions.create({
-      model: 'glm-5.2',
-      messages: [
+    const result = await this.providerRouter.complete(
+      this.decomposerModel,
+      [
         { role: 'system', content: DECOMPOSER_SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
       ],
-      thinking: { type: 'enabled' },
-      temperature: 0.3,
-    });
+      {
+        temperature: 0.3,
+        enableThinking: true,
+      }
+    );
 
-    const content = response.choices?.[0]?.message?.content ?? '[]';
+    const content = result.content ?? '[]';
 
     try {
       const parsed = this.parseSubtasks(content, request.id);
@@ -155,7 +172,7 @@ Produce the subtask decomposition now.`;
       description: 'Complete task (undecomposed)',
       input: request.query,
       requiredCapabilities: ['reasoning', 'analysis'],
-      preferredModels: ['glm-5.2'],
+      preferredModels: [this.decomposerModel],
       priority: 'critical',
       dependencies: [],
       estimatedComplexity: 'complex',
