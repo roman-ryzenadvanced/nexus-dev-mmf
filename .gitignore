@@ -1,2 +1,7 @@
-skills/
 node_modules/
+dist/
+*.tsbuildinfo
+.env
+.z-ai-config
+.DS_Store
+Thumbs.db
