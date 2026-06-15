@@ -35,7 +35,10 @@ export type ModelCapability =
   | 'long-context'
   | 'vision'
   | 'rapid-iteration'
-  | 'code-review';
+  | 'code-review'
+  | 'design'
+  | 'slope-detection'
+  | 'design-system';
 
 /**
  * The canonical model registry for Nexus-Dev MMFE.
@@ -47,7 +50,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5.2-1m',
     name: 'GLM 5.2 (1M Context)',
     tier: 'flagship',
-    capabilities: ['reasoning', 'math', 'code', 'analysis', 'long-context', 'planning', 'code-review'],
+    capabilities: ['reasoning', 'math', 'code', 'analysis', 'long-context', 'planning', 'code-review', 'design', 'slope-detection', 'design-system'],
     contextWindow: 1_000_000,
     speedRank: 5,
     qualityRank: 1,
@@ -55,13 +58,13 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 8192,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Advanced reasoning model with 1M token context window. Best for complex problem decomposition, long-document analysis, and deep multi-step reasoning tasks.',
+    description: 'Advanced reasoning model with 1M token context window. Best for complex problem decomposition, long-document analysis, deep multi-step reasoning, and AI SLOPE detection/elimination.',
   },
   'glm-5.2': {
     id: 'glm-5.2',
     name: 'GLM 5.2',
     tier: 'flagship',
-    capabilities: ['reasoning', 'math', 'code', 'analysis', 'planning', 'debugging', 'code-review'],
+    capabilities: ['reasoning', 'math', 'code', 'analysis', 'planning', 'debugging', 'code-review', 'design', 'slope-detection', 'design-system'],
     contextWindow: 128_000,
     speedRank: 3,
     qualityRank: 1,
@@ -69,13 +72,13 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 8192,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Baseline high-performance model. Excellent for robust task execution, complex reasoning, and balanced quality-speed tradeoffs.',
+    description: 'Baseline high-performance model. Excellent for robust task execution, complex reasoning, design generation, and balanced quality-speed tradeoffs.',
   },
   'glm-5.1': {
     id: 'glm-5.1',
     name: 'GLM 5.1',
     tier: 'standard',
-    capabilities: ['conversation', 'translation', 'summarization', 'extraction', 'creative-writing', 'code-review'],
+    capabilities: ['conversation', 'translation', 'summarization', 'extraction', 'creative-writing', 'code-review', 'design'],
     contextWindow: 128_000,
     speedRank: 3,
     qualityRank: 2,
@@ -83,13 +86,13 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 4096,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Nuanced language understanding and context sensitivity. Ideal for content refinement, summarization, and contextual awareness tasks.',
+    description: 'Nuanced language understanding and context sensitivity. Ideal for content refinement, summarization, design copy, and contextual awareness tasks.',
   },
   'glm-5': {
     id: 'glm-5',
     name: 'GLM 5',
     tier: 'fast',
-    capabilities: ['code', 'debugging', 'rapid-iteration', 'summarization', 'extraction', 'code-review'],
+    capabilities: ['code', 'debugging', 'rapid-iteration', 'summarization', 'extraction', 'code-review', 'design'],
     contextWindow: 32_000,
     speedRank: 1,
     qualityRank: 3,
@@ -103,7 +106,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-5v-turbo',
     name: 'GLM 5V Turbo',
     tier: 'fast',
-    capabilities: ['rapid-iteration', 'code', 'debugging', 'vision', 'code-review'],
+    capabilities: ['rapid-iteration', 'code', 'debugging', 'vision', 'code-review', 'design'],
     contextWindow: 32_000,
     speedRank: 1,
     qualityRank: 3,
@@ -117,7 +120,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     id: 'glm-4.7',
     name: 'GLM 4.7',
     tier: 'creative',
-    capabilities: ['creative-writing', 'code', 'documentation', 'refactoring', 'analysis', 'code-review'],
+    capabilities: ['creative-writing', 'code', 'documentation', 'refactoring', 'analysis', 'code-review', 'design', 'design-system'],
     contextWindow: 128_000,
     speedRank: 4,
     qualityRank: 2,

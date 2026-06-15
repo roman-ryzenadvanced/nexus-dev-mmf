@@ -40,7 +40,14 @@ AVAILABLE MODELS AND THEIR STRENGTHS:
 - glm-5v-turbo: Accelerated feedback, vision support, quick iteration
 - glm-4.7: Creative generation, deep knowledge, sophisticated code synthesis
 
-CAPABILITY OPTIONS: reasoning, math, code, creative-writing, analysis, summarization, translation, extraction, planning, debugging, refactoring, documentation, conversation, long-context, vision, rapid-iteration, code-review
+CAPABILITY OPTIONS: reasoning, math, code, creative-writing, analysis, summarization, translation, extraction, planning, debugging, refactoring, documentation, conversation, long-context, vision, rapid-iteration, code-review, design, slope-detection, design-system
+
+DESIGN TASK DETECTION:
+If the request involves UI/UX design, visual design, landing page creation, dashboard design, brand identity, logo creation, banner design, icon design, presentation creation, or any visual/creative output:
+- Add "design" capability to relevant subtasks
+- For design quality review subtasks, add "slope-detection" capability
+- For design system/token generation subtasks, add "design-system" capability
+- Design subtasks should prefer creative and flagship models (glm-4.7, glm-5.2)
 
 Return ONLY the JSON array. No markdown, no explanation.`;
 

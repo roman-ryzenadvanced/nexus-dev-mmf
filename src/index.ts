@@ -1,5 +1,5 @@
 /**
- * Nexus-Dev MMFE — Main Entry Point (v3.1.0)
+ * Nexus-Dev MMFE — Main Entry Point (v3.2.0)
  * Exports the full public API of the Multi-Model Fusion Engine.
  */
 
@@ -97,6 +97,34 @@ export type {
 } from './code-review/types.js';
 
 export { DEFAULT_CODE_REVIEW_CONFIG } from './code-review/types.js';
+
+// v3.2 modules — Design Skill (adapted from UI/UX Pro Max Skill with AI SLOPE elimination)
+export { DesignSkillEngine, createDesignSkillEngine } from './design-skill/design-engine.js';
+export {
+  searchDomain,
+  searchStack,
+  multiDomainSearch,
+  detectDomain as detectDesignDomain,
+  getAvailableDomains as getAvailableDesignDomains,
+  getAvailableStacks as getAvailableDesignStacks,
+} from './design-skill/search-engine.js';
+
+// Design Skill types
+export type {
+  DesignSkillRequest,
+  DesignSkillResult,
+  DesignSystemRecommendation,
+  DesignSystemColors,
+  DesignSystemTypography,
+  DesignRoutingDecision,
+  DesignSubDomain,
+  AISlopeReport,
+  AISlopeIssue,
+  AISlopeCategory,
+  DesignSkillConfig,
+} from './design-skill/types.js';
+
+export { AI_SLOPE_PATTERNS, DEFAULT_DESIGN_SKILL_CONFIG } from './design-skill/types.js';
 
 export {
   MODEL_REGISTRY,
