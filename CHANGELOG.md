@@ -7,6 +7,240 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.0] — 2026-06-15
+
+### 🚀 Major New Feature: Multi-Provider Support (ZAI, OpenAI, Anthropic, Google)
+
+Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables routing across multiple LLM providers — not just ZAI/GLM models. The same orchestration pipeline (decompose → route → execute → synthesize) now works with models from any provider, allowing you to mix GLM, GPT, Claude, and Gemini models in the same pipeline.
+
+#### Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    Nexus Orchestration Pipeline              │
+│  Decompose → Route → Execute (Parallel) → Synthesize        │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                    ┌───────▼───────┐
+                    │ ProviderRouter │  ← Resolves model → provider
+                    └───┬───┬───┬───┘
+                        │   │   │
+              ┌─────────┘   │   └─────────┐
+              ▼             ▼             ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ZAIProvider│ │OpenAI    │ │Anthropic │ │Google    │
+        │(GLM 5.x) │ │Provider  │ │Provider  │ │Provider  │
+        └──────────┘ │(GPT-4o,  │ │(Claude 4)│ │(Gemini)  │
+                     │o3, o4)   │ └──────────┘ └──────────┘
+                     └──────────┘
+```
+
+#### Provider Abstraction Layer (`src/providers/`)
+
+**Core Interface (`src/providers/types.ts`)**
+- **`LLMProvider`** — The unified interface all providers must implement
+  - `initialize(config)` — Authenticate and prepare the provider
+  - `complete(model, messages, options)` — Execute a chat completion
+  - `healthCheck()` — Test connectivity and authentication
+  - `listModels()` / `supportsModel(id)` — Model availability queries
+  - `shutdown()` — Graceful teardown
+- **`ProviderId`** — Union type: `'zai' | 'openai' | 'anthropic' | 'google'`
+- **`ProviderConfig`** — Per-provider initialization config (apiKey, baseURL, organization, project, region, timeout, maxConcurrent, providerConfig)
+- **`ProviderMessage`** — Unified message format (`{ role, content }`)
+- **`ProviderCompletionOptions`** — Temperature, maxTokens, enableThinking, topP, stopSequences, providerOptions
+- **`ProviderCompletionResult`** — Content, model, provider, usage, thinkingUsed, metadata
+- **`MultiProviderConfig`** — Full multi-provider configuration with `DEFAULT_MULTI_PROVIDER_CONFIG`
+
+**ZAI Provider (`src/providers/zai-provider.ts`)**
+- Wraps `z-ai-web-dev-sdk` as an `LLMProvider`
+- Supports: `glm-5.2-1m`, `glm-5.2`, `glm-5.1`, `glm-5`, `glm-5v-turbo`, `glm-4.7`
+- Full backward compatibility — existing code using ZAI works unchanged
+- Auto-initializes via `ZAI.create()`, no API key required
+
+**OpenAI Provider (`src/providers/openai-provider.ts`)**
+- Direct HTTP adapter for the OpenAI Chat Completions API
+- Supports: `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini`, `o3`, `o3-mini`, `o4-mini`
+- Handles reasoning models (o3, o4-mini) with `max_completion_tokens` and `reasoning_effort`
+- Requires `OPENAI_API_KEY` env var or `apiKey` in config
+- Supports custom base URL (for proxies, Azure OpenAI, etc.) and organization ID
+
+**Anthropic Provider (`src/providers/anthropic-provider.ts`)**
+- Direct HTTP adapter for the Anthropic Messages API
+- Supports: `claude-opus-4`, `claude-sonnet-4`, `claude-haiku-3.5` (+ older 3.5 models)
+- Model aliases: `'claude-opus-4'` → `'claude-opus-4-20250514'`, etc.
+- Properly extracts `system` prompt from messages (Anthropic uses separate system parameter)
+- Supports extended thinking for Claude 4 models
+- Requires `ANTHROPIC_API_KEY` env var or `apiKey` in config
+
+**Google Provider (`src/providers/google-provider.ts`)**
+- Direct HTTP adapter for the Google AI (Gemini) API
+- Supports: `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2-flash`, `gemini-2-flash-lite`
+- Converts messages to Gemini's `contents` format with `systemInstruction`
+- Supports thinking mode for Gemini 2.5 models via `thinkingConfig`
+- Requires `GOOGLE_API_KEY` or `GEMINI_API_KEY` env var or `apiKey` in config
+
+**Provider Router (`src/providers/provider-router.ts`)**
+- Central registry and router for all LLM providers
+- Model ID resolution order:
+  1. **Provider prefix**: `"openai/gpt-4o"` → OpenAI provider
+  2. **Model registry**: Model's `provider` field in `MODEL_REGISTRY`
+  3. **Default provider**: Falls back to configured `defaultProvider`
+- `complete(modelId, messages, options)` — Route to the correct provider
+- `completeWithFallback(modelId, messages, options, fallbackModels)` — Try fallback providers on failure
+- `initialize()` — Initialize all configured providers (parallel, fault-tolerant)
+- `healthCheckAll()` — Run health checks across all providers
+- `listAllModels()` — List available models across all providers
+- `registerProvider(provider)` — Register custom providers at runtime
+- Configurable: `enableFallback`, `lazyLoad`, `initTimeout`
+
+```javascript
+import { createProviderRouter } from 'nexus-dev-mmf';
+
+const router = createProviderRouter({
+  defaultProvider: 'zai',
+  enableFallback: true,
+  providers: {
+    openai: { provider: 'openai', apiKey: process.env.OPENAI_API_KEY },
+    anthropic: { provider: 'anthropic', apiKey: process.env.ANTHROPIC_API_KEY },
+    google: { provider: 'google', apiKey: process.env.GEMINI_API_KEY },
+  },
+});
+
+await router.initialize();
+
+// Route by model registry — knows which provider to use
+const result = await router.complete('gpt-4o', messages);
+const result2 = await router.complete('claude-sonnet-4', messages);
+
+// Explicit provider prefix
+const result3 = await router.complete('openai/o3', messages);
+
+// With fallback — if gpt-4o fails, try gemini-2.5-pro, then glm-5.2
+const result4 = await router.completeWithFallback('gpt-4o', messages, {}, ['gemini-2.5-pro', 'glm-5.2']);
+```
+
+#### Expanded Model Registry (`src/core/models.ts`)
+
+The model registry now includes **16 models across 4 providers**:
+
+| Provider | Models | Tiers |
+|----------|--------|-------|
+| ZAI (GLM) | glm-5.2-1m, glm-5.2, glm-5.1, glm-5, glm-5v-turbo, glm-4.7 | flagship, standard, fast, creative, vision |
+| OpenAI | gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini | flagship, standard |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-3.5 | flagship, fast |
+| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-2-flash | flagship, fast |
+
+- **`ModelProfile.provider`** — New required field (`ProviderId`) that maps each model to its provider
+- **`getModelsByProvider(provider)`** — Get all models from a specific provider
+- **`getModelProvider(modelId)`** — Get the provider for a given model ID
+- All models include `design`, `code-review`, and `slope-detection` capabilities where appropriate
+
+#### Custom Provider Interface
+
+You can implement your own provider by implementing the `LLMProvider` interface:
+
+```javascript
+import { LLMProvider, ProviderId, ProviderConfig, ProviderMessage, ProviderCompletionOptions, ProviderCompletionResult } from 'nexus-dev-mmf';
+
+class MyCustomProvider implements LLMProvider {
+  readonly providerId = 'zai';  // or register a new ID
+  readonly name = 'My Custom Provider';
+  readonly supportedModels = ['my-model-1'];
+  get isReady() { return true; }
+
+  async initialize(config) { /* ... */ }
+  async complete(model, messages, options) { /* ... */ }
+  async healthCheck() { return true; }
+  listModels() { return this.supportedModels; }
+  supportsModel(id) { return this.supportedModels.includes(id); }
+  async shutdown() { /* ... */ }
+}
+
+// Register at runtime
+orch.getProviderRouter().registerProvider(new MyCustomProvider());
+```
+
+### 🔧 Changed
+
+- **`ModelProfile`** — Added required `provider: ProviderId` field
+- **`MODEL_REGISTRY`** — Expanded from 6 GLM models to 16 models across 4 providers
+- **`ModelCapability`** — Added `'design'`, `'slope-detection'`, `'design-system'` capability types
+- **`getModelsByProvider()`** — New function to filter models by provider
+- **`getModelProvider()`** — New function to look up a model's provider
+- **`package.json`** — Updated version to 4.0.0, added `openai`, `anthropic`, `google`, `gemini`, `claude`, `gpt`, `multi-provider`, `llm-router` keywords
+- **`README.md`** — Updated with v4.0.0 multi-provider documentation, configuration examples, and provider-specific setup instructions
+- **Main exports** (`src/index.ts`) — Added all provider exports: `LLMProvider`, `ProviderId`, `ProviderConfig`, `ProviderMessage`, `ProviderCompletionOptions`, `ProviderCompletionResult`, `ProviderTokenUsage`, `MultiProviderConfig`, `DEFAULT_MULTI_PROVIDER_CONFIG`, `ZAIProvider`, `OpenAIProvider`, `AnthropicProvider`, `GoogleProvider`, `ProviderRouter`, `createProviderRouter`
+
+---
+
+## [3.2.0] — 2026-06-15
+
+### 🚀 Major New Feature: Design Skill with AI SLOPE Elimination
+
+Integrated an 8-phase design pipeline that generates professional UI/UX designs and systematically detects/eliminates AI SLOPE (Systematic Lapses in Output Precision & Excellence) — the common patterns where AI-generated designs feel generic, predictable, and uninspired.
+
+#### Architecture Overview
+
+The design skill uses an **8-phase pipeline** that leverages Nexus's multi-model fusion for high-quality, AI-SLOPE-free design generation:
+
+```
+ANALYZE:   Extract requirements, constraints, and design domain
+SEARCH:    BM25 search across 9 design sub-domains (600+ entries)
+GENERATE:  Multi-model design generation with domain knowledge
+SLOPE:     Detect AI SLOPE patterns across 10 categories
+ELIMINATE: Re-generate with SLOPE elimination constraints
+EVALUATE:  Score design quality (0-100) across 6 dimensions
+REFINE:    Re-synthesize if quality below threshold
+OUTPUT:    Final design specification with quality report
+```
+
+#### Design Engine (`src/design-skill/design-engine.ts`)
+- **`DesignEngine`** — The core 8-phase design pipeline engine
+- **`process(request)`** — Process a design request through the full pipeline
+- **`createDesignEngine(config?)`** — Factory function
+- Supports all 4 Nexus execution modes: `speed`, `quality`, `balanced`, `creative`
+
+#### BM25 Search Engine (`src/design-skill/search-engine.ts`)
+- **`DesignSearchEngine`** — BM25-powered search across the design knowledge base
+- **`search(query, domain?, topK?)`** — Search for relevant design entries
+- 9 design sub-domains with 600+ curated entries covering layouts, color systems, typography, interactions, accessibility, responsive patterns, animation, iconography, and design tokens
+
+#### AI SLOPE Detection (`src/design-skill/types.ts`)
+- **10 SLOPE categories**: Generic Templates, Color-by-Numbers, Layout Defaults, Cookie-Cutter Components, Placeholder Content, Uniform Spacing, Predictable Interactions, Default Typography, Stock Visual Language, Template Patterns
+- Each category includes detection heuristics, severity scoring (1-5), and elimination strategies
+- SLOPE score calculated as weighted average across all detected patterns
+
+#### Design Knowledge Base (`src/design-skill/data/`)
+- **`layout-patterns.json`** — 80+ layout patterns with responsive variants
+- **`color-systems.json`** — 60+ color system definitions with accessibility ratings
+- **`typography-systems.json`** — 50+ typography scale systems
+- **`interaction-patterns.json`** — 70+ interaction and animation patterns
+- **`accessibility-rules.json`** — 40+ accessibility compliance rules
+- **`responsive-patterns.json`** — 50+ responsive design strategies
+- **`animation-patterns.json`** — 60+ animation and transition patterns
+- **`iconography-rules.json`** — 50+ icon design and usage rules
+- **`design-tokens.json`** — 100+ design token definitions
+
+#### Design CLI (`scripts/design-fusion.mjs`)
+- Design generation from the command line with SLOPE elimination
+- Flags: `--mode`, `--domain`, `--no-slope`, `--quality-threshold`, `--mtp`
+
+```bash
+node scripts/design-fusion.mjs "Design a SaaS dashboard with analytics"
+node scripts/design-fusion.mjs --mode creative --domain dashboard "Design a fintech app"
+node scripts/design-fusion.mjs --no-slope "Quick design without SLOPE check"
+```
+
+### 🔧 Changed
+
+- **`ModelCapability`** — Added `'design'`, `'slope-detection'`, `'design-system'` to the capability union type
+- **`MODEL_REGISTRY`** — Added `design`, `slope-detection`, `design-system` capabilities to appropriate models
+- **`package.json`** — Updated version to 3.2.0, added `design-skill`, `ai-slope`, `ui-ux` keywords
+- **Main exports** (`src/index.ts`) — Added all design skill exports: `DesignEngine`, `createDesignEngine`, `DesignSearchEngine`, plus all design types
+- **`README.md`** — Updated with v3.2.0 design skill documentation and agentic tool integration guides for 15+ platforms
+
+---
+
 ## [3.1.0] — 2026-06-15
 
 ### 🚀 Major New Feature: Code Review Engine (Adapted from Alibaba Open Code Review)
