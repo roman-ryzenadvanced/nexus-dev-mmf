@@ -38,6 +38,27 @@ export interface NexusDevConfig {
 
   /** Enable pipeline event streaming */
   enableEvents: boolean;
+
+  /** Enable MTP (Multi-Threaded Pipeline) hyperthreading mode */
+  enableMTP: boolean;
+
+  /** MTP-specific configuration */
+  mtp: {
+    /** Enable speculative decomposition (fast model runs ahead) */
+    speculativeDecomposition: boolean;
+    /** Enable speculative execution (fast models draft answers early) */
+    speculativeExecution: boolean;
+    /** Enable incremental synthesis (start synthesizing before all results) */
+    incrementalSynthesis: boolean;
+    /** Enable concurrent quality scoring */
+    concurrentQuality: boolean;
+    /** Maximum concurrent MTP threads */
+    maxConcurrentThreads: number;
+    /** Overlap delay in ms before starting next phase */
+    overlapDelayMs: number;
+    /** Maximum speculative threads per pipeline */
+    maxSpeculativeThreads: number;
+  };
 }
 
 export const DEFAULT_CONFIG: NexusDevConfig = {
@@ -53,6 +74,16 @@ export const DEFAULT_CONFIG: NexusDevConfig = {
   maxTotalCostWeight: Infinity,
   enablePerformanceTracking: true,
   enableEvents: true,
+  enableMTP: false,
+  mtp: {
+    speculativeDecomposition: true,
+    speculativeExecution: true,
+    incrementalSynthesis: true,
+    concurrentQuality: true,
+    maxConcurrentThreads: 8,
+    overlapDelayMs: 200,
+    maxSpeculativeThreads: 4,
+  },
 };
 
 /**

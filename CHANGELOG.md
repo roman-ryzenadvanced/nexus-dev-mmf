@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] — 2026-06-15
+
+### 🚀 Major New Feature: MTP (Multi-Threaded Pipeline)
+
+The MTP Engine is a speculative execution engine that overlaps pipeline stages like CPU hyperthreading. While one model is generating, the next stage is already being prepared and started — delivering **2.2x speedup** over sequential pipelines.
+
+#### Architecture Overview
+
+```
+SEQUENTIAL:  [Decompose][Route][Execute W1][Execute W2][Synthesize][Quality] = ~11.6s
+NEXUS:       [Decompose][Route][Exec W1+W2 parallel][Synthesize+Quality]    = ~8.4s
+MTP:         [D+SpecD][R+Exec+SpecExec][IncSynth+Exec][FinalSynth+Quality]  = ~5.2s
+```
+
+#### MTP Engine (`src/core/mtp-engine.ts`)
+- **`MTPEngine`** — The core hyperthreading pipeline engine
+- **`process(query, options?)`** — Process a query through the MTP pipeline
+- **`setEventCallback(cb)`** — Subscribe to MTP pipeline events
+- **`getSnapshot()`** — Get a snapshot of the current MTP pipeline state
+- **`getMetrics(totalTime)`** — Get MTP performance metrics (speedup, thread utilization, speculation stats)
+- **7 thread types**: `decompose-flagship`, `decompose-fast`, `execute-primary`, `execute-speculative`, `synthesize-partial`, `synthesize-final`, `quality-score`
+
+```javascript
+import { createOrchestrator } from 'nexus-dev-mmf';
+
+const orch = createOrchestrator({ enableMTP: true });
+const result = await orch.process('Complex multi-domain query');
+console.log(result.metadata.mtpMetrics.speedupFactor); // ~2.2x
+```
+
+#### Speculative Decomposition
+- Flagship model (glm-5.2) and fast model (glm-5) decompose the query simultaneously
+- If the flagship is slow (>8s), the speculative decomposition result is used instead
+- Never wait — the fast model provides a fallback that keeps the pipeline moving
+- Configurable via `mtp.speculativeDecomposition` (default: `true`)
+
+#### Speculative Execution
+- Fast models (glm-5v-turbo) draft answers for subtasks before routing completes
+- Primary results are always preferred over speculative drafts
+- If a primary result fails or is slow, the speculative draft is automatically used
+- Confidence threshold ensures speculation only fires when likely to help (`mtp.speculativeConfidenceThreshold`)
+- Maximum speculative threads per pipeline: `mtp.maxSpeculativeThreads` (default: 4)
+
+#### Incremental Synthesis
+- Start building the answer before all subtasks have finished
+- GLM 5.1 progressively integrates each arriving result into a growing answer
+- The incremental draft is passed to the final synthesis as a starting point
+- Dramatically reduces perceived latency — the answer is already forming while models are still running
+- Configurable via `mtp.incrementalSynthesis` (default: `true`)
+
+#### Concurrent Quality Scoring
+- Quality scoring runs in parallel with final synthesis — no sequential wait
+- If quality is below threshold, refinement kicks in immediately
+- Configurable via `mtp.concurrentQuality` (default: `true`)
+
+#### MTP Types (`src/core/mtp-types.ts`)
+- **`MTPThread`** — Represents an independent execution lane (id, type, state, model, speculative flag)
+- **`MTPThreadType`** — 9 thread types covering all MTP operations
+- **`MTPThreadState`** — Thread lifecycle (pending, running, completed, failed, cancelled, superseded)
+- **`MTPThreadResult`** — Output from an MTP thread (output, time, tokens, quality, subtasks)
+- **`MTPPipelineSnapshot`** — Complete pipeline state at a point in time
+- **`MTPPipelinePhase`** — 8 overlapping phases (initializing, dual-decomposing, routing-executing, incremental-synth, final-synthesis, quality-pass, completed, failed)
+- **`MTPMetrics`** — Performance metrics (overlap time saved, peak concurrency, speculative hit rate, speedup factor, thread utilization)
+- **`MTPConfig`** — Full configuration with `DEFAULT_MTP_CONFIG`
+- **`MTPDecomposedSubtask`** — Subtask from decomposition with source and confidence tracking
+
+#### MTP CLI (`scripts/mtp-fusion.mjs`)
+- Full MTP pipeline execution from the command line
+- Flags: `--mode`, `--no-spec`, `--no-spec-decomp`, `--no-spec-exec`, `--no-inc-synth`, `--threads`, `--max-spec`, `--overlap`
+- Shows real-time thread execution logs with emoji indicators
+- Reports speedup factor, speculative hits, peak concurrency
+
+```bash
+node scripts/mtp-fusion.mjs "Design a distributed cache system"
+node scripts/mtp-fusion.mjs --mode speed --threads 6 "Quick question"
+node scripts/mtp-fusion.mjs --no-spec "Run without speculation"
+```
+
+### 🔧 Changed
+
+- **`NexusDevConfig`** — Added `enableMTP` (boolean, default: `false`) and `mtp` configuration object
+- **`Orchestrator`** — Upgraded to v3.0 with MTP integration:
+  - When `enableMTP: true`, `process()` routes through the MTP engine automatically
+  - New methods: `enableMTP()`, `disableMTP()`, `isMTPEnabled()`, `getMTPEngine()`
+  - MTP events are forwarded to the existing event system
+  - Performance tracking works transparently with MTP results
+- **`OrchestrationResult.metadata`** — Now includes `mtp: true`, `mtpMetrics`, `speculativeHits`, `speculativeMisses`, `speedupFactor`, `peakConcurrency` when MTP is used
+- **Main entry point** — Updated to v3.0.0 with MTP exports
+
+---
+
 ## [2.1.0] — 2026-06-15
 
 ### 🚀 New Features

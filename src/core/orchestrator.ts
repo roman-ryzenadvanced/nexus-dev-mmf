@@ -1,5 +1,5 @@
 /**
- * Nexus-Dev MMFE — The Orchestrator (v2.1)
+ * Nexus-Dev MMFE — The Orchestrator (v3.0)
  * Central coordination engine with:
  *   - Pipeline events (streaming)
  *   - Performance tracking
@@ -7,6 +7,7 @@
  *   - Multi-turn conversations
  *   - Custom model registration
  *   - Embedding-based task similarity
+ *   - MTP (Multi-Threaded Pipeline) hyperthreading
  */
 
 import { uuidv4 } from './utils/uuid.js';
@@ -27,6 +28,7 @@ import {
   PipelineStage,
 } from './types.js';
 import { NexusDevConfig, DEFAULT_CONFIG, mergeConfig } from './config.js';
+import { MTPEngine } from './mtp-engine.js';
 
 export class Orchestrator {
   private config: NexusDevConfig;
@@ -39,6 +41,7 @@ export class Orchestrator {
   private perfTracker: PerformanceTracker;
   private conversations: ConversationManager;
   private embeddings: EmbeddingSimilarity;
+  private mtpEngine: MTPEngine | null = null;
 
   constructor(config?: Partial<NexusDevConfig>) {
     this.config = mergeConfig(config);
@@ -51,12 +54,55 @@ export class Orchestrator {
     this.perfTracker = new PerformanceTracker();
     this.conversations = new ConversationManager();
     this.embeddings = new EmbeddingSimilarity();
+
+    // Initialize MTP engine if enabled
+    if (this.config.enableMTP) {
+      this.mtpEngine = new MTPEngine(this.config, {
+        enableSpeculativeDecomposition: this.config.mtp.speculativeDecomposition,
+        enableSpeculativeExecution: this.config.mtp.speculativeExecution,
+        enableIncrementalSynthesis: this.config.mtp.incrementalSynthesis,
+        enableConcurrentQuality: this.config.mtp.concurrentQuality,
+        maxConcurrentThreads: this.config.mtp.maxConcurrentThreads,
+        overlapDelayMs: this.config.mtp.overlapDelayMs,
+        maxSpeculativeThreads: this.config.mtp.maxSpeculativeThreads,
+      });
+    }
   }
 
   /**
    * Process a request through the full orchestration pipeline.
    */
   async process(query: string, options?: Partial<OrchestrationRequest>): Promise<OrchestrationResult> {
+    // ── MTP Fast Path ──
+    // If MTP is enabled, use the hyperthreaded pipeline for dramatically faster processing
+    if (this.config.enableMTP && this.mtpEngine) {
+      // Wire up MTP events to the orchestrator event system
+      this.mtpEngine.setEventCallback((type, data) => {
+        if (this.config.enableEvents) {
+          this.events.emitNexusEvent(type, data.pipelineId as string, data);
+        }
+      });
+
+      const result = await this.mtpEngine.process(query, options);
+
+      // Track performance from MTP result
+      for (const subResult of result.subTaskResults) {
+        if (subResult.success) {
+          this.perfTracker.recordSuccess(subResult.modelId, subResult.executionTimeMs, result.qualityScore, subResult.tokenUsage?.total);
+        } else {
+          this.perfTracker.recordFailure(subResult.modelId, subResult.executionTimeMs);
+        }
+      }
+
+      // Add to conversation if applicable
+      if (options?.conversationId) {
+        this.conversations.addTurn(options.conversationId, result, query);
+      }
+
+      return result;
+    }
+
+    // ── Standard 4-Phase Pipeline ──
     const requestId = uuidv4();
     const startTime = Date.now();
 
@@ -251,6 +297,45 @@ export class Orchestrator {
    */
   getEmbeddings(): EmbeddingSimilarity {
     return this.embeddings;
+  }
+
+  /**
+   * Get the MTP engine (if enabled).
+   */
+  getMTPEngine(): MTPEngine | null {
+    return this.mtpEngine;
+  }
+
+  /**
+   * Enable MTP mode at runtime.
+   */
+  enableMTP(): void {
+    this.config.enableMTP = true;
+    if (!this.mtpEngine) {
+      this.mtpEngine = new MTPEngine(this.config, {
+        enableSpeculativeDecomposition: this.config.mtp.speculativeDecomposition,
+        enableSpeculativeExecution: this.config.mtp.speculativeExecution,
+        enableIncrementalSynthesis: this.config.mtp.incrementalSynthesis,
+        enableConcurrentQuality: this.config.mtp.concurrentQuality,
+        maxConcurrentThreads: this.config.mtp.maxConcurrentThreads,
+        overlapDelayMs: this.config.mtp.overlapDelayMs,
+        maxSpeculativeThreads: this.config.mtp.maxSpeculativeThreads,
+      });
+    }
+  }
+
+  /**
+   * Disable MTP mode at runtime.
+   */
+  disableMTP(): void {
+    this.config.enableMTP = false;
+  }
+
+  /**
+   * Check if MTP mode is enabled.
+   */
+  isMTPEnabled(): boolean {
+    return this.config.enableMTP;
   }
 
   /**

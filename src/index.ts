@@ -1,5 +1,5 @@
 /**
- * Nexus-Dev MMFE — Main Entry Point (v2.1.0)
+ * Nexus-Dev MMFE — Main Entry Point (v3.0.0)
  * Exports the full public API of the Multi-Model Fusion Engine.
  */
 
@@ -19,6 +19,9 @@ export { optimizeForBudget, calculateTotalCost, findCheapestModel, isWithinBudge
 
 // v2.1 modules
 export { EmbeddingSimilarity } from './core/embedding-similarity.js';
+
+// v3.0 modules — MTP (Multi-Threaded Pipeline)
+export { MTPEngine } from './core/mtp-engine.js';
 
 // Types
 export type {
@@ -58,6 +61,20 @@ export type {
   EmbeddingRecord,
   SimilarityResult,
 } from './core/embedding-similarity.js';
+
+export type {
+  MTPThread,
+  MTPThreadType,
+  MTPThreadState,
+  MTPThreadResult,
+  MTPDecomposedSubtask,
+  MTPPipelineSnapshot,
+  MTPPipelinePhase,
+  MTPMetrics,
+  MTPConfig,
+} from './core/mtp-types.js';
+
+export { DEFAULT_MTP_CONFIG } from './core/mtp-types.js';
 
 export {
   MODEL_REGISTRY,
