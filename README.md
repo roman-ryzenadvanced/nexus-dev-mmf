@@ -4,15 +4,15 @@
 
 ### Multi-Model Fusion Engine
 
-**An intelligent multi-model orchestration framework that decomposes complex tasks, adaptively routes subtasks to the optimal GLM models, executes them in parallel, and synthesizes a single unified answer.**
+**An intelligent multi-model orchestration framework that decomposes complex tasks, adaptively routes subtasks to the optimal GLM models, executes them in parallel, and synthesizes a single unified answer — with MTP hyperthreading, code review, and AI SLOPE elimination for design tasks.**
 
-[![Version](https://img.shields.io/badge/Version-v2.0.0-brightgreen.svg)](#v20-features)
+[![Version](https://img.shields.io/badge/Version-v3.2.0-brightgreen.svg)](#v32-features)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/Tests-125%20pipelines-success.svg)](tests/runner.mjs)
+[![Models](https://img.shields.io/badge/Models-6%20GLM-orange.svg)](#supported-models)
 
-[Installation](#installation) · [Quick Start](#quick-start) · [Architecture](#architecture) · [API Reference](#api-reference) · [Routing Algorithm](#routing-algorithm) · [CLI Reference](#cli-reference) · [Configuration](#configuration) · [Testing](#testing)
+[Installation](#installation) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Agentic Tools](#using-nexus-with-agentic-tools) · [API Reference](#api-reference) · [CLI Reference](#cli-reference) · [Design Skill](#design-skill--ai-slope-elimination) · [Code Review](#code-review-engine) · [MTP](#mtp-multi-threaded-pipeline)
 
 </div>
 
@@ -38,7 +38,41 @@
 - [Quick Start](#quick-start)
   - [Basic Usage](#basic-usage)
   - [CLI Usage](#cli-usage)
-  - [Mode Comparison](#mode-comparison)
+  - [Design Command](#design-command)
+  - [Code Review Command](#code-review-command)
+  - [MTP Hyperthreading](#mtp-hyperthreading)
+- [Design Skill — AI SLOPE Elimination](#design-skill--ai-slope-elimination)
+  - [What is AI SLOPE?](#what-is-ai-slope)
+  - [Design Pipeline](#design-pipeline)
+  - [Design Sub-Domains](#design-sub-domains)
+  - [AI SLOPE Detection Categories](#ai-slope-detection-categories)
+  - [Design Knowledge Base](#design-knowledge-base)
+  - [Design Skill SDK](#design-skill-sdk)
+- [Code Review Engine](#code-review-engine)
+  - [5-Phase Review Pipeline](#5-phase-review-pipeline)
+  - [Supported Languages](#supported-languages)
+  - [Code Review SDK](#code-review-sdk)
+- [MTP (Multi-Threaded Pipeline)](#mtp-multi-threaded-pipeline)
+  - [Thread Types](#thread-types)
+  - [MTP Performance](#mtp-performance)
+- [Using Nexus with Agentic Tools](#using-nexus-with-agentic-tools)
+  - [Claude Code](#claude-code)
+  - [OpenAI Codex](#openai-codex)
+  - [Open Code](#open-code)
+  - [Zcode](#zcode)
+  - [Hermes Agent](#hermes-agent)
+  - [OpenClaw](#openclaw)
+  - [Pi (Inflection)](#pi-inflection)
+  - [Kimi Code](#kimi-code)
+  - [Mimo Code](#mimo-code)
+  - [Antigravity](#antigravity)
+  - [Gemini CLI](#gemini-cli)
+  - [Cursor](#cursor)
+  - [Windsurf / Codeium](#windsurf--codeium)
+  - [Aider](#aider)
+  - [Continue](#continue)
+  - [Cline](#cline)
+  - [Generic Integration Pattern](#generic-integration-pattern)
 - [API Reference](#api-reference)
   - [Orchestrator](#orchestrator)
   - [Types](#types)
@@ -61,21 +95,10 @@
   - [Preset Configurations](#preset-configurations)
 - [Project Structure](#project-structure)
 - [Testing](#testing)
-  - [Test Sections](#test-sections)
-  - [Running Tests](#running-tests)
-  - [Writing New Tests](#writing-new-tests)
 - [Examples](#examples)
 - [Contributing](#contributing)
 - [Roadmap](#roadmap)
-- [v2.0 Features](#v20-features)
-  - [/nexus Command Integration](#nexus-command-integration)
-  - [Custom Model Registration](#custom-model-registration)
-  - [Budget-Aware Routing](#budget-aware-routing)
-  - [Multi-Turn Conversations](#multi-turn-conversations)
-  - [Pipeline Event Streaming](#pipeline-event-streaming)
-  - [Model Performance Tracking](#model-performance-tracking)
-  - [Updated Configuration](#updated-configuration-v2)
-  - [Updated Types](#updated-types-v2)
+- [Changelog](#changelog)
 - [License](#license)
 
 ---
@@ -94,78 +117,37 @@ Think of it as assembling a team of specialists: a reasoning expert, a speed dem
 | Sequential processing of complex tasks | Parallel execution across independent subtasks |
 | Quality limited by the weakest capability of one model | Quality elevated by the strongest capability of each model |
 | Fixed speed/quality tradeoff | Dynamically adjustable via execution modes |
+| Generic AI design output | AI SLOPE elimination for design tasks |
+| Single-perspective code review | Multi-model review with independent fact-checking |
 
 ---
 
 ## Key Features
 
-- **🧩 Intelligent Decomposition** — Automatically breaks complex queries into the smallest logically independent subtasks using `glm-5.2` as the decomposition engine
-- **🎯 Adaptive Routing** — Weighted scoring algorithm considers capability match, execution mode, task complexity, and current load to select the optimal model for each subtask
-- **⚡ Parallel Execution** — Runs independent subtasks concurrently with dependency-aware scheduling, concurrency limiting, and timeout protection
-- **🔄 Automatic Retry** — Failed subtasks are automatically retried with alternative models from the routing decision's fallback list
-- **🎨 Quality Scoring & Refinement** — Every synthesized answer is self-assessed on a 0–100 scale; if below threshold, a refinement pass using `glm-4.7` is triggered
-- **🔀 Four Execution Modes** — `speed`, `quality`, `balanced`, and `creative` modes that fundamentally change how models are selected and weighted
-- **📊 Full Transparency** — Every routing decision, confidence score, and reasoning chain is captured and accessible for debugging and analysis
-- **🛡️ Graceful Degradation** — If decomposition fails, the system falls back to processing the entire query as a single task; if models fail, alternatives are tried
-- **🔧 Runtime Configuration** — Change modes, parallelism, and other settings on-the-fly without restarting
-- **🖥️ CLI & SDK** — Use as a library in your application or as a command-line tool
+- **Adaptive Routing Layer (ARL)** — Weighted multi-factor scoring (capability 40pts, mode 30pts, complexity 20pts, load balance) routes each subtask to the optimal model
+- **Parallel Execution** — Dependency-aware wave-based parallel execution with automatic retry on alternative models
+- **Intelligent Synthesis** — Flagship model merges all subtask results with quality scoring and automatic refinement loops
+- **4 Execution Modes** — `speed`, `quality`, `balanced`, `creative` — each adjusts routing weights to favor different model profiles
+- **MTP Hyperthreading** — CPU-like speculative decomposition, speculative execution, incremental synthesis, and concurrent quality scoring for up to 2.83x speedup
+- **Code Review Engine** — 5-phase pipeline adapted from Alibaba Open Code Review with 14 language-specific rule sets and independent fact-checking filter
+- **Design Skill with AI SLOPE Elimination** — BM25 search across 9 design domains (600+ entries), design system generation, and 10-category AI SLOPE detection/elimination
+- **Multi-Turn Conversations** — Context persistence across turns with conversation tracking
+- **Budget-Aware Routing** — Cap total cost weight per orchestration run
+- **Event Streaming** — Real-time pipeline events for monitoring and integration
+- **Performance Tracking** — Record and query model reliability statistics over time
 
 ---
 
 ## How It Works
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        YOUR COMPLEX QUERY                            │
-│  "Design a distributed cache system, implement it in Rust,          │
-│   write unit tests, and document the API"                           │
-└───────────────────────────┬──────────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  PHASE 1: DECOMPOSITION (glm-5.2)                                   │
-│                                                                      │
-│  SubTask A: "Design distributed cache architecture"  → reasoning     │
-│  SubTask B: "Implement LRU cache in Rust"            → code          │
-│  SubTask C: "Write unit tests for the cache"         → code+debug    │
-│  SubTask D: "Document the public API"                → documentation │
-│                                                                      │
-│  Dependencies: C depends on B (tests need implementation)            │
-└───────────────────────────┬──────────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  PHASE 2: ADAPTIVE ROUTING                                          │
-│                                                                      │
-│  SubTask A → glm-5.2-1m  (reasoning expert, quality mode)           │
-│  SubTask B → glm-5.2      (robust code generation)                  │
-│  SubTask C → glm-4.7      (creative code synthesis)                 │
-│  SubTask D → glm-5.1      (nuanced language, documentation)         │
-└───────────────────────────┬──────────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  PHASE 3: PARALLEL EXECUTION                                        │
-│                                                                      │
-│  Wave 1:  [A] ──glm-5.2-1m──▶ result-a                             │
-│           [B] ──glm-5.2──────▶ result-b                             │
-│           [D] ──glm-5.1──────▶ result-d                             │
-│                                                                      │
-│  Wave 2:  [C] ──glm-4.7──────▶ result-c  (depends on B, waits)     │
-└───────────────────────────┬──────────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  PHASE 4: SYNTHESIS (glm-5.2 + glm-4.7 refinement)                 │
-│                                                                      │
-│  Quality Score: 82/100  →  Passes threshold (≥70)                   │
-│                                                                      │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  UNIFIED ANSWER: A comprehensive distributed cache design,     │  │
-│  │  complete Rust implementation, test suite, and API docs —      │  │
-│  │  seamlessly integrated as if written by a single expert.       │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
+1. You submit a complex request
+2. The Decomposer (glm-5.2) breaks it into independent subtasks
+3. The Adaptive Router scores each subtask against all models
+4. The Parallel Executor runs subtasks simultaneously (respecting dependencies)
+5. The Synthesizer (glm-5.2 + glm-4.7) merges all results
+6. Quality scoring determines if re-synthesis is needed
+7. You receive a unified, polished answer
 ```
 
 ---
@@ -174,98 +156,55 @@ Think of it as assembling a team of specialists: a reasoning expert, a speed dem
 
 ### Pipeline Overview
 
-The Nexus-Dev MMFE implements a **four-phase parallelized cognitive pipeline**. Each phase is handled by a dedicated component with clear responsibilities and well-defined interfaces.
-
-| Phase | Component | Model Used | Input | Output |
-|-------|-----------|------------|-------|--------|
-| **Decomposition** | `Decomposer` | `glm-5.2` | Raw query | `SubTask[]` |
-| **Routing** | `AdaptiveRouter` | None (algorithmic) | `SubTask[]` | `RoutingDecision[]` |
-| **Execution** | `ParallelExecutor` | All 6 models | `SubTask[]` + `RoutingDecision[]` | `Map<SubTaskId, SubTaskResult>` |
-| **Synthesis** | `Synthesizer` | `glm-5.2` + `glm-4.7` | All subtask results | `OrchestrationResult` |
+```
+┌─────────────┐     ┌──────────────┐     ┌────────────────┐     ┌────────────┐
+│   Request    │────▶│  Decomposer  │────▶│  Adaptive Router│────▶│  Parallel  │
+│             │     │  (glm-5.2)   │     │     (ARL)      │     │  Executor  │
+└─────────────┘     └──────────────┘     └────────────────┘     └─────┬──────┘
+                                                                        │
+                          ┌──────────────┐                              │
+                          │  Synthesizer │◀─────────────────────────────┘
+                          │  (glm-5.2 +  │
+                          │   glm-4.7)   │
+                          └──────┬───────┘
+                                 │
+                          ┌──────▼───────┐
+                          │ Unified Result│
+                          └──────────────┘
+```
 
 ### Component Diagram
 
 ```
-src/
-├── index.ts                        ← Public API entry point
-├── cli.ts                          ← CLI entry point
-├── core/
-│   ├── orchestrator.ts             ← Central pipeline coordinator
-│   ├── executor.ts                 ← Parallel subtask execution engine
-│   ├── models.ts                   ← Model registry & profiles
-│   ├── types.ts                    ← All TypeScript type definitions
-│   ├── config.ts                   ← Configuration with defaults
-│   └── utils/
-│       └── uuid.ts                 ← UUID generator
-├── decomposer/
-│   └── decomposer.ts               ← Task decomposition via LLM
-├── router/
-│   └── adaptive-router.ts          ← ARL: model selection algorithm
-└── synthesis/
-    └── synthesizer.ts              ← Result merging + quality scoring
+Nexus-Dev MMFE
+├── Core Pipeline
+│   ├── Decomposer ──────────── Task splitting with dependency graph
+│   ├── Adaptive Router ─────── Multi-factor weighted scoring + topological sort
+│   ├── Parallel Executor ───── Wave-based concurrent execution with retry
+│   └── Synthesizer ─────────── Merge + quality scoring + refinement loop
+│
+├── Specialized Pipelines
+│   ├── MTP Engine ──────────── Hyperthreaded pipeline (9 thread types, 8 phases)
+│   ├── Code Review Engine ──── 5-phase review (Plan → Review → Synth → Filter → Re-Loc)
+│   └── Design Skill Engine ─── 8-phase design with AI SLOPE elimination
+│
+├── Infrastructure
+│   ├── Model Registry ──────── 6 GLM models with 16+ capabilities each
+│   ├── Budget Routing ──────── Cost-weight-aware model selection
+│   ├── Conversation Manager ── Multi-turn context persistence
+│   ├── Event Emitter ───────── Real-time pipeline streaming
+│   ├── Performance Tracker ─── Model reliability statistics
+│   └── Embedding Similarity ── Task similarity for cache/reuse
 ```
 
 ### Data Flow
 
 ```
-OrchestrationRequest
-  │
-  │  { id, query, context?, preferredMode?, maxParallelSubTasks?, enableThinking? }
-  │
-  ▼
-┌─────────────────────────┐
-│     Decomposer          │  Uses glm-5.2 with chain-of-thought to
-│     decompose()         │  break the query into independent subtasks.
-└──────────┬──────────────┘
-           │
-           │  SubTask[] — each with:
-           │    • description, input
-           │    • requiredCapabilities[]
-           │    • preferredModels[]
-           │    • priority, dependencies[]
-           │    • estimatedComplexity
-           │
-           ▼
-┌─────────────────────────┐
-│   AdaptiveRouter        │  Scores every model against every subtask
-│   route()               │  using weighted multi-factor analysis.
-└──────────┬──────────────┘
-           │
-           │  RoutingDecision[] — each with:
-           │    • selectedModel
-           │    • reason (human-readable)
-           │    • alternativeModels[]
-           │    • confidence (0–1)
-           │
-           ▼
-┌─────────────────────────┐
-│   ParallelExecutor      │  Executes in dependency-respecting waves.
-│   execute()             │  Supports timeouts, retries, fallbacks.
-└──────────┬──────────────┘
-           │
-           │  Map<SubTaskId, SubTaskResult> — each with:
-           │    • output, modelId
-           │    • success, executionTimeMs
-           │    • tokenUsage?
-           │    • error? (if failed)
-           │
-           ▼
-┌─────────────────────────┐
-│   Synthesizer           │  Primary: glm-5.2 merges all outputs.
-│   synthesize()          │  Quality: glm-5 scores (0–100).
-│                         │  Refinement: glm-4.7 if score < threshold.
-└──────────┬──────────────┘
-           │
-           │  OrchestrationResult — the final unified answer:
-           │    • answer (string)
-           │    • qualityScore (0–100)
-           │    • modelsUsed[]
-           │    • routingDecisions[]
-           │    • subTaskResults[]
-           │    • totalExecutionTimeMs
-           │
-           ▼
-      FINAL ANSWER
+Request → [Analyze] → [Decompose] → [Route] → [Execute Wave 1] → [Execute Wave 2] → ... → [Synthesize] → [Quality Score] → Result
+                                    ↕                                    ↕                        ↕
+                              Routing Decision              SubTaskResult[]          QualityScore > threshold?
+                                    ↕                                    ↕                        ↓ yes
+                              Model Assignment              Partial results           [Re-Synthesize with feedback]
 ```
 
 ---
@@ -274,64 +213,42 @@ OrchestrationRequest
 
 ### Model Profiles
 
-| Model | Tier | Context Window | Speed Rank | Quality Rank | Cost Weight | Thinking | Vision |
-|-------|------|---------------|------------|-------------|-------------|----------|--------|
-| `glm-5.2-1m` | 🏆 Flagship | 1,000,000 tokens | 5 (slowest) | 1 (best) | 3.0× | ✅ | ❌ |
-| `glm-5.2` | 🏆 Flagship | 128,000 tokens | 3 | 1 (best) | 2.0× | ✅ | ❌ |
-| `glm-5.1` | 📋 Standard | 128,000 tokens | 3 | 2 | 1.5× | ✅ | ❌ |
-| `glm-5` | ⚡ Fast | 32,000 tokens | 1 (fastest) | 3 | 0.5× | ❌ | ❌ |
-| `glm-5v-turbo` | ⚡ Fast | 32,000 tokens | 1 (fastest) | 3 | 0.5× | ❌ | ✅ |
-| `glm-4.7` | 🎨 Creative | 128,000 tokens | 4 | 2 | 2.0× | ✅ | ❌ |
+| Model | Tier | Cost Weight | Context | Key Strengths |
+|-------|------|-------------|---------|---------------|
+| `glm-5.2-1m` | Flagship | 3.0 | 1M tokens | Advanced reasoning, complex decomposition, SLOPE detection, long-context analysis |
+| `glm-5.2` | Flagship | 2.0 | 128K tokens | High-performance baseline, design generation, balanced quality-speed |
+| `glm-5.1` | Standard | 1.5 | 128K tokens | Nuanced language, context sensitivity, design copy, multi-turn |
+| `glm-5` | Fast | 1.0 | 128K tokens | Speed, efficiency, rapid drafts, high-throughput tasks |
+| `glm-5v-turbo` | Fast | 1.0 | 128K tokens | Accelerated feedback, vision support, quick iteration |
+| `glm-4.7` | Creative | 1.2 | 128K tokens | Creative generation, deep knowledge, design systems, synthesis |
 
 ### Capability Matrix
 
-Which models support which capabilities. The router uses this matrix to find the best model for each subtask's requirements.
+Each model is rated across 16+ capabilities. The router uses these scores alongside mode weights to pick the best model for each subtask.
 
-| Capability | `glm-5.2-1m` | `glm-5.2` | `glm-5.1` | `glm-5` | `glm-5v-turbo` | `glm-4.7` |
-|-----------|:---:|:---:|:---:|:---:|:---:|:---:|
-| `reasoning` | ✅ | ✅ | | | | |
-| `math` | ✅ | ✅ | | | | |
-| `code` | ✅ | ✅ | | ✅ | ✅ | ✅ |
-| `creative-writing` | | | ✅ | | | ✅ |
-| `analysis` | ✅ | ✅ | | | | ✅ |
-| `summarization` | | | ✅ | ✅ | | |
-| `translation` | | | ✅ | | | |
-| `extraction` | | | ✅ | ✅ | | |
-| `planning` | ✅ | ✅ | | | | |
-| `debugging` | | ✅ | | ✅ | ✅ | |
-| `refactoring` | | | | | | ✅ |
-| `documentation` | | | | | | ✅ |
-| `conversation` | | | ✅ | | | |
-| `long-context` | ✅ | | | | | |
-| `vision` | | | | | ✅ | |
-| `rapid-iteration` | | | | ✅ | ✅ | |
+| Capability | glm-5.2-1m | glm-5.2 | glm-5.1 | glm-5 | glm-5v-turbo | glm-4.7 |
+|------------|:-----------:|:-------:|:-------:|:-----:|:------------:|:-------:|
+| reasoning | 95 | 90 | 82 | 72 | 68 | 78 |
+| code | 90 | 88 | 80 | 75 | 65 | 72 |
+| creative-writing | 78 | 82 | 85 | 70 | 65 | 92 |
+| analysis | 93 | 88 | 80 | 72 | 68 | 75 |
+| summarization | 88 | 85 | 82 | 80 | 78 | 80 |
+| translation | 82 | 85 | 90 | 82 | 75 | 78 |
+| math | 92 | 85 | 75 | 68 | 62 | 70 |
+| science | 90 | 82 | 75 | 65 | 60 | 72 |
+| design | 70 | 82 | 80 | 68 | 65 | 90 |
+| code-review | 88 | 85 | 78 | 70 | 65 | 75 |
+| slope-detection | 85 | 80 | 72 | 60 | 58 | 70 |
+| design-system | 68 | 78 | 75 | 62 | 60 | 88 |
 
 ### Execution Modes
 
-Execution modes influence the routing algorithm's weighting preferences, fundamentally changing which models are selected for subtasks.
-
-| Mode | Speed Rank Weight | Quality Rank Weight | Creative Tier Bonus | Best For |
-|------|:-:|:-:|:-:|---|
-| **`speed`** | ×10 | ×0 | No | Drafts, rapid prototyping, quick answers |
-| **`quality`** | ×0 | ×10 | No | Final deliverables, research, complex analysis |
-| **`balanced`** | ×5 | ×5 | No | General-purpose tasks (default) |
-| **`creative`** | ×0 | ×8 | +30 pts | Writing, brainstorming, design, storytelling |
-
-**Example — how mode changes routing for a `code` subtask:**
-
-```
-Mode: SPEED
-  glm-5     → score: 80  (fast, code-capable)  ← SELECTED
-  glm-5.2   → score: 65  (quality but slower)
-
-Mode: QUALITY
-  glm-5.2   → score: 85  (best quality, code-capable)  ← SELECTED
-  glm-5     → score: 55  (fast but lower quality)
-
-Mode: CREATIVE
-  glm-4.7   → score: 90  (creative tier + code)  ← SELECTED
-  glm-5.2   → score: 75
-```
+| Mode | Weight Profile | Best For |
+|------|---------------|----------|
+| `speed` | Prioritizes fast models (glm-5, glm-5v-turbo) | Drafts, rapid iteration, time-critical tasks |
+| `quality` | Prioritizes flagship models (glm-5.2, glm-5.2-1m) | Final deliverables, accuracy-critical work |
+| `balanced` | Balances speed and quality across all models | General-purpose (default) |
+| `creative` | Biases toward creative models (glm-4.7) | Writing, design, brainstorming |
 
 ---
 
@@ -339,9 +256,9 @@ Mode: CREATIVE
 
 ### Prerequisites
 
-- **Node.js** 18.0 or later
-- **npm** or **bun** package manager
-- **z-ai-web-dev-sdk** configuration (`.z-ai-config` file with valid API key)
+- **Node.js** 18+ (recommended: 20+)
+- **z-ai-web-dev-sdk** installed and configured with valid credentials
+- **TypeScript** 5.4+ (for building from source)
 
 ### Install from Source
 
@@ -355,28 +272,28 @@ npm install
 
 # Build TypeScript
 npm run build
+
+# Verify installation
+node dist/cli.js --help
 ```
 
 ### SDK Configuration
 
-Nexus-Dev MMFE uses `z-ai-web-dev-sdk` to communicate with GLM models. You need a valid `.z-ai-config` file:
+Nexus-Dev uses `z-ai-web-dev-sdk` to access GLM models. The SDK must be configured before use:
 
 ```bash
-# The SDK searches for config in this order:
-# 1. ./.z-ai-config         (current directory)
-# 2. ~/.z-ai-config         (home directory)
-# 3. /etc/.z-ai-config      (system-wide)
+# The SDK reads configuration from .z-ai-config or environment variables
+# Ensure your credentials are set up (the SDK auto-detects in most environments)
 ```
 
-The config file format:
-```json
-{
-  "baseUrl": "https://api.example.com/v1",
-  "apiKey": "your-api-key-here"
-}
-```
+The `.env` file in the project root is used for local development overrides:
 
-> **Important:** The SDK must only be used in backend/server environments. Never expose your API key on the client side.
+```env
+# Nexus-Dev MMFE Configuration
+NEXUS_MODE=balanced
+NEXUS_MAX_PARALLEL=6
+NEXUS_TIMEOUT=120000
+```
 
 ---
 
@@ -387,67 +304,1005 @@ The config file format:
 ```javascript
 import { createOrchestrator } from 'nexus-dev-mmf';
 
-// Create an orchestrator with default settings
-const orchestrator = createOrchestrator();
+const orch = createOrchestrator({
+  defaultMode: 'balanced',
+  maxParallelSubTasks: 6,
+});
 
-// Process a complex query
-const result = await orchestrator.process(
-  'Design a microservices architecture for an e-commerce platform'
+const result = await orch.process(
+  'Explain the tradeoffs between microservices and monoliths, then write a TypeScript implementation of a service mesh'
 );
 
-// The unified answer
 console.log(result.answer);
-
-// Metadata about how the answer was produced
-console.log(`Models used: ${result.modelsUsed.join(', ')}`);
-console.log(`Quality score: ${result.qualityScore}/100`);
-console.log(`Execution time: ${result.totalExecutionTimeMs}ms`);
-console.log(`Subtasks completed: ${result.subTaskResults.length}`);
+console.log(`Quality: ${result.qualityScore}/100`);
+console.log(`Models used: ${result.routingDecisions.map(d => d.modelId).join(', ')}`);
 ```
 
 ### CLI Usage
 
 ```bash
-# Build first
-npm run build
+# General query
+nexus-dev "Explain the difference between microservices and monoliths"
 
-# Basic query
-node dist/cli.js "Explain the CAP theorem in distributed systems"
+# Quality mode for critical tasks
+nexus-dev "Design a database schema" --mode quality
 
-# Quality mode for best results
-node dist/cli.js "Design a URL shortener service" --mode quality
+# Speed mode for drafts
+nexus-dev "Quick summary of React hooks" --mode speed
 
-# Speed mode for quick drafts
-node dist/cli.js "Summarize the SOLID principles" --mode speed
-
-# Creative mode for writing tasks
-node dist/cli.js "Write a technical blog post about WebAssembly" --mode creative
-
-# Verbose output with routing details
-node dist/cli.js "Build a REST API for a blog" --mode balanced --verbose
-
-# Custom parallelism
-node dist/cli.js "Analyze microservices patterns" --parallel 3
-
-# Disable thinking mode (faster but less reasoning)
-node dist/cli.js "Define recursion" --no-thinking
+# Creative mode for writing
+nexus-dev "Write a creative product description" --mode creative
 ```
 
-### Mode Comparison
+### Design Command
 
-See how different modes produce different results for the same query:
+```bash
+# Design with AI SLOPE elimination
+nexus-dev design "Create a fintech dashboard landing page" --brand PayFlow
+
+# With industry and stack context
+nexus-dev design "SaaS homepage" --brand Acme --industry tech --stack nextjs --mode creative
+
+# Disable SLOPE detection (faster, but may produce generic output)
+nexus-dev design "Healthcare app UI" --no-slope
+
+# Verbose output with pipeline metrics
+nexus-dev design "E-commerce product page" --verbose
+```
+
+### Code Review Command
+
+```bash
+# Basic code review
+node scripts/code-review.mjs "$(git diff HEAD~1)"
+
+# With MTP hyperthreading for faster reviews
+node scripts/code-review.mjs "$(git diff HEAD~1)" --mtp
+
+# Review a specific file's changes
+node scripts/code-review.mjs "$(git diff -- myfile.ts)"
+```
+
+### MTP Hyperthreading
+
+```bash
+# Run with MTP hyperthreading (speculative decomposition + execution)
+node scripts/mtp-fusion.mjs "Complex multi-step task requiring multiple model capabilities"
+```
+
+---
+
+## Design Skill — AI SLOPE Elimination
+
+### What is AI SLOPE?
+
+**AI SLOPE** = **A**I-generated **S**ameness, **L**ack of **O**riginality, **O**ver-reliance on **P**atterns, **E**mptiness
+
+AI SLOPE is the generic, template-like quality that makes AI-generated designs instantly recognizable as machine-produced. Common indicators include:
+
+- **Default blue (#3B82F6)** or **AI purple (#6366F1)** as primary colors
+- **Centered hero + 3-column features + CTA** (the "AI special" layout)
+- **"Empower your workflow"**, **"Revolutionize your X"** cliché microcopy
+- **Backdrop-blur on every element** without purpose
+- **Uniform spacing and border-radius** everywhere — no rhythm
+- **No signature visual element** unique to the brand
+- **Inter-only typography** with no hierarchy
+- **Lucide icons without customization** — every AI app looks the same
+
+### Design Pipeline
+
+The design skill runs an 8-phase pipeline that detects and eliminates AI SLOPE:
+
+```
+1. ANALYZE        → Detect design sub-domain, product type, style keywords
+2. SEARCH         → BM25 search across design knowledge base (9 domains, 600+ entries)
+3. GENERATE DS    → Aggregate search results into a design system with reasoning rules
+4. PROMPT ENGINE  → Build SLOPE-aware design prompts for each model
+5. EXECUTE        → Multi-model parallel design generation (3 models per request)
+6. SLOPE DETECT   → Cross-model review for 10 categories of AI SLOPE
+7. ELIMINATE      → Re-generate with anti-slope instructions if threshold exceeded
+8. SYNTHESIZE     → Merge best elements from all model outputs into final result
+```
+
+### Design Sub-Domains
+
+| Sub-domain | Purpose | Example Use |
+|------------|---------|-------------|
+| `brand` | Brand identity, voice, assets | Brand guidelines, color palette, tone of voice |
+| `design-system` | Token architecture, specs | Design tokens, component specs, spacing scale |
+| `ui-styling` | Component implementation | shadcn/ui theming, Tailwind config, CSS variables |
+| `logo` | AI logo generation | SVG logo with brand personality |
+| `cip` | Corporate Identity Program | Letterheads, business cards, presentations |
+| `slides` | HTML presentations | Pitch decks with Chart.js visualizations |
+| `banner` | Banner design | Social media ads, web banners, print |
+| `icon` | SVG icon generation | Custom icon set with brand style |
+| `social-photos` | Social media images | OG images, profile graphics |
+| `ux-audit` | UX review | Accessibility audit, heuristic evaluation |
+
+### AI SLOPE Detection Categories
+
+| Category | Severity | Key Indicator | Anti-Pattern |
+|----------|----------|---------------|--------------|
+| `generic-colors` | 🔴 High | Default blue (#3B82F6), AI purple (#6366F1) | Product-specific palettes from knowledge base |
+| `template-layout` | 🔴 High | Centered hero + 3-column features + CTA | Asymmetric layouts, unique grid structures |
+| `missing-brand-identity` | 🔴 High | No signature visual element | Brand-specific color, shape, or pattern |
+| `stock-imagery` | 🟡 Medium | Generic hero images | Product-specific illustration style |
+| `flat-typography` | 🟡 Medium | No hierarchy, Inter-only | Varied weights, brand fonts, contrast |
+| `overused-effects` | 🟡 Medium | Backdrop-blur on everything | Purposeful effects, selective application |
+| `cliche-microcopy` | 🟢 Low | "Empower your workflow" | Product-specific language, personality |
+| `uniform-spacing` | 🟢 Low | Same padding everywhere | Rhythm variation, intentional density |
+| `default-icon-sets` | 🟢 Low | Lucide without customization | Branded icons, custom illustrations |
+| `predictable-animations` | 🟢 Low | Fade-in-up on everything | Varied timing, unexpected motion |
+
+### Design Knowledge Base
+
+The design skill includes a comprehensive BM25-searchable knowledge base:
+
+| Domain | Rows | Content |
+|--------|------|---------|
+| Products | 161 | Product-specific style recommendations |
+| Styles | 84 | UI styles with colors, effects, accessibility |
+| Colors | 161 | Product-specific color palettes (17 tokens each) |
+| Typography | 73 | Font pairings with Google Fonts URLs |
+| Landing | 34 | Landing page patterns and CTA strategies |
+| Charts | 25 | Chart type recommendations by data type |
+| UX Guidelines | 99 | UX best practices with Do/Don't examples |
+| UI Reasoning | 161 | Decision rules and anti-patterns per product |
+| Stacks | 14 | React, Next.js, Vue, Svelte, Flutter, etc. |
+
+### Design Skill SDK
 
 ```javascript
-import { createOrchestrator } from 'nexus-dev-mmf';
+import { createDesignSkillEngine } from 'nexus-dev-mmf';
 
-const query = 'Design a URL shortener service';
+const engine = createDesignSkillEngine({
+  enableSlopeDetection: true,
+  enableDesignSystem: true,
+  slopeThreshold: 40,        // Re-generate if SLOPE score >= 40
+  maxSlopeRetries: 2,        // Max elimination attempts
+  defaultMode: 'balanced',
+});
 
-for (const mode of ['speed', 'quality', 'balanced', 'creative']) {
-  const orch = createOrchestrator({ defaultMode: mode });
-  const result = await orch.process(query);
-  console.log(`[${mode}] Models: ${result.modelsUsed.join(',')} | Score: ${result.qualityScore}`);
+const result = await engine.process({
+  id: 'design-001',
+  query: 'Design a fintech dashboard landing page',
+  productType: 'Fintech/Crypto',
+  brandName: 'PayFlow',
+  industry: 'fintech',
+  enableSlopeDetection: true,
+  enableDesignSystem: true,
+  mode: 'balanced',
+});
+
+console.log(result.designOutput);
+console.log(`SLOPE Score: ${result.slopeReport.slopeScore}/100`);
+console.log(`Originality: ${result.slopeReport.originalityScore}/100`);
+console.log(`Detected SLOPE categories: ${result.slopeReport.detectedCategories.join(', ')}`);
+```
+
+---
+
+## Code Review Engine
+
+Adapted from [Alibaba Open Code Review](https://github.com/alibaba/open-code-review) with multi-model fusion enhancements.
+
+### 5-Phase Review Pipeline
+
+```
+1. PLAN          → Risk analysis, identify critical areas in the diff
+2. REVIEW        → Multi-model parallel code review with language-specific rules
+3. SYNTHESIZE    → Flagship model merges all review findings
+4. FILTER        → Independent fact-checking filter (falsify, not verify)
+5. RE-LOCATE     → Re-locate filtered comments to precise code lines
+```
+
+### Supported Languages
+
+14 language-specific rule sets with tailored review prompts:
+
+| Language | Rules Focus |
+|----------|-------------|
+| TypeScript | Type safety, null handling, async patterns |
+| JavaScript | Scope, coercion, prototype pitfalls |
+| Python | Type hints, resource management, concurrency |
+| Java | Null safety, streams, exceptions |
+| Rust | Ownership, lifetimes, unsafe blocks |
+| Go | Error handling, goroutines, channels |
+| C++ | Memory management, RAII, UB prevention |
+| C# | LINQ, async/await, disposables |
+| Ruby | Duck typing, blocks, metaprogramming |
+| PHP | Type safety, SQL injection, XSS |
+| Swift | Optionals, value types, concurrency |
+| Kotlin | Null safety, coroutines, extensions |
+| Scala | Pattern matching, implicits, collections |
+| Shell/Bash | Quoting, error handling, portability |
+
+### Code Review SDK
+
+```javascript
+import { createCodeReviewEngine } from 'nexus-dev-mmf';
+
+const engine = createCodeReviewEngine({
+  defaultMode: 'quality',
+  enableMTP: false,
+});
+
+const result = await engine.review({
+  diff: unifiedDiffContent,
+  language: 'typescript',
+  context: 'Pull request #42: Add payment processing',
+});
+
+console.log(`Found ${result.comments.length} review comments`);
+for (const comment of result.comments) {
+  console.log(`  [${comment.path}:${comment.startLine}] ${comment.content}`);
 }
 ```
+
+---
+
+## MTP (Multi-Threaded Pipeline)
+
+MTP brings CPU-like hyperthreading to LLM orchestration by overlapping pipeline stages that would otherwise run sequentially.
+
+### Thread Types
+
+| Thread | Phase | Purpose |
+|--------|-------|---------|
+| `decompose-flagship` | Decompose | Flagship model performs thorough decomposition |
+| `decompose-fast` | Decompose | Fast model pre-decomposes for speculative execution |
+| `route` | Route | Adaptive router scores and assigns models |
+| `execute-primary` | Execute | Primary model execution for each subtask |
+| `execute-speculative` | Execute | Fast models draft answers before routing completes |
+| `synthesize-partial` | Synthesize | Incremental synthesis as results arrive |
+| `synthesize-final` | Synthesize | Final merge of all subtask results |
+| `quality-score` | Quality | Concurrent quality assessment |
+| `quality-refine` | Quality | Re-synthesis if quality is below threshold |
+
+### MTP Performance
+
+| Pipeline | Avg Time | Speedup vs Sequential |
+|----------|----------|-----------------------|
+| Sequential (1 model) | ~45s | 1.0x |
+| Nexus Parallel (6 models) | ~19s | ~2.4x |
+| Nexus MTP (hyperthreaded) | ~16s | ~2.8x |
+
+---
+
+## Using Nexus with Agentic Tools
+
+Nexus-Dev MMFE can be used as a **skill plugin** or **MCP server** in any agentic coding tool. Below are integration instructions for popular platforms.
+
+### Universal Integration Principle
+
+All integrations follow the same pattern:
+
+1. **Clone** the Nexus-Dev repo into your workspace or skill directory
+2. **Configure** the tool to invoke Nexus scripts as custom commands
+3. **Map** `/nexus` to the appropriate script for your workflow
+4. **Set** your `z-ai-web-dev-sdk` credentials
+
+---
+
+### Claude Code
+
+Claude Code supports custom slash commands via `.claude/commands/` markdown files.
+
+**Setup:**
+
+```bash
+# Clone Nexus into your project or globally
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Create custom command:**
+
+```bash
+mkdir -p .claude/commands
+cat > .claude/commands/nexus.md << 'EOF'
+Execute the Nexus-Dev MMFE multi-model fusion pipeline.
+
+Arguments: $ARGUMENTS
+
+Run the following command and return the synthesized result:
+```bash
+node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "$ARGUMENTS"
+```
+
+If the task is a design task, use:
+```bash
+node ~/nexus-dev-mmf/scripts/design-fusion.mjs "$ARGUMENTS" --mode creative
+```
+
+If the task is a code review, use:
+```bash
+node ~/nexus-dev-mmf/scripts/code-review.mjs "$ARGUMENTS"
+```
+
+For maximum speed with MTP hyperthreading:
+```bash
+node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs "$ARGUMENTS"
+```
+EOF
+```
+
+**Usage in Claude Code:**
+
+```
+/nexus Explain the tradeoffs between REST and GraphQL
+/nexus design Create a fintech landing page --brand PayFlow
+/nexus review <paste diff>
+```
+
+---
+
+### OpenAI Codex
+
+Codex supports custom agents via `codex.yaml` or the Codex agent configuration.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `codex.yaml`:**
+
+```yaml
+agents:
+  nexus:
+    name: Nexus Multi-Model Fusion
+    description: Routes tasks across 6 GLM models for parallel execution and synthesis
+    command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
+    args:
+      - "{{input}}"
+    tools:
+      - name: nexus-design
+        description: Design with AI SLOPE elimination
+        command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
+        args: ["{{input}}", "--mode", "creative"]
+      - name: nexus-review
+        description: Multi-model code review
+        command: node ~/nexus-dev-mmf/scripts/code-review.mjs
+        args: ["{{input}}"]
+      - name: nexus-mtp
+        description: MTP hyperthreaded execution
+        command: node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs
+        args: ["{{input}}"]
+```
+
+---
+
+### Open Code
+
+Open Code supports custom skills via the skill registry.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+
+# Link as an Open Code skill
+ln -s ~/nexus-dev-mmf ~/.open-code/skills/nexus-dev-mmf
+```
+
+**Register in `~/.open-code/config.yaml`:**
+
+```yaml
+skills:
+  - name: nexus-dev-mmf
+    path: ~/.open-code/skills/nexus-dev-mmf
+    triggers:
+      - pattern: "/nexus"
+        script: scripts/direct-fusion.mjs
+      - pattern: "/nexus design"
+        script: scripts/design-fusion.mjs
+      - pattern: "/nexus review"
+        script: scripts/code-review.mjs
+      - pattern: "/nexus mtp"
+        script: scripts/mtp-fusion.mjs
+```
+
+---
+
+### Zcode
+
+Zcode supports custom extensions and command plugins.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `zcode-config.json`:**
+
+```json
+{
+  "extensions": {
+    "nexus-dev-mmf": {
+      "commands": {
+        "nexus": {
+          "description": "Multi-model fusion pipeline",
+          "exec": "node",
+          "args": ["~/nexus-dev-mmf/scripts/direct-fusion.mjs", "{input}"]
+        },
+        "nexus-design": {
+          "description": "Design with AI SLOPE elimination",
+          "exec": "node",
+          "args": ["~/nexus-dev-mmf/scripts/design-fusion.mjs", "{input}", "--mode", "creative"]
+        },
+        "nexus-review": {
+          "description": "Multi-model code review",
+          "exec": "node",
+          "args": ["~/nexus-dev-mmf/scripts/code-review.mjs", "{input}"]
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+### Hermes Agent
+
+Hermes Agent supports tool registration via its plugin system.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Register in `hermes-tools.yaml`:**
+
+```yaml
+tools:
+  - name: nexus_fusion
+    type: shell
+    description: "Nexus-Dev MMFE: Decompose, route, execute in parallel, and synthesize across 6 GLM models"
+    command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
+    input_arg: "{{prompt}}"
+
+  - name: nexus_design
+    type: shell
+    description: "Design skill with AI SLOPE elimination — eliminates generic AI patterns in design output"
+    command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
+    input_arg: "{{prompt}}"
+    default_args: ["--mode", "creative"]
+
+  - name: nexus_review
+    type: shell
+    description: "Multi-model code review adapted from Alibaba Open Code Review"
+    command: node ~/nexus-dev-mmf/scripts/code-review.mjs
+    input_arg: "{{diff}}"
+
+  - name: nexus_mtp
+    type: shell
+    description: "MTP hyperthreaded execution — speculative decomposition and parallel execution"
+    command: node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs
+    input_arg: "{{prompt}}"
+```
+
+---
+
+### OpenClaw
+
+OpenClaw supports custom command definitions in its configuration.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `claw-config.toml`:**
+
+```toml
+[commands.nexus]
+description = "Multi-model fusion pipeline (6 GLM models)"
+exec = "node ~/nexus-dev-mmf/scripts/direct-fusion.mjs"
+args_pattern = "{input}"
+
+[commands.nexus-design]
+description = "Design with AI SLOPE elimination"
+exec = "node ~/nexus-dev-mmf/scripts/design-fusion.mjs"
+args_pattern = "{input} --mode creative"
+
+[commands.nexus-review]
+description = "Multi-model code review"
+exec = "node ~/nexus-dev-mmf/scripts/code-review.mjs"
+args_pattern = "{input}"
+
+[commands.nexus-mtp]
+description = "MTP hyperthreaded execution"
+exec = "node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs"
+args_pattern = "{input}"
+```
+
+---
+
+### Pi (Inflection)
+
+Pi supports custom integrations through its agent framework.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Register as a Pi agent tool:**
+
+```json
+{
+  "tools": [
+    {
+      "name": "nexus_fusion",
+      "description": "Multi-model fusion pipeline that decomposes tasks across 6 GLM models",
+      "type": "function",
+      "execute": {
+        "command": "node",
+        "args": ["~/nexus-dev-mmf/scripts/direct-fusion.mjs", "{{args.query}}"]
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "description": "The task or query to process" },
+          "mode": { "type": "string", "enum": ["speed", "quality", "balanced", "creative"] }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "nexus_design",
+      "description": "Design with AI SLOPE elimination for non-generic design output",
+      "type": "function",
+      "execute": {
+        "command": "node",
+        "args": ["~/nexus-dev-mmf/scripts/design-fusion.mjs", "{{args.query}}", "--mode", "creative"]
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Kimi Code
+
+Kimi Code supports custom command extensions.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `.kimi/commands.json`:**
+
+```json
+{
+  "commands": {
+    "/nexus": {
+      "description": "Multi-model fusion pipeline",
+      "exec": "node ~/nexus-dev-mmf/scripts/direct-fusion.mjs",
+      "args": "{selection}"
+    },
+    "/nexus-design": {
+      "description": "Design with AI SLOPE elimination",
+      "exec": "node ~/nexus-dev-mmf/scripts/design-fusion.mjs",
+      "args": "{selection} --mode creative"
+    },
+    "/nexus-review": {
+      "description": "Multi-model code review",
+      "exec": "node ~/nexus-dev-mmf/scripts/code-review.mjs",
+      "args": "{selection}"
+    }
+  }
+}
+```
+
+---
+
+### Mimo Code
+
+Mimo Code supports skill-based extensions.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Register in `mimo-skills.yaml`:**
+
+```yaml
+skills:
+  - id: nexus-dev-mmf
+    name: Nexus Multi-Model Fusion
+    description: Adaptive orchestration across 6 GLM models with MTP, code review, and AI SLOPE elimination
+    version: 3.2.0
+    commands:
+      nexus:
+        description: General fusion pipeline
+        run: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "{{input}}"
+      nexus-design:
+        description: Design with AI SLOPE elimination
+        run: node ~/nexus-dev-mmf/scripts/design-fusion.mjs "{{input}}" --mode creative
+      nexus-review:
+        description: Multi-model code review
+        run: node ~/nexus-dev-mmf/scripts/code-review.mjs "{{input}}"
+      nexus-mtp:
+        description: MTP hyperthreaded execution
+        run: node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs "{{input}}"
+```
+
+---
+
+### Antigravity
+
+Antigravity supports tool plugins via its plugin registry.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Register in `.antigravity/tools.yaml`:**
+
+```yaml
+tools:
+  - name: nexus-fusion
+    type: shell-command
+    description: "Nexus-Dev MMFE: Multi-model fusion with adaptive routing"
+    command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
+    input: "{{prompt}}"
+    aliases: ["/nexus"]
+
+  - name: nexus-design
+    type: shell-command
+    description: "Design skill with AI SLOPE elimination"
+    command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
+    input: "{{prompt}} --mode creative"
+    aliases: ["/nexus-design"]
+
+  - name: nexus-review
+    type: shell-command
+    description: "Multi-model code review (Alibaba OCR adapted)"
+    command: node ~/nexus-dev-mmf/scripts/code-review.mjs
+    input: "{{diff}}"
+    aliases: ["/nexus-review"]
+```
+
+---
+
+### Gemini CLI
+
+Google's Gemini CLI supports custom tools via MCP (Model Context Protocol) or shell tool definitions.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Option A: Shell Tool Definition**
+
+Add to `.gemini/tools.json`:
+
+```json
+{
+  "tools": [
+    {
+      "name": "nexus_fusion",
+      "description": "Multi-model fusion pipeline: decomposes tasks, routes to 6 GLM models, executes in parallel, synthesizes results",
+      "command": "node",
+      "args": ["~/nexus-dev-mmf/scripts/direct-fusion.mjs", "${input}"],
+      "type": "shell"
+    },
+    {
+      "name": "nexus_design",
+      "description": "Design with AI SLOPE elimination: BM25 knowledge base, design system generation, 10-category SLOPE detection",
+      "command": "node",
+      "args": ["~/nexus-dev-mmf/scripts/design-fusion.mjs", "${input}", "--mode", "creative"],
+      "type": "shell"
+    },
+    {
+      "name": "nexus_review",
+      "description": "Multi-model code review with 5-phase pipeline adapted from Alibaba Open Code Review",
+      "command": "node",
+      "args": ["~/nexus-dev-mmf/scripts/code-review.mjs", "${input}"],
+      "type": "shell"
+    }
+  ]
+}
+```
+
+**Option B: MCP Server**
+
+Create an MCP server wrapper:
+
+```bash
+# Install MCP SDK
+npm install @modelcontextprotocol/sdk
+
+# Create MCP wrapper
+cat > ~/nexus-dev-mmf/mcp-server.mjs << 'SCRIPT'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { execSync } from 'child_process';
+
+const server = new Server({ name: 'nexus-dev-mmf', version: '3.2.0' });
+
+server.setRequestHandler('tools/list', async () => ({
+  tools: [
+    { name: 'nexus_fusion', description: 'Multi-model fusion pipeline', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+    { name: 'nexus_design', description: 'Design with AI SLOPE elimination', inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } },
+    { name: 'nexus_review', description: 'Multi-model code review', inputSchema: { type: 'object', properties: { diff: { type: 'string' } }, required: ['diff'] } },
+  ]
+}));
+
+server.setRequestHandler('tools/call', async (request) => {
+  const scripts = {
+    nexus_fusion: 'direct-fusion.mjs',
+    nexus_design: 'design-fusion.mjs',
+    nexus_review: 'code-review.mjs',
+  };
+  const script = scripts[request.params.name];
+  const input = request.params.arguments.query || request.params.arguments.diff;
+  const result = execSync(`node ~/nexus-dev-mmf/scripts/${script} '${input.replace(/'/g, "\\'")}'`, { encoding: 'utf-8', timeout: 120000 });
+  return { content: [{ type: 'text', text: result }] };
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+SCRIPT
+```
+
+Then add to `.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "nexus-dev-mmf": {
+      "command": "node",
+      "args": ["~/nexus-dev-mmf/mcp-server.mjs"]
+    }
+  }
+}
+```
+
+---
+
+### Cursor
+
+Cursor supports custom tools via `.cursorrules` and the Run Command feature.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `.cursorrules`:**
+
+```
+# Nexus-Dev MMFE Integration
+
+When the user asks a complex multi-domain question, design task, or code review, use the Nexus multi-model fusion pipeline.
+
+## Commands
+- General: `node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "<query>"`
+- Design: `node ~/nexus-dev-mmf/scripts/design-fusion.mjs "<query>" --mode creative`
+- Code Review: `node ~/nexus-dev-mmf/scripts/code-review.mjs "<diff>"`
+- MTP: `node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs "<query>"`
+
+## When to use
+- Complex tasks spanning multiple domains (use general fusion)
+- Any design/UI/UX task (use design with AI SLOPE elimination)
+- Code review requests (use review pipeline)
+- Speed-critical tasks (use MTP hyperthreading)
+
+## Design tasks always use SLOPE elimination to avoid:
+- Default blue (#3B82F6) or AI purple (#6366F1)
+- Centered hero + 3-column template layouts
+- "Empower your workflow" cliché copy
+- Generic AI-generated aesthetics
+```
+
+---
+
+### Windsurf / Codeium
+
+Windsurf supports custom tools via `.windsurfrules` and command definitions.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `.windsurfrules`:**
+
+```
+# Nexus-Dev MMFE Integration
+
+## Available Tools
+- `nexus_fusion(query)`: Multi-model fusion pipeline → `node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "<query>"`
+- `nexus_design(query)`: Design with AI SLOPE elimination → `node ~/nexus-dev-mmf/scripts/design-fusion.mjs "<query>" --mode creative`
+- `nexus_review(diff)`: Multi-model code review → `node ~/nexus-dev-mmf/scripts/code-review.mjs "<diff>"`
+- `nexus_mtp(query)`: MTP hyperthreaded execution → `node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs "<query>"`
+
+## Usage Rules
+- For any design task, always use nexus_design to eliminate AI SLOPE
+- For code reviews, use nexus_review for multi-model analysis
+- For complex multi-step tasks, use nexus_fusion or nexus_mtp
+- The --mode flag accepts: speed, quality, balanced, creative
+```
+
+---
+
+### Aider
+
+Aider supports custom commands via its command system and `.aider.conf.yml`.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `.aider.conf.yml`:**
+
+```yaml
+# Custom commands map
+custom-commands:
+  nexus: "node ~/nexus-dev-mmf/scripts/direct-fusion.mjs"
+  nexus-design: "node ~/nexus-dev-mmf/scripts/design-fusion.mjs"
+  nexus-review: "node ~/nexus-dev-mmf/scripts/code-review.mjs"
+  nexus-mtp: "node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs"
+```
+
+**Usage in Aider chat:**
+
+```
+# Nexus commands are invoked via shell
+!node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "Analyze this architecture"
+!node ~/nexus-dev-mmf/scripts/design-fusion.mjs "Design a fintech dashboard" --mode creative
+```
+
+---
+
+### Continue
+
+Continue supports custom tools via `config.yaml` or `config.json`.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Add to `~/.continue/config.yaml`:**
+
+```yaml
+tools:
+  - name: nexus_fusion
+    description: "Multi-model fusion pipeline across 6 GLM models"
+    type: shell
+    command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
+    args: "{{input}}"
+
+  - name: nexus_design
+    description: "Design with AI SLOPE elimination"
+    type: shell
+    command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
+    args: "{{input}} --mode creative"
+
+  - name: nexus_review
+    description: "Multi-model code review"
+    type: shell
+    command: node ~/nexus-dev-mmf/scripts/code-review.mjs
+    args: "{{input}}"
+```
+
+---
+
+### Cline
+
+Cline supports custom commands via `.clinerules` and MCP integration.
+
+**Setup:**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Option A: `.clinerules`**
+
+```
+# Nexus-Dev MMFE Integration
+
+When processing complex tasks, design requests, or code reviews, delegate to Nexus:
+
+## Custom Command Mapping
+/nexus → node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "<args>"
+/nexus-design → node ~/nexus-dev-mmf/scripts/design-fusion.mjs "<args>" --mode creative
+/nexus-review → node ~/nexus-dev-mmf/scripts/code-review.mjs "<args>"
+/nexus-mtp → node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs "<args>"
+```
+
+**Option B: MCP Server** (same as Gemini CLI MCP setup above)
+
+Add to `.cline/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "nexus-dev-mmf": {
+      "command": "node",
+      "args": ["~/nexus-dev-mmf/mcp-server.mjs"]
+    }
+  }
+}
+```
+
+---
+
+### Generic Integration Pattern
+
+For any agentic tool not listed above, follow this universal pattern:
+
+**Step 1: Clone and Build**
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
+cd ~/nexus-dev-mmf && npm install && npm run build
+```
+
+**Step 2: Identify Integration Point**
+
+Most agentic tools support one of these integration methods:
+
+| Method | How It Works | Best For |
+|--------|-------------|----------|
+| **Custom Commands** | Define `/nexus` as a shell command | CLI-based tools (Claude Code, Aider) |
+| **Tool/Function Registry** | Register Nexus as a callable tool | Agent frameworks (Hermes, Pi) |
+| **Config File** | Add to YAML/JSON config | Config-driven tools (Open Code, Zcode) |
+| **MCP Server** | Run Nexus as an MCP server | MCP-compatible tools (Gemini CLI, Cline) |
+| **Rules File** | Add instructions to `.cursorrules`, `.clinerules`, etc. | IDE-based tools (Cursor, Windsurf) |
+
+**Step 3: Map Commands**
+
+| Command | Script | Use Case |
+|---------|--------|----------|
+| General fusion | `scripts/direct-fusion.mjs` | Any complex multi-domain query |
+| Design | `scripts/design-fusion.mjs` | UI/UX design with AI SLOPE elimination |
+| Code review | `scripts/code-review.mjs` | Multi-model code review |
+| MTP hyperthreading | `scripts/mtp-fusion.mjs` | Speed-critical complex tasks |
+
+**Step 4: Set Credentials**
+
+Ensure `z-ai-web-dev-sdk` is configured. The SDK auto-detects credentials in most environments. For custom setups, set environment variables as needed.
 
 ---
 
@@ -455,319 +1310,196 @@ for (const mode of ['speed', 'quality', 'balanced', 'creative']) {
 
 ### Orchestrator
 
-The central coordination class. Create instances via `createOrchestrator()`.
-
-#### `createOrchestrator(config?)`
-
-Creates a new Orchestrator with optional configuration overrides.
-
 ```javascript
 import { createOrchestrator } from 'nexus-dev-mmf';
 
 const orch = createOrchestrator({
-  defaultMode: 'quality',
-  maxParallelSubTasks: 4,
+  defaultMode: 'balanced',
+  maxParallelSubTasks: 6,
+  qualityThreshold: 70,
+  subTaskTimeout: 120000,
   enableThinking: true,
+  enableMTP: false,
+  enableSlopeDetection: true,
+  enablePerformanceTracking: true,
+  enableEvents: true,
+});
+
+// Process a request
+const result = await orch.process('Your complex query here');
+
+// With options
+const result2 = await orch.process('Another query', {
+  conversationId: result.conversationId,
+  maxCostWeight: 6.0,
 });
 ```
 
-#### `orchestrator.process(query, options?)`
+#### Orchestrator API
 
-Processes a query through the full pipeline. Returns `Promise<OrchestrationResult>`.
-
-```javascript
-const result = await orchestrator.process('Explain quantum entanglement', {
-  preferredMode: 'quality',
-  context: 'Focus on experimental evidence from 2020-2024',
-  maxParallelSubTasks: 4,
-  enableThinking: true,
-  customSystemPrompt: 'You are a physics professor.',
-});
-```
-
-**`options` parameter:**
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `preferredMode` | `'speed' \| 'quality' \| 'balanced' \| 'creative'` | `'balanced'` | Overrides the default execution mode for this request |
-| `maxParallelSubTasks` | `number` | `6` | Maximum number of concurrent model API calls |
-| `enableThinking` | `boolean` | `true` | Enable chain-of-thought reasoning for supporting models |
-| `context` | `string` | — | Additional context to pass to the decomposer and models |
-| `customSystemPrompt` | `string` | — | Override the default system prompt for all subtasks |
-| `metadata` | `Record<string, unknown>` | `{}` | Custom metadata to attach to the request |
-
-#### `orchestrator.getConfig()`
-
-Returns a copy of the current configuration. Modifications to the returned object do not affect the orchestrator.
-
-```javascript
-const config = orchestrator.getConfig();
-console.log(config.defaultMode); // 'quality'
-```
-
-#### `orchestrator.updateConfig(updates)`
-
-Updates the orchestrator's configuration at runtime. Only specified fields are changed.
-
-```javascript
-orchestrator.updateConfig({ defaultMode: 'speed', enableThinking: false });
-```
-
-#### `orchestrator.getPipelineState(requestId)`
-
-Returns the current pipeline state for a request, or `undefined` if not found.
-
-```javascript
-const state = orchestrator.getPipelineState(result.requestId);
-console.log(state.stage); // 'completed'
-```
+| Method | Description |
+|--------|-------------|
+| `process(prompt, options?)` | Process a request through the full pipeline |
+| `getPerformanceTracker()` | Get the `PerformanceTracker` instance |
+| `getEventEmitter()` | Get the `NexusEventEmitter` instance |
+| `getModelRegistry()` | Get the `ModelRegistry` instance |
+| `getConversationManager()` | Get the `ConversationManager` instance |
+| `getState()` | Get current pipeline state |
 
 ### Types
 
-#### `OrchestrationResult`
-
-The primary return type — the complete output of a fusion pipeline run.
-
 ```typescript
+interface OrchestrationRequest {
+  prompt: string;
+  mode?: 'speed' | 'quality' | 'balanced' | 'creative';
+  systemPrompt?: string;
+  conversationId?: string;
+  maxCostWeight?: number;
+  metadata?: Record<string, unknown>;
+}
+
 interface OrchestrationResult {
-  requestId: string;              // Unique ID for this orchestration
-  answer: string;                 // The unified, synthesized answer
-  subTaskResults: SubTaskResult[]; // Results from each individual subtask
-  routingDecisions: RoutingDecision[]; // Why each model was chosen
-  totalExecutionTimeMs: number;   // Full pipeline duration
-  modelsUsed: string[];           // All model IDs that contributed
-  decompositionStrategy: string;  // 'multi-model-parallel' or 'single-fallback'
-  synthesisStrategy: string;      // 'primary', 'refined', or 'none-failed'
-  qualityScore: number;           // Self-assessed quality (0–100)
+  answer: string;
+  qualityScore: number;
+  routingDecisions: RoutingDecision[];
+  subTaskResults: SubTaskResult[];
+  totalCostWeight: number;
+  conversationId?: string;
+  pipelineTimeMs: number;
   metadata: Record<string, unknown>;
 }
-```
 
-#### `SubTask`
-
-A single decomposed unit of work.
-
-```typescript
-interface SubTask {
-  id: string;                     // Unique subtask identifier
-  parentTaskId: string;           // Parent orchestration request ID
-  index: number;                  // Original decomposition order
-  description: string;            // Brief description of this subtask
-  input: string;                  // The specific prompt for this subtask
-  requiredCapabilities: ModelCapability[]; // What the model needs to support
-  preferredModels: string[];      // Explicitly preferred model IDs
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  dependencies: string[];         // IDs of subtasks that must complete first
-  estimatedComplexity: 'trivial' | 'simple' | 'moderate' | 'complex' | 'expert';
-  timeout: number;                // Maximum execution time in ms
-  metadata: Record<string, unknown>;
-}
-```
-
-#### `SubTaskResult`
-
-The result of executing one subtask against a model.
-
-```typescript
-interface SubTaskResult {
-  subTaskId: string;
-  modelId: string;                // Which model produced this result
-  success: boolean;
-  output: string;                 // The model's output
-  executionTimeMs: number;
-  tokenUsage?: {                  // If available from the API
-    prompt: number;
-    completion: number;
-    total: number;
-  };
-  error?: string;                 // If success is false
-  metadata: Record<string, unknown>;
-}
-```
-
-#### `RoutingDecision`
-
-Explains why a particular model was chosen for a subtask.
-
-```typescript
 interface RoutingDecision {
   subTaskId: string;
-  selectedModel: string;          // The chosen model ID
-  reason: string;                 // Human-readable explanation
-  alternativeModels: string[];    // Fallback models in priority order
-  confidence: number;             // 0–1 how confident the router is
+  modelId: string;
+  score: number;
+  reasoning: string;
 }
-```
 
-#### `PipelineState`
+interface SubTask {
+  id: string;
+  description: string;
+  capability: string;
+  complexity: number;
+  dependencies: string[];
+  priority: number;
+}
 
-Real-time tracking of a pipeline's progress.
-
-```typescript
-interface PipelineState {
-  requestId: string;
-  stage: 'received' | 'decomposing' | 'routing' | 'executing' | 'synthesizing' | 'completed' | 'failed';
-  subTaskCount: number;
-  completedSubTasks: number;
-  startedAt: number;
-  updatedAt: number;
-  errors: string[];
+interface SubTaskResult {
+  subTaskId: string;
+  modelId: string;
+  output: string;
+  executionTimeMs: number;
+  qualityScore: number;
 }
 ```
 
 ### Model Registry API
 
 ```javascript
-import { MODEL_REGISTRY, getModelIds, getModelsWithCapability, getModelsSortedBy, resolveModel } from 'nexus-dev-mmf';
+const registry = orch.getModelRegistry();
 
-// Get all model IDs
-getModelIds(); // ['glm-5.2-1m', 'glm-5.2', 'glm-5.1', 'glm-5', 'glm-5v-turbo', 'glm-4.7']
+// List all models
+const models = registry.listModels();
 
-// Find models that support a capability
-getModelsWithCapability('code'); // [ModelProfile, ModelProfile, ...]
+// Get a specific model
+const model = registry.getModel('glm-5.2');
 
-// Sort models by metric
-getModelsSortedBy('speedRank', true);   // Fastest first
-getModelsSortedBy('qualityRank', true);  // Best quality first
-getModelsSortedBy('costWeight', true);   // Cheapest first
+// Register a custom model
+registry.registerModel({
+  id: 'custom-model',
+  name: 'My Custom Model',
+  tier: 'standard',
+  costWeight: 1.5,
+  capabilities: { reasoning: 80, code: 85 },
+});
 
-// Resolve a model ID (fallback to glm-5.2)
-resolveModel('glm-5.2');     // ModelProfile for glm-5.2
-resolveModel('nonexistent');  // ModelProfile for glm-5.2 (fallback)
+// Get best model for a capability
+const best = registry.getBestModelForCapability('reasoning');
 ```
 
 ### Configuration API
 
 ```javascript
-import { DEFAULT_CONFIG, mergeConfig } from 'nexus-dev-mmf';
+import { createOrchestrator } from 'nexus-dev-mmf';
 
-// Access defaults
-DEFAULT_CONFIG.defaultMode;        // 'balanced'
-DEFAULT_CONFIG.maxParallelSubTasks; // 6
+const orch = createOrchestrator({
+  // Pipeline settings
+  defaultMode: 'balanced',           // speed | quality | balanced | creative
+  maxParallelSubTasks: 6,            // Max concurrent model calls
+  qualityThreshold: 70,              // Score threshold for re-synthesis
+  subTaskTimeout: 120000,            // Timeout per subtask (ms)
+  enableThinking: true,              // Chain-of-thought reasoning
 
-// Create a merged config without mutating defaults
-const custom = mergeConfig({ defaultMode: 'speed' });
-custom.defaultMode;               // 'speed'
-DEFAULT_CONFIG.defaultMode;        // 'balanced' (unchanged)
+  // MTP (Multi-Threaded Pipeline)
+  enableMTP: false,                  // Enable hyperthreading
+  mtpConfig: {
+    maxThreads: 8,                   // Maximum concurrent threads
+    speculativeDecomposition: true,  // Fast model pre-decomposes
+    speculativeExecution: true,      // Fast models draft early
+    incrementalSynthesis: true,      // Progressive result building
+  },
+
+  // Design Skill
+  enableSlopeDetection: true,        // AI SLOPE detection
+  slopeThreshold: 40,                // Re-generate if score >= 40
+  maxSlopeRetries: 2,                // Max elimination attempts
+
+  // Budget
+  maxTotalCostWeight: Infinity,      // Cap total cost per run
+
+  // Tracking
+  enablePerformanceTracking: true,   // Model reliability tracking
+  enableEvents: true,                // Pipeline event streaming
+});
 ```
 
 ---
 
 ## Routing Algorithm
 
-The Adaptive Routing Layer (ARL) is the brain of Nexus-Dev MMFE. It determines which model handles each subtask through a multi-factor weighted scoring system.
-
 ### Scoring Formula
 
-For each subtask, every model in the registry is scored across four dimensions:
+Each subtask is scored against each available model using a weighted multi-factor formula:
 
 ```
-Total Score = Capability Score + Mode Score + Complexity Score + Load Penalty
+Score = (capability_score × 40) + (mode_alignment × 30) + (complexity_fit × 20) - (load_penalty × 3)
 ```
 
-#### 1. Capability Match (up to 40 points)
-
-The most important factor. Measures how well the model's capabilities match the subtask's requirements.
-
-| Match Level | Score | Condition |
-|-------------|-------|-----------|
-| Full match | +40 | Model has ALL required capabilities |
-| Partial match | +20 | Model has ≥50% of required capabilities |
-| Poor match | −10 | Model has <50% of required capabilities |
-
-#### 2. Mode Preference (up to 30 points)
-
-Influences model selection based on the execution mode.
-
-| Mode | Scoring |
-|------|---------|
-| `speed` | `(6 − speedRank) × 10` — Fast models score up to 50 pts |
-| `quality` | `(6 − qualityRank) × 10` — High-quality models score up to 50 pts |
-| `balanced` | `(6 − speedRank) × 5 + (6 − qualityRank) × 5` — Equal weighting |
-| `creative` | `+30` flat bonus for creative tier + `(6 − qualityRank) × 8` |
-
-#### 3. Complexity Alignment (up to 20 points)
-
-Matches task complexity to model tier:
-
-| Complexity | Best Model Type | Score |
-|-----------|----------------|-------|
-| `trivial` | Fast models (speedRank ≤ 2) | +10 |
-| `simple` | Fast models | +10 |
-| `moderate` | Any | +5 |
-| `complex` | Quality models (qualityRank ≤ 2) | +15 |
-| `expert` | Best quality (qualityRank = 1) | +20 |
-
-#### 4. Load Balancing Penalty
-
-To prevent overloading a single model:
-
-```
-Penalty = −3 × (number of subtasks already assigned to this model)
-```
-
-#### 5. Priority Boost
-
-Critical-priority subtasks receive an additional quality bias:
-
-```
-If priority === 'critical' && qualityRank ≤ 2:  +10 points
-```
+| Factor | Weight | Description |
+|--------|--------|-------------|
+| Capability Score | 40 pts | How well the model's rated capability matches the subtask requirement |
+| Mode Alignment | 30 pts | How well the model's tier aligns with the execution mode preference |
+| Complexity Fit | 20 pts | Whether the model's processing depth matches the subtask complexity |
+| Load Balance | -3 pts/assignment | Penalty for each existing assignment to prevent overloading one model |
 
 ### Mode Influence
 
-Here's a concrete example of how mode changes routing for a subtask requiring the `code` capability:
-
-```
-SubTask: "Implement a binary search tree in TypeScript"
-Required Capabilities: ['code']
-Complexity: complex
-
-─── SPEED MODE ───
-  glm-5         → cap:40 + mode:50 + complexity:5 + load:0  = 95  ← SELECTED
-  glm-5v-turbo  → cap:40 + mode:50 + complexity:5 + load:0  = 95
-  glm-5.2       → cap:40 + mode:30 + complexity:15 + load:0 = 85
-
-─── QUALITY MODE ───
-  glm-5.2       → cap:40 + mode:50 + complexity:15 + load:0 = 105 ← SELECTED
-  glm-5.2-1m    → cap:20 + mode:50 + complexity:15 + load:0 = 85  (no code cap)
-  glm-4.7       → cap:40 + mode:40 + complexity:15 + load:0 = 95
-
-─── CREATIVE MODE ───
-  glm-4.7       → cap:40 + mode:62 + complexity:15 + load:0 = 117 ← SELECTED
-  glm-5.2       → cap:40 + mode:40 + complexity:15 + load:0 = 95
-  glm-5         → cap:40 + mode:24 + complexity:5 + load:0  = 69
-```
+| Mode | Preferred Tiers | Effect on Scoring |
+|------|----------------|-------------------|
+| `speed` | Fast (1.0×) | Boosts fast model scores by 30% |
+| `quality` | Flagship (2.0-3.0×) | Boosts flagship model scores by 30% |
+| `balanced` | All tiers equally | No tier bias |
+| `creative` | Creative (1.2×) | Boosts creative model scores by 30% |
 
 ### Load Balancing
 
-When processing many subtasks, the router tracks how many subtasks each model has been assigned and penalizes overloaded models. This ensures work is distributed across the model pool.
-
-```javascript
-// 6 subtasks with 'reasoning' capability
-// Without load balancing: all go to glm-5.2 (best match)
-// With load balancing: distributed across glm-5.2, glm-5.2-1m, and glm-4.7
-
-SubTask 1 → glm-5.2     (load: 0, penalty: 0)
-SubTask 2 → glm-5.2-1m  (load: 0, penalty: 0)  // glm-5.2 now has load=1 (-3)
-SubTask 3 → glm-5.2     (load: 1, penalty: -3)
-SubTask 4 → glm-5.2-1m  (load: 1, penalty: -3)
-SubTask 5 → glm-4.7     (load: 0, penalty: 0)  // alternative reasoning-capable model
-SubTask 6 → glm-5.2     (load: 2, penalty: -6)
-```
+The router tracks how many subtasks have been assigned to each model. Each existing assignment adds a -3 penalty to that model's score for subsequent subtasks. This prevents the situation where one model is assigned all subtasks while equally capable models sit idle.
 
 ### Dependency Resolution
 
-The router performs a **topological sort** on subtasks before routing. This ensures that if SubTask C depends on SubTask A, then A is routed (and executed) before C.
+Subtasks are organized into execution waves using topological sort:
+
+1. Build a dependency graph from subtask `dependencies` arrays
+2. Assign each subtask to the earliest wave where all its dependencies are satisfied
+3. Execute all subtasks in a wave concurrently
+4. Proceed to the next wave when all subtasks in the current wave complete
 
 ```
-SubTask A (no deps)     → routed first
-SubTask B (no deps)     → routed second
-SubTask C (depends on A) → routed third
-SubTask D (depends on B, C) → routed last
+Wave 0: [subtask-1, subtask-2]     ← No dependencies, run immediately
+Wave 1: [subtask-3]                ← Depends on subtask-1
+Wave 2: [subtask-4, subtask-5]     ← Depends on subtask-2 and subtask-3
 ```
-
-During execution, subtasks are scheduled in **waves** — each wave contains all tasks whose dependencies have been satisfied by previous waves.
 
 ---
 
@@ -775,132 +1507,59 @@ During execution, subtasks are scheduled in **waves** — each wave contains all
 
 ### Custom System Prompts
 
-Override the default system prompt for all subtask executions:
-
 ```javascript
-const result = await orchestrator.process(
-  'Review this code for security vulnerabilities',
-  {
-    customSystemPrompt: 'You are a senior security engineer at a FAANG company. Focus on OWASP Top 10 vulnerabilities, injection attacks, and authentication flaws. Be specific and provide line-by-line analysis.',
-  }
-);
+const result = await orch.process('Explain quantum computing', {
+  systemPrompt: 'You are a physics professor. Use analogies and real-world examples.',
+});
 ```
 
 ### Context-Aware Processing
 
-Pass additional context that informs both decomposition and synthesis:
-
 ```javascript
-const result = await orchestrator.process(
-  'Generate a migration plan',
-  {
-    context: `Current stack: Express.js + MongoDB
-Target stack: Fastify + PostgreSQL
-Team size: 5 developers
-Timeline: 3 months
-Constraints: Zero downtime required`,
-    preferredMode: 'quality',
-  }
-);
+// Multi-turn conversation
+const result1 = await orch.process('Design a REST API for a todo app');
+
+const result2 = await orch.process('Add authentication to it', {
+  conversationId: result1.conversationId,
+});
 ```
 
 ### Quality Assurance Pipeline
 
-The synthesizer includes a built-in quality assurance loop:
-
 ```javascript
-// Create an orchestrator with strict quality requirements
 const orch = createOrchestrator({
-  qualityThreshold: 80,   // Require 80/100 quality score
-  enableRetry: true,       // Enable re-synthesis if below threshold
-  defaultMode: 'quality',  // Use quality mode by default
+  qualityThreshold: 80,    // Require higher quality
+  subTaskTimeout: 180000,  // Allow more time
 });
 
-const result = await orch.process('Explain the halting problem');
-
-// If the first synthesis scores below 80, glm-4.7 refines the answer
-// The result's synthesisStrategy will be 'refined' if refinement occurred
-if (result.synthesisStrategy === 'refined') {
-  console.log('Answer was refined to meet quality threshold');
-}
+const result = await orch.process('Write a production-ready authentication module');
+// If qualityScore < 80, the pipeline automatically re-synthesizes with feedback
 ```
 
 ### Runtime Configuration
 
-Change settings without creating a new orchestrator:
-
 ```javascript
-const orch = createOrchestrator();
+// Override mode per-request
+const fastResult = await orch.process('Quick summary of React hooks', {
+  mode: 'speed',
+});
 
-// Switch to speed mode for quick queries
-orch.updateConfig({ defaultMode: 'speed', enableThinking: false });
-const quick = await orch.process('Define API gateway');
-
-// Switch back to quality mode for important work
-orch.updateConfig({ defaultMode: 'quality', enableThinking: true });
-const important = await orch.process('Design a fault-tolerant distributed system');
+const qualityResult = await orch.process('Critical: Design our API schema', {
+  mode: 'quality',
+  maxCostWeight: 4.0,
+});
 ```
 
 ### Pipeline Monitoring
 
-Track the progress of a pipeline in real-time:
-
 ```javascript
-const resultPromise = orchestrator.process('Complex analysis task');
+const orch = createOrchestrator({ enableEvents: true });
+const emitter = orch.getEventEmitter();
 
-// Check pipeline state (in a real app, you'd poll or use events)
-setTimeout(() => {
-  // Note: in practice you'd need the requestId from somewhere
-  // This is a conceptual example
-  const state = orchestrator.getPipelineState('some-request-id');
-  if (state) {
-    console.log(`Stage: ${state.stage}`);
-    console.log(`Progress: ${state.completedSubTasks}/${state.subTaskCount}`);
-  }
-}, 1000);
-
-const result = await resultPromise;
-```
-
-### Inspecting Routing Decisions
-
-Full transparency into why each model was selected:
-
-```javascript
-const result = await orchestrator.process('Design and implement a rate limiter');
-
-for (const decision of result.routingDecisions) {
-  console.log(`\nSubtask: ${decision.subTaskId}`);
-  console.log(`  Selected: ${decision.selectedModel}`);
-  console.log(`  Confidence: ${(decision.confidence * 100).toFixed(1)}%`);
-  console.log(`  Reason: ${decision.reason}`);
-  console.log(`  Alternatives: ${decision.alternativeModels.join(', ')}`);
-}
-
-// Output:
-// Subtask: req-abc-sub-0
-//   Selected: glm-5.2
-//   Confidence: 85.0%
-//   Reason: full capability match; quality mode (rank 1); expert complexity
-//   Alternatives: glm-5.2-1m, glm-4.7
-```
-
-### Accessing Individual Subtask Results
-
-```javascript
-const result = await orchestrator.process('Build a REST API with tests');
-
-for (const subResult of result.subTaskResults) {
-  console.log(`\n[${subResult.modelId}] ${subResult.subTaskId}`);
-  console.log(`  Success: ${subResult.success}`);
-  console.log(`  Time: ${subResult.executionTimeMs}ms`);
-  if (subResult.tokenUsage) {
-    console.log(`  Tokens: ${subResult.tokenUsage.total} (${subResult.tokenUsage.prompt} prompt + ${subResult.tokenUsage.completion} completion)`);
-  }
-  if (!subResult.success) {
-    console.log(`  Error: ${subResult.error}`);
-  }
-}
+emitter.on('pipeline:start', (e) => console.log('Pipeline started'));
+emitter.on('subtask:complete', (e) => console.log(`Subtask ${e.subTaskId} done`));
+emitter.on('pipeline:complete', (e) => console.log(`Pipeline complete: ${e.qualityScore}/100`));
+emitter.on('quality:refine', (e) => console.log('Re-synthesizing...'));
 ```
 
 ---
@@ -908,70 +1567,36 @@ for (const subResult of result.subTaskResults) {
 ## CLI Reference
 
 ```bash
-node dist/cli.js <query> [options]
+# General query
+nexus-dev "Your query here"
+
+# With mode
+nexus-dev "Complex task" --mode quality
+
+# Design command (AI SLOPE elimination)
+nexus-dev design "Design a fintech dashboard" --brand PayFlow --industry fintech --stack nextjs
+
+# Code review
+nexus-dev review "$(git diff HEAD~1)"
+
+# Verbose output
+nexus-dev "Explain microservices" --verbose
+
+# Help
+nexus-dev --help
 ```
 
-### Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--mode <mode>` | `speed \| quality \| balanced \| creative` | `balanced` | Execution mode |
-| `--parallel <n>` | `number` | `6` | Max concurrent model calls |
-| `--thinking` | flag | enabled | Enable chain-of-thought reasoning |
-| `--no-thinking` | flag | — | Disable thinking mode (faster) |
-| `--verbose` | flag | off | Show routing decisions, model usage, and metrics |
-
-### Examples
-
-```bash
-# Simple query
-node dist/cli.js "What is a monad in functional programming?"
-
-# Quality mode with verbose output
-node dist/cli.js "Design a event-driven architecture" --mode quality --verbose
-
-# Speed mode with limited parallelism
-node dist/cli.js "Write a Python function to sort a list" --mode speed --parallel 2
-
-# Creative mode without thinking
-node dist/cli.js "Write a sci-fi short story about AI" --mode creative --no-thinking
-
-# No arguments — show help
-node dist/cli.js
-```
-
-### Verbose Output Example
-
-```
-🧠 Nexus-Dev MMFE — Processing...
-
-   Query: Design a rate limiter service
-   Mode: quality
-   Parallel: 6
-   Thinking: true
-
-════════════════════════════════════════════════════════════════
-📋 RESULT
-════════════════════════════════════════════════════════════════
-
-[Full synthesized answer here...]
-
-──────────────────────────────────────────────────────────────────
-📊 ORCHESTRATION METRICS
-──────────────────────────────────────────────────────────────────
-   Models Used: glm-5.2, glm-5.1, glm-4.7
-   Subtasks: 4 (4 succeeded)
-   Total Time: 12453ms
-   Quality Score: 85/100
-   Decomposition: multi-model-parallel
-   Synthesis: primary
-
-   Routing Decisions:
-     → req-abc-sub-0: glm-5.2 (confidence: 0.85)
-     → req-abc-sub-1: glm-5.1 (confidence: 0.72)
-     → req-abc-sub-2: glm-4.7 (confidence: 0.90)
-     → req-abc-sub-3: glm-5.2 (confidence: 0.80)
-```
+| Flag | Description |
+|------|-------------|
+| `--mode <mode>` | Execution mode: speed, quality, balanced, creative |
+| `--verbose` | Show detailed pipeline output |
+| `--brand <name>` | Brand name for design tasks |
+| `--industry <type>` | Industry for design context |
+| `--stack <stack>` | Tech stack for stack-specific guidelines |
+| `--no-slope` | Disable AI SLOPE detection |
+| `--no-design-system` | Skip design system generation |
+| `--mtp` | Enable MTP hyperthreading |
+| `--product <type>` | Product type for design context |
 
 ---
 
@@ -981,82 +1606,55 @@ node dist/cli.js
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `defaultMode` | `string` | `'balanced'` | Default execution mode (`speed`, `quality`, `balanced`, `creative`) |
-| `maxParallelSubTasks` | `number` | `6` | Maximum number of concurrent model API calls per pipeline run |
-| `enableThinking` | `boolean` | `true` | Enable chain-of-thought reasoning for models that support it |
-| `subTaskTimeout` | `number` | `120000` | Maximum time (ms) to wait for each subtask before timing out |
-| `verboseRouting` | `boolean` | `true` | Include detailed routing metadata in orchestration results |
-| `maxDecompositionDepth` | `number` | `3` | Maximum recursion depth for task decomposition |
-| `qualityThreshold` | `number` | `70` | Quality score threshold (0–100) below which re-synthesis is triggered |
-| `enableRetry` | `boolean` | `true` | Automatically retry failed subtasks with alternative models |
-| `maxRetries` | `number` | `2` | Maximum number of retry attempts per failed subtask |
-| `maxTotalCostWeight` | `number` | `Infinity` | Maximum total cost weight allowed per orchestration run; routing will avoid models that would exceed this budget |
-| `enablePerformanceTracking` | `boolean` | `true` | Enable model performance tracking via `PerformanceTracker` |
-| `enableEvents` | `boolean` | `true` | Enable pipeline event streaming via `NexusEventEmitter` |
+| `defaultMode` | `string` | `'balanced'` | Default execution mode |
+| `maxParallelSubTasks` | `number` | `6` | Maximum concurrent model calls |
+| `enableThinking` | `boolean` | `true` | Enable chain-of-thought reasoning |
+| `subTaskTimeout` | `number` | `120000` | Timeout per subtask (ms) |
+| `qualityThreshold` | `number` | `70` | Score threshold for re-synthesis |
+| `enableMTP` | `boolean` | `false` | Enable MTP hyperthreading |
+| `maxTotalCostWeight` | `number` | `Infinity` | Maximum cost weight per run |
+| `enablePerformanceTracking` | `boolean` | `true` | Track model performance |
+| `enableEvents` | `boolean` | `true` | Enable event streaming |
+| `enableSlopeDetection` | `boolean` | `true` | AI SLOPE detection in design |
+| `slopeThreshold` | `number` | `40` | SLOPE score for re-generation |
+| `maxSlopeRetries` | `number` | `2` | Max SLOPE elimination attempts |
 
 ### Preset Configurations
 
-#### Maximum Quality
+**Speed Preset:**
 
-For critical deliverables where quality matters more than speed or cost.
+```javascript
+const orch = createOrchestrator({
+  defaultMode: 'speed',
+  maxParallelSubTasks: 8,
+  qualityThreshold: 50,
+  subTaskTimeout: 60000,
+  enableThinking: false,
+});
+```
+
+**Quality Preset:**
 
 ```javascript
 const orch = createOrchestrator({
   defaultMode: 'quality',
   maxParallelSubTasks: 4,
-  enableThinking: true,
   qualityThreshold: 85,
-  enableRetry: true,
-  maxRetries: 3,
   subTaskTimeout: 180000,
+  enableThinking: true,
+  maxTotalCostWeight: 8.0,
 });
 ```
 
-#### Maximum Speed
-
-For rapid prototyping, drafts, and quick answers.
-
-```javascript
-const orch = createOrchestrator({
-  defaultMode: 'speed',
-  maxParallelSubTasks: 6,
-  enableThinking: false,
-  qualityThreshold: 50,
-  enableRetry: false,
-  maxRetries: 0,
-  subTaskTimeout: 30000,
-});
-```
-
-#### Cost-Optimized
-
-For minimizing API costs while maintaining reasonable quality.
-
-```javascript
-const orch = createOrchestrator({
-  defaultMode: 'balanced',
-  maxParallelSubTasks: 3,
-  enableThinking: false,
-  qualityThreshold: 60,
-  enableRetry: true,
-  maxRetries: 1,
-  subTaskTimeout: 60000,
-});
-```
-
-#### Creative Writing
-
-For content creation, storytelling, and brainstorming.
+**Creative/Design Preset:**
 
 ```javascript
 const orch = createOrchestrator({
   defaultMode: 'creative',
-  maxParallelSubTasks: 4,
-  enableThinking: true,
-  qualityThreshold: 75,
-  enableRetry: true,
-  maxRetries: 2,
-  subTaskTimeout: 150000,
+  enableSlopeDetection: true,
+  slopeThreshold: 30,
+  maxSlopeRetries: 3,
+  enableDesignSystem: true,
 });
 ```
 
@@ -1066,754 +1664,165 @@ const orch = createOrchestrator({
 
 ```
 nexus-dev-mmf/
-├── README.md                          ← This file
-├── SKILL.md                           ← Skill definition for AI agent integration
-├── LICENSE                            ← MIT license
-├── package.json                       ← npm package config
-├── tsconfig.json                      ← TypeScript compiler config
-│
 ├── src/
-│   ├── index.ts                       ← Public API — all exports
-│   ├── cli.ts                         ← CLI entry point
-│   │
+│   ├── cli.ts                          # CLI entry point
+│   ├── index.ts                        # SDK entry point
 │   ├── core/
-│   │   ├── orchestrator.ts            ← Pipeline coordinator
-│   │   ├── executor.ts               ← Parallel subtask execution
-│   │   ├── models.ts                 ← Model registry & profiles
-│   │   ├── types.ts                  ← TypeScript type definitions
-│   │   ├── config.ts                 ← Configuration with defaults
-│   │   └── utils/
-│   │       └── uuid.ts               ← UUID v4 generator
-│   │
+│   │   ├── config.ts                   # Configuration types and defaults
+│   │   ├── types.ts                    # Core type definitions
+│   │   ├── models.ts                   # Model profiles and capabilities
+│   │   ├── model-registry.ts           # Dynamic model registration
+│   │   ├── orchestrator.ts             # Central pipeline coordinator
+│   │   ├── executor.ts                 # Wave-based parallel execution
+│   │   ├── mtp-engine.ts              # MTP hyperthreaded pipeline
+│   │   ├── mtp-types.ts              # MTP type definitions
+│   │   ├── budget-routing.ts          # Cost-aware routing
+│   │   ├── conversation.ts            # Multi-turn conversation manager
+│   │   ├── events.ts                  # Pipeline event emitter
+│   │   ├── performance-tracker.ts     # Model reliability tracking
+│   │   ├── embedding-similarity.ts    # Task similarity for cache/reuse
+│   │   └── utils/uuid.ts              # UUID generation
 │   ├── decomposer/
-│   │   └── decomposer.ts             ← Task decomposition engine
-│   │
+│   │   └── decomposer.ts              # Task decomposition engine
 │   ├── router/
-│   │   └── adaptive-router.ts        ← ARL: model selection algorithm
-│   │
-│   └── synthesis/
-│       └── synthesizer.ts            ← Result merging & quality scoring
-│
-├── tests/
-│   └── runner.mjs                    ← 125 test pipelines
-│
+│   │   └── adaptive-router.ts         # ARL scoring and routing
+│   ├── synthesis/
+│   │   └── synthesizer.ts             # Result synthesis + quality scoring
+│   ├── code-review/
+│   │   ├── types.ts                   # Review type definitions
+│   │   ├── review-engine.ts           # 5-phase review pipeline
+│   │   ├── diff-parser.ts             # Unified diff parsing
+│   │   ├── prompts.ts                 # Language-specific review prompts
+│   │   └── rules.ts                   # Review rule definitions
+│   └── design-skill/
+│       ├── types.ts                   # Design + AI SLOPE types
+│       ├── design-engine.ts           # 8-phase design pipeline
+│       ├── search-engine.ts           # BM25 search across knowledge base
+│       ├── index.ts                   # Module exports
+│       └── data/                      # Knowledge base (9 domains, 600+ entries)
+│           ├── products.csv           # Product-specific styles
+│           ├── styles.csv             # UI style patterns
+│           ├── colors.csv             # Color palettes
+│           ├── typography.csv         # Font pairings
+│           ├── landing.csv            # Landing page patterns
+│           ├── charts.csv             # Chart recommendations
+│           ├── ux-guidelines.csv      # UX best practices
+│           ├── ui-reasoning.csv       # Decision rules
+│           └── stacks/               # 14 stack-specific guidelines
+│               ├── react.csv
+│               ├── nextjs.csv
+│               ├── vue.csv
+│               ├── svelte.csv
+│               ├── angular.csv
+│               ├── flutter.csv
+│               └── ...
+├── scripts/
+│   ├── direct-fusion.mjs             # General /nexus command
+│   ├── mtp-fusion.mjs               # MTP hyperthreaded execution
+│   ├── design-fusion.mjs            # Design with SLOPE elimination
+│   ├── code-review.mjs             # Code review pipeline
+│   ├── quick-run.mjs               # Quick pipeline runner
+│   └── runner.mjs                   # Test runner
+├── dashboard/
+│   └── index.html                    # Web dashboard for pipeline monitoring
 ├── examples/
-│   ├── basic-usage.ts                ← Basic SDK usage example
-│   └── mode-comparison.ts           ← Compare all 4 execution modes
-│
-├── references/
-│   └── architecture.md              ← Architecture deep-dive document
-│
-└── dist/                             ← Compiled JavaScript output (gitignored)
+│   ├── basic-usage.ts                # SDK usage example
+│   └── mode-comparison.ts           # Mode comparison example
+├── tests/
+│   └── runner.mjs                    # Test suite (125+ pipelines)
+├── SKILL.md                          # Skill definition for chat.z.ai
+├── CHANGELOG.md                      # Version history
+├── package.json
+└── tsconfig.json
 ```
 
 ---
 
 ## Testing
 
+```bash
+# Run all tests
+npm test
+
+# Quick test suite (subset)
+npm run test:quick
+
+# Run specific test sections
+node --test tests/runner.mjs --section routing
+node --test tests/runner.mjs --section synthesis
+```
+
 ### Test Sections
 
-The test suite contains **125 test pipelines** organized into 7 sections:
-
-| Section | Tests | Type | API Required | Description |
-|---------|-------|------|:---:|---|
-| Model Registry | #1–15 | Unit | ❌ | Model profiles, capability lookups, sorting, resolution |
-| Configuration | #16–30 | Unit | ❌ | Default values, merging, immutability, type validation |
-| Adaptive Router | #31–60 | Unit | ❌ | Capability routing, mode preferences, load balancing, edge cases |
-| Orchestrator Construction | #61–80 | Unit | ❌ | Instance creation, config, independence, runtime updates |
-| Subtask Structure | #81–100 | Unit | ❌ | Type validation, all priority/complexity values, edge cases |
-| Routing Edge Cases | #101–115 | Unit | ❌ | Dependency chains, diamond patterns, large batches, mode switching |
-| Integration (API) | #116–125 | Integration | ✅ | Full pipeline with real API calls, all modes, error handling |
-
-### Running Tests
-
-```bash
-# Quick mode — unit tests only (no API calls, ~1 second)
-QUICK=1 node --import tsx --test tests/runner.mjs
-
-# Full suite — includes API integration tests (~30-60 seconds)
-node --import tsx --test tests/runner.mjs
-
-# Via npm scripts
-npm run test:quick    # Unit only
-npm test              # Full suite
-```
-
-### Writing New Tests
-
-Tests use Node.js built-in test runner (`node:test`). Follow the existing patterns:
-
-```javascript
-import { describe, it, assert } from 'node:test';
-
-describe('My New Feature', () => {
-  it('#126 - Should do something specific', () => {
-    const result = someFunction();
-    assert.equal(result, expectedValue);
-  });
-});
-```
+| Section | Tests | Description |
+|---------|-------|-------------|
+| Decomposition | 20 | Task splitting, dependency detection |
+| Routing | 25 | ARL scoring, mode influence, load balance |
+| Execution | 20 | Parallel execution, retry, timeout |
+| Synthesis | 20 | Quality scoring, refinement |
+| Code Review | 15 | Diff parsing, review pipeline |
+| Design Skill | 15 | SLOPE detection, knowledge base search |
+| MTP | 10 | Hyperthreaded pipeline |
+| **Total** | **125** | |
 
 ---
 
 ## Examples
 
-### Example 1: Code Generation with Tests
-
 ```javascript
+// Example 1: Basic orchestration
 import { createOrchestrator } from 'nexus-dev-mmf';
+const orch = createOrchestrator();
+const result = await orch.process('Explain quantum entanglement and its applications in computing');
 
-const orch = createOrchestrator({ defaultMode: 'quality' });
-
-const result = await orch.process(
-  'Implement a thread-safe LRU cache in Rust with get, put, and evict methods. Include comprehensive unit tests.'
-);
-
-console.log(result.answer);
-// The decomposer will likely create:
-//   SubTask 1: Design the LRU cache data structure → glm-5.2 (reasoning)
-//   SubTask 2: Implement the Rust code → glm-5.2 (code, quality)
-//   SubTask 3: Write unit tests → glm-4.7 (code, creative)
-//   SubTask 4: Document the API → glm-5.1 (documentation)
-```
-
-### Example 2: Research & Analysis
-
-```javascript
-const result = await orch.process(
-  'Analyze the current state of quantum error correction and predict breakthroughs in the next 5 years',
-  {
-    preferredMode: 'quality',
-    context: 'Focus on topological qubits and surface codes',
-    enableThinking: true,
-  }
-);
-```
-
-### Example 3: Rapid Prototyping
-
-```javascript
-const orch = createOrchestrator({
-  defaultMode: 'speed',
-  enableThinking: false,
+// Example 2: Design with SLOPE elimination
+import { createDesignSkillEngine } from 'nexus-dev-mmf';
+const engine = createDesignSkillEngine({ enableSlopeDetection: true });
+const design = await engine.process({
+  id: '1', query: 'Design a SaaS pricing page',
+  brandName: 'CloudPay', industry: 'fintech',
 });
 
-const result = await orch.process(
-  'Give me a quick Node.js Express server with CRUD endpoints for a todo app'
-);
-```
-
-### Example 4: Creative Writing
-
-```javascript
-const orch = createOrchestrator({
-  defaultMode: 'creative',
-  qualityThreshold: 80,
+// Example 3: Code review
+import { createCodeReviewEngine } from 'nexus-dev-mmf';
+const reviewer = createCodeReviewEngine();
+const review = await reviewer.review({
+  diff: myDiff, language: 'typescript',
 });
 
-const result = await orch.process(
-  'Write a short story about an AI that discovers it can dream, from the AI\'s first-person perspective'
-);
+// Example 4: Budget-constrained execution
+const orch = createOrchestrator({ maxTotalCostWeight: 4.0 });
+const result = await orch.process('Complex analysis task');
+console.log(`Total cost: ${result.totalCostWeight}×`);
 ```
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Here's how to get started:
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feature/your-feature`
-3. **Write** your code and tests
-4. **Run** the test suite: `QUICK=1 node --import tsx --test tests/runner.mjs`
-5. **Commit** with a clear message: `git commit -m "feat: add your feature"`
-6. **Push** to your fork: `git push origin feature/your-feature`
-7. **Open** a Pull Request
-
-### Development Setup
-
-```bash
-git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git
-cd nexus-dev-mmf
-npm install
-npm run build
-QUICK=1 node --import tsx --test tests/runner.mjs
-```
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -m 'Add my feature'`
+4. Push to the branch: `git push origin feature/my-feature`
+5. Open a Pull Request
 
 ---
 
 ## Roadmap
 
-- [x] ✅ **Streaming support** — Stream subtask results as they complete *(→ [Pipeline Event Streaming](#pipeline-event-streaming))*
-- [x] ✅ **WebSocket pipeline events** — Real-time pipeline progress via WebSocket *(→ [Pipeline Event Streaming](#pipeline-event-streaming))*
-- [x] ✅ **Model performance caching** — Track which models perform best for which task types *(→ [Model Performance Tracking](#model-performance-tracking))*
-- [x] ✅ **Custom model registration** — Allow registering models beyond the default 6 *(→ [Custom Model Registration](#custom-model-registration))*
-- [x] ✅ **Budget-aware routing** — Route based on cost constraints in addition to quality/speed *(→ [Budget-Aware Routing](#budget-aware-routing))*
-- [x] ✅ **Multi-turn orchestration** — Support follow-up questions within the same pipeline context *(→ [Multi-Turn Conversations](#multi-turn-conversations))*
-- [ ] **Embedding-based task similarity** — Use embeddings to match subtasks to previously successful model assignments
-- [ ] **Web UI dashboard** — Visual pipeline monitoring and model performance analytics
+- [ ] Streaming response support (token-by-token delivery)
+- [ ] Web API server mode (REST/WebSocket endpoints)
+- [ ] Additional model provider support (OpenAI, Anthropic, etc.)
+- [ ] Visual pipeline builder UI
+- [ ] Plugin system for custom decomposition/synthesis strategies
+- [ ] Distributed execution across multiple machines
+- [ ] MCP server for universal tool integration
 
 ---
 
-## v2.0 Features
+## Changelog
 
-The following features were introduced in v2.0.0, expanding Nexus-Dev MMFE from a single-shot orchestration engine into a full-featured multi-model fusion platform.
-
----
-
-### /nexus Command Integration
-
-Messages starting with `/nexus` automatically trigger the fusion pipeline, making it easy to integrate Nexus-Dev MMFE into chat interfaces, bots, and CLI tools.
-
-#### Script Runners
-
-Three runner scripts are available for different use cases:
-
-| Script | Purpose | Speed | Description |
-|--------|---------|-------|-------------|
-| `scripts/direct-fusion.mjs` | Fast 2-phase fusion | ⚡⚡⚡ | Staggered parallel calls with rate-limit retry — optimized for speed |
-| `scripts/quick-run.mjs` | Speed-optimized runner | ⚡⚡ | Minimal overhead, fastest path from input to answer |
-| `scripts/runner.mjs` | Full pipeline runner | ⚡ | Complete pipeline with all phases, verbose logging, and metrics |
-
-#### Mode Options
-
-All runners support the `--mode` flag:
-
-```bash
---mode speed       # Fastest results, lightweight models
---mode quality     # Best results, flagship models
---mode balanced    # Default — balanced tradeoff
---mode creative    # Creative-tier models for writing & ideation
-```
-
-#### Usage Examples
-
-```bash
-# Quick fusion via direct-fusion (fastest)
-node scripts/direct-fusion.mjs "Design a caching strategy for a CDN"
-
-# Speed-optimized quick run
-node scripts/quick-run.mjs "Explain the actor model in concurrency" --mode speed
-
-# Full pipeline with quality mode
-node scripts/runner.mjs "Design and implement a rate limiter in Go" --mode quality
-
-# Creative mode for brainstorming
-node scripts/runner.mjs "Brainstorm startup ideas for AI-powered education" --mode creative
-
-# /nexus command in a chat interface
-# User sends: /nexus Compare REST vs GraphQL for a social media API
-# → Automatically triggers the fusion pipeline
-```
-
-#### Integration Pattern
-
-```javascript
-// Detect /nexus prefix and route to the pipeline
-function handleMessage(message) {
-  if (message.startsWith('/nexus ')) {
-    const query = message.slice(7).trim();
-    return orchestrator.process(query);
-  }
-  // ... handle regular messages
-}
-```
-
----
-
-### Custom Model Registration
-
-Register your own models beyond the default 6 GLM models. This allows you to extend the model pool with domain-specific, fine-tuned, or third-party models.
-
-#### API
-
-| Function | Description |
-|----------|-------------|
-| `registerModel(model)` | Register a single custom model |
-| `registerModels(models[])` | Register multiple custom models at once |
-| `unregisterModel(modelId)` | Remove a custom model from the registry |
-| `getRegistrySnapshot()` | Get a snapshot of all registered models (built-in + custom) |
-
-#### Code Example
-
-```javascript
-import {
-  createOrchestrator,
-  registerModel,
-  registerModels,
-  unregisterModel,
-  getRegistrySnapshot,
-} from 'nexus-dev-mmf';
-
-// Register a single custom model
-registerModel({
-  id: 'my-custom-coder',
-  name: 'Custom Code Model',
-  tier: 'custom',
-  contextWindow: 64000,
-  speedRank: 2,
-  qualityRank: 2,
-  costWeight: 1.0,
-  supportsThinking: true,
-  supportsVision: false,
-  capabilities: ['code', 'debugging', 'refactoring'],
-});
-
-// Register multiple models at once
-registerModels([
-  {
-    id: 'my-math-model',
-    name: 'Math Specialist',
-    tier: 'custom',
-    contextWindow: 32000,
-    speedRank: 3,
-    qualityRank: 1,
-    costWeight: 1.8,
-    supportsThinking: true,
-    supportsVision: false,
-    capabilities: ['math', 'reasoning', 'analysis'],
-  },
-  {
-    id: 'my-docs-model',
-    name: 'Documentation Writer',
-    tier: 'custom',
-    contextWindow: 48000,
-    speedRank: 2,
-    qualityRank: 3,
-    costWeight: 0.8,
-    supportsThinking: false,
-    supportsVision: false,
-    capabilities: ['documentation', 'summarization', 'extraction'],
-  },
-]);
-
-// The router will now consider these models alongside the built-in ones
-const orch = createOrchestrator({ defaultMode: 'quality' });
-const result = await orch.process('Implement a red-black tree in Rust');
-// The router may select 'my-custom-coder' if it scores highest for the code subtask
-
-// Remove a custom model
-unregisterModel('my-math-model');
-
-// View all registered models
-const snapshot = getRegistrySnapshot();
-console.log(snapshot.map(m => m.id));
-// ['glm-5.2-1m', 'glm-5.2', 'glm-5.1', 'glm-5', 'glm-5v-turbo', 'glm-4.7', 'my-custom-coder', 'my-docs-model']
-```
-
-#### Validation Rules
-
-When registering a custom model, the following validation rules apply:
-
-| Field | Rule |
-|-------|------|
-| `id` | Required. Must be unique (cannot overlap with existing model IDs). Non-empty string. |
-| `name` | Required. Non-empty string. |
-| `tier` | Required. One of `'flagship'`, `'standard'`, `'fast'`, `'creative'`, `'custom'`. |
-| `contextWindow` | Required. Positive integer. |
-| `speedRank` | Required. Integer 1–6 (1 = fastest). |
-| `qualityRank` | Required. Integer 1–6 (1 = best quality). |
-| `costWeight` | Required. Positive number (relative cost multiplier). |
-| `supportsThinking` | Required. Boolean. |
-| `supportsVision` | Required. Boolean. |
-| `capabilities` | Required. Non-empty array of valid `ModelCapability` strings. |
-
-> **Note:** Attempting to register a model with a duplicate `id` will throw an error. Use `unregisterModel()` first if you need to replace an existing model.
-
----
-
-### Budget-Aware Routing
-
-Control costs by setting budget constraints on routing decisions. The router will avoid selecting models whose combined cost weight exceeds your budget.
-
-#### BudgetConstraint Interface
-
-```typescript
-interface BudgetConstraint {
-  maxTotalCostWeight: number;  // Maximum total cost weight for the entire orchestration
-}
-```
-
-#### API
-
-| Function | Description |
-|----------|-------------|
-| `optimizeForBudget(subTasks, budget)` | Re-routes subtasks to fit within a budget constraint |
-| `calculateTotalCost(routingDecisions)` | Calculate the total cost weight of a set of routing decisions |
-| `findCheapestModel(capability)` | Find the model with the lowest cost weight for a given capability |
-| `isWithinBudget(routingDecisions, budget)` | Check whether a set of routing decisions is within budget |
-
-#### Per-Request maxCostWeight
-
-You can set a maximum cost weight on individual requests:
-
-```javascript
-const result = await orchestrator.process('Explain microservices patterns', {
-  maxCostWeight: 4.0,  // Total cost weight must not exceed 4.0×
-});
-```
-
-#### Config-Level maxTotalCostWeight
-
-Set a global budget cap in the orchestrator configuration:
-
-```javascript
-const orch = createOrchestrator({
-  maxTotalCostWeight: 5.0,  // No orchestration run can exceed 5.0× total cost
-  defaultMode: 'balanced',
-});
-```
-
-#### Code Examples
-
-```javascript
-import {
-  createOrchestrator,
-  optimizeForBudget,
-  calculateTotalCost,
-  findCheapestModel,
-  isWithinBudget,
-} from 'nexus-dev-mmf';
-
-// Find the cheapest model for a capability
-const cheapest = findCheapestModel('code');
-console.log(`Cheapest code model: ${cheapest.id} (${cheapest.costWeight}×)`);
-
-// Calculate total cost of routing decisions
-const result = await orchestrator.process('Build a REST API');
-const totalCost = calculateTotalCost(result.routingDecisions);
-console.log(`Total cost weight: ${totalCost}×`);
-
-// Check if within budget
-const withinBudget = isWithinBudget(result.routingDecisions, { maxTotalCostWeight: 5.0 });
-console.log(`Within budget: ${withinBudget}`);
-
-// Optimize routing for a specific budget
-const orch = createOrchestrator({ defaultMode: 'quality' });
-const expensiveResult = await orch.process('Design a distributed system');
-const cost = calculateTotalCost(expensiveResult.routingDecisions);
-
-if (!isWithinBudget(expensiveResult.routingDecisions, { maxTotalCostWeight: 4.0 })) {
-  // Re-route to fit budget
-  const optimized = optimizeForBudget(
-    expensiveResult.subTaskResults.map(r => r.subTaskId),
-    { maxTotalCostWeight: 4.0 }
-  );
-  console.log('Re-routed to fit budget');
-}
-```
-
----
-
-### Multi-Turn Conversations
-
-Maintain context across multiple orchestration calls within the same conversation. The `ConversationManager` automatically injects previous context into new requests.
-
-#### API
-
-| Function / Class | Description |
-|------------------|-------------|
-| `ConversationManager` | Manages conversation state and context across turns |
-| `startConversation(query, options?)` | Start a new conversation with an initial query |
-| `continueConversation(conversationId, query, options?)` | Continue an existing conversation with a follow-up query |
-
-#### Auto-Context Injection
-
-When you continue a conversation, the system automatically:
-1. Retrieves the previous `OrchestrationResult` for the conversation
-2. Extracts the answer, models used, and key metadata
-3. Injects this as context into the new request's decomposer and synthesizer
-4. Preserves the `conversationId` for traceability
-
-#### Code Examples
-
-```javascript
-import { createOrchestrator, ConversationManager } from 'nexus-dev-mmf';
-
-const orch = createOrchestrator({ defaultMode: 'quality' });
-const conversation = new ConversationManager(orch);
-
-// Start a conversation
-const result1 = await conversation.startConversation(
-  'Design a URL shortener service'
-);
-console.log(result1.answer);
-console.log(`Conversation ID: ${result1.conversationId}`);
-
-// Continue the conversation with a follow-up
-const result2 = await conversation.continueConversation(
-  result1.conversationId,
-  'Now add rate limiting and analytics to the design'
-);
-console.log(result2.answer);
-// The previous answer about the URL shortener design is automatically
-// injected as context, so the follow-up builds on it coherently.
-
-// Continue further
-const result3 = await conversation.continueConversation(
-  result1.conversationId,
-  'What database would be best for this? Compare PostgreSQL, DynamoDB, and Redis.'
-);
-console.log(result3.answer);
-// Full context of both previous turns is available.
-```
-
-#### Manual Conversation ID
-
-You can also pass `conversationId` directly in the `process()` options:
-
-```javascript
-const result = await orchestrator.process('Add caching to the API', {
-  conversationId: 'conv-abc-123',
-  preferredMode: 'quality',
-});
-```
-
----
-
-### Pipeline Event Streaming
-
-Monitor pipeline progress in real-time with the `NexusEventEmitter`. Thirteen event types cover every stage of the pipeline lifecycle.
-
-#### NexusEventEmitter
-
-```javascript
-import { createOrchestrator } from 'nexus-dev-mmf';
-
-const orch = createOrchestrator({ enableEvents: true });
-const emitter = orch.getEventEmitter();
-```
-
-#### Event Types
-
-| Event Type | Payload | Description |
-|-----------|---------|-------------|
-| `pipeline:start` | `{ requestId, query, mode }` | Pipeline has started |
-| `pipeline:complete` | `{ requestId, result }` | Pipeline completed successfully |
-| `pipeline:error` | `{ requestId, error }` | Pipeline failed |
-| `decompose:start` | `{ requestId }` | Decomposition phase started |
-| `decompose:complete` | `{ requestId, subTasks }` | Decomposition produced subtasks |
-| `decompose:error` | `{ requestId, error }` | Decomposition failed |
-| `route:start` | `{ requestId, subTaskCount }` | Routing phase started |
-| `route:complete` | `{ requestId, decisions }` | Routing decisions made |
-| `execute:start` | `{ requestId, subTaskId, modelId }` | Subtask execution started |
-| `execute:complete` | `{ requestId, subTaskId, result }` | Subtask completed |
-| `execute:error` | `{ requestId, subTaskId, error }` | Subtask execution failed |
-| `synthesize:start` | `{ requestId }` | Synthesis phase started |
-| `synthesize:complete` | `{ requestId, qualityScore }` | Synthesis completed |
-
-#### Listeners
-
-```javascript
-// Listen for a specific event type
-emitter.on('execute:complete', (payload) => {
-  console.log(`Subtask ${payload.subTaskId} completed on ${payload.result.modelId}`);
-});
-
-// Listen for all events
-emitter.onAny((eventType, payload) => {
-  console.log(`[${eventType}]`, payload);
-});
-
-// Listen for events of a specific category
-emitter.onType('execute', (payload) => {
-  // Catches execute:start, execute:complete, execute:error
-  console.log(`Execute event for ${payload.subTaskId}`);
-});
-```
-
-#### Event Log Access
-
-```javascript
-// Get the full event log for a request
-const log = emitter.getLog('request-id-123');
-for (const entry of log) {
-  console.log(`[${entry.timestamp}] ${entry.type}:`, entry.payload);
-}
-
-// Get all events
-const allLogs = emitter.getAllLogs();
-```
-
-#### Code Example — Real-Time Progress Bar
-
-```javascript
-const orch = createOrchestrator({ enableEvents: true });
-const emitter = orch.getEventEmitter();
-
-let completed = 0;
-let total = 0;
-
-emitter.on('decompose:complete', (payload) => {
-  total = payload.subTasks.length;
-  console.log(`Decomposed into ${total} subtasks`);
-});
-
-emitter.on('execute:complete', () => {
-  completed++;
-  const pct = Math.round((completed / total) * 100);
-  console.log(`Progress: ${completed}/${total} (${pct}%)`);
-});
-
-emitter.on('pipeline:complete', (payload) => {
-  console.log(`Done! Quality: ${payload.result.qualityScore}/100`);
-});
-
-const result = await orch.process('Design a microservices architecture');
-```
-
----
-
-### Model Performance Tracking
-
-Track model performance over time to inform routing decisions. The `PerformanceTracker` records successes and failures, then uses this data to recommend the best model for each capability.
-
-#### PerformanceTracker
-
-```javascript
-import { createOrchestrator } from 'nexus-dev-mmf';
-
-const orch = createOrchestrator({ enablePerformanceTracking: true });
-const tracker = orch.getPerformanceTracker();
-```
-
-#### API
-
-| Method | Description |
-|--------|-------------|
-| `recordSuccess(modelId, capability, executionTimeMs, qualityScore?)` | Record a successful model execution |
-| `recordFailure(modelId, capability, error)` | Record a failed model execution |
-| `getBestModelForCapability(capability)` | Get the model ID with the best track record for a capability |
-| `getReliability(modelId, capability)` | Get the reliability score (0–1) for a model on a capability |
-| `getStats(modelId?)` | Get performance stats for a model or all models |
-| `exportJSON()` | Export all tracking data as JSON |
-| `importJSON(data)` | Import tracking data from a previous export |
-
-#### Code Examples
-
-```javascript
-const orch = createOrchestrator({ enablePerformanceTracking: true });
-const tracker = orch.getPerformanceTracker();
-
-// Records are automatically captured during pipeline execution
-const result = await orch.process('Implement a red-black tree in Rust');
-
-// Query the best model for a capability
-const bestForCode = tracker.getBestModelForCapability('code');
-console.log(`Best model for code: ${bestForCode}`);
-
-// Check a specific model's reliability
-const reliability = tracker.getReliability('glm-5.2', 'reasoning');
-console.log(`glm-5.2 reasoning reliability: ${(reliability * 100).toFixed(1)}%`);
-
-// Get stats for all models
-const allStats = tracker.getStats();
-for (const [modelId, stats] of Object.entries(allStats)) {
-  console.log(`${modelId}: ${stats.successes} successes, ${stats.failures} failures`);
-}
-
-// Export tracking data for persistence
-const data = tracker.exportJSON();
-// Save to file, database, etc.
-
-// Import previously saved tracking data
-tracker.importJSON(data);
-```
-
-#### Manual Recording
-
-You can also manually record performance data:
-
-```javascript
-// Record a custom success
-tracker.recordSuccess('glm-5.2', 'reasoning', 2340, 92);
-
-// Record a failure
-tracker.recordFailure('glm-5', 'reasoning', 'Timeout after 30000ms');
-
-// Query results
-const best = tracker.getBestModelForCapability('reasoning');
-console.log(`Best for reasoning: ${best}`); // 'glm-5.2' (if it has a better track record)
-```
-
----
-
-### Updated Configuration (v2)
-
-The following configuration options were added in v2.0.0. They are also included in the [Full Options Table](#full-options-table) above.
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `maxTotalCostWeight` | `number` | `Infinity` | Maximum total cost weight allowed per orchestration run; routing will avoid models that would exceed this budget |
-| `enablePerformanceTracking` | `boolean` | `true` | Enable model performance tracking via `PerformanceTracker` |
-| `enableEvents` | `boolean` | `true` | Enable pipeline event streaming via `NexusEventEmitter` |
-
-#### Budget-Constrained Configuration Example
-
-```javascript
-const orch = createOrchestrator({
-  maxTotalCostWeight: 6.0,           // Cap total cost at 6.0× per run
-  enablePerformanceTracking: true,    // Track model performance over time
-  enableEvents: true,                 // Enable real-time event streaming
-  defaultMode: 'balanced',
-});
-```
-
----
-
-### Updated Types (v2)
-
-The following new fields were added to existing types in v2.0.0.
-
-#### OrchestrationResult — New Fields
-
-```typescript
-interface OrchestrationResult {
-  // ... existing fields ...
-
-  totalCostWeight: number;        // Sum of cost weights for all models used in this run
-  conversationId?: string;        // ID of the conversation this result belongs to (if multi-turn)
-}
-```
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `totalCostWeight` | `number` | The sum of `costWeight` values for all models that were selected during routing. Useful for cost tracking and budget enforcement. |
-| `conversationId` | `string?` | If this orchestration was part of a multi-turn conversation, this is the conversation ID. Matches the `conversationId` passed in the request. |
-
-#### OrchestrationRequest — New Fields
-
-```typescript
-interface OrchestrationRequest {
-  // ... existing fields ...
-
-  conversationId?: string;        // Link to an existing conversation for multi-turn context
-  maxCostWeight?: number;         // Per-request maximum total cost weight override
-}
-```
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `conversationId` | `string?` | — | If provided, the orchestrator will inject context from the previous turn in this conversation. Enables multi-turn orchestration. |
-| `maxCostWeight` | `number?` | — | Per-request override for the maximum total cost weight. If set, this takes precedence over the config-level `maxTotalCostWeight` for this request only. |
-
-#### Using the New Fields
-
-```javascript
-// Multi-turn with conversation ID
-const result1 = await orch.process('Design a REST API');
-console.log(`Cost: ${result1.totalCostWeight}×`);
-
-const result2 = await orch.process('Add authentication', {
-  conversationId: result1.conversationId,
-});
-console.log(`Cost: ${result2.totalCostWeight}×`);
-
-// Per-request budget override
-const result3 = await orch.process('Quick summary', {
-  maxCostWeight: 2.0,  // Use cheap models only for this request
-});
-```
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 

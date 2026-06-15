@@ -5,3 +5,22 @@ dist/
 .z-ai-config
 .DS_Store
 Thumbs.db
+
+# Workspace files (not part of nexus-dev-mmf)
+skills/
+tool-results/
+.zscripts/
+bun.lock
+Caddyfile
+components.json
+db/
+eslint.config.mjs
+mini-services/
+next.config.ts
+postcss.config.mjs
+prisma/
+public/
+tailwind.config.ts
+upload/
+worklog.md
+package-lock.json
