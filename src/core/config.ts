@@ -29,6 +29,15 @@ export interface NexusDevConfig {
 
   /** Maximum retry attempts per subtask */
   maxRetries: number;
+
+  /** Maximum total cost weight per request (budget constraint) */
+  maxTotalCostWeight: number;
+
+  /** Enable performance tracking across requests */
+  enablePerformanceTracking: boolean;
+
+  /** Enable pipeline event streaming */
+  enableEvents: boolean;
 }
 
 export const DEFAULT_CONFIG: NexusDevConfig = {
@@ -41,6 +50,9 @@ export const DEFAULT_CONFIG: NexusDevConfig = {
   qualityThreshold: 70,
   enableRetry: true,
   maxRetries: 2,
+  maxTotalCostWeight: Infinity,
+  enablePerformanceTracking: true,
+  enableEvents: true,
 };
 
 /**

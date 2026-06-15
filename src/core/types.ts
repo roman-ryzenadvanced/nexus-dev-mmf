@@ -52,6 +52,8 @@ export interface OrchestrationRequest {
   maxParallelSubTasks?: number;
   enableThinking?: boolean;
   customSystemPrompt?: string;
+  conversationId?: string;           // For multi-turn conversations
+  maxCostWeight?: number;            // Budget constraint per request
   metadata: Record<string, unknown>;
 }
 
@@ -68,6 +70,8 @@ export interface OrchestrationResult {
   decompositionStrategy: string;
   synthesisStrategy: string;
   qualityScore: number;          // 0-100 self-assessed quality
+  totalCostWeight: number;       // Sum of costWeight for all models used
+  conversationId?: string;       // If part of a multi-turn conversation
   metadata: Record<string, unknown>;
 }
 

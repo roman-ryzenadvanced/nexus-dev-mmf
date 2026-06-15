@@ -6,6 +6,7 @@
 
 **An intelligent multi-model orchestration framework that decomposes complex tasks, adaptively routes subtasks to the optimal GLM models, executes them in parallel, and synthesizes a single unified answer.**
 
+[![Version](https://img.shields.io/badge/Version-v2.0.0-brightgreen.svg)](#v20-features)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
@@ -66,6 +67,15 @@
 - [Examples](#examples)
 - [Contributing](#contributing)
 - [Roadmap](#roadmap)
+- [v2.0 Features](#v20-features)
+  - [/nexus Command Integration](#nexus-command-integration)
+  - [Custom Model Registration](#custom-model-registration)
+  - [Budget-Aware Routing](#budget-aware-routing)
+  - [Multi-Turn Conversations](#multi-turn-conversations)
+  - [Pipeline Event Streaming](#pipeline-event-streaming)
+  - [Model Performance Tracking](#model-performance-tracking)
+  - [Updated Configuration](#updated-configuration-v2)
+  - [Updated Types](#updated-types-v2)
 - [License](#license)
 
 ---
@@ -980,6 +990,9 @@ node dist/cli.js
 | `qualityThreshold` | `number` | `70` | Quality score threshold (0–100) below which re-synthesis is triggered |
 | `enableRetry` | `boolean` | `true` | Automatically retry failed subtasks with alternative models |
 | `maxRetries` | `number` | `2` | Maximum number of retry attempts per failed subtask |
+| `maxTotalCostWeight` | `number` | `Infinity` | Maximum total cost weight allowed per orchestration run; routing will avoid models that would exceed this budget |
+| `enablePerformanceTracking` | `boolean` | `true` | Enable model performance tracking via `PerformanceTracker` |
+| `enableEvents` | `boolean` | `true` | Enable pipeline event streaming via `NexusEventEmitter` |
 
 ### Preset Configurations
 
@@ -1231,14 +1244,576 @@ QUICK=1 node --import tsx --test tests/runner.mjs
 
 ## Roadmap
 
-- [ ] **Streaming support** — Stream subtask results as they complete
-- [ ] **WebSocket pipeline events** — Real-time pipeline progress via WebSocket
-- [ ] **Model performance caching** — Track which models perform best for which task types
-- [ ] **Custom model registration** — Allow registering models beyond the default 6
-- [ ] **Budget-aware routing** — Route based on cost constraints in addition to quality/speed
-- [ ] **Multi-turn orchestration** — Support follow-up questions within the same pipeline context
+- [x] ✅ **Streaming support** — Stream subtask results as they complete *(→ [Pipeline Event Streaming](#pipeline-event-streaming))*
+- [x] ✅ **WebSocket pipeline events** — Real-time pipeline progress via WebSocket *(→ [Pipeline Event Streaming](#pipeline-event-streaming))*
+- [x] ✅ **Model performance caching** — Track which models perform best for which task types *(→ [Model Performance Tracking](#model-performance-tracking))*
+- [x] ✅ **Custom model registration** — Allow registering models beyond the default 6 *(→ [Custom Model Registration](#custom-model-registration))*
+- [x] ✅ **Budget-aware routing** — Route based on cost constraints in addition to quality/speed *(→ [Budget-Aware Routing](#budget-aware-routing))*
+- [x] ✅ **Multi-turn orchestration** — Support follow-up questions within the same pipeline context *(→ [Multi-Turn Conversations](#multi-turn-conversations))*
 - [ ] **Embedding-based task similarity** — Use embeddings to match subtasks to previously successful model assignments
 - [ ] **Web UI dashboard** — Visual pipeline monitoring and model performance analytics
+
+---
+
+## v2.0 Features
+
+The following features were introduced in v2.0.0, expanding Nexus-Dev MMFE from a single-shot orchestration engine into a full-featured multi-model fusion platform.
+
+---
+
+### /nexus Command Integration
+
+Messages starting with `/nexus` automatically trigger the fusion pipeline, making it easy to integrate Nexus-Dev MMFE into chat interfaces, bots, and CLI tools.
+
+#### Script Runners
+
+Three runner scripts are available for different use cases:
+
+| Script | Purpose | Speed | Description |
+|--------|---------|-------|-------------|
+| `scripts/direct-fusion.mjs` | Fast 2-phase fusion | ⚡⚡⚡ | Staggered parallel calls with rate-limit retry — optimized for speed |
+| `scripts/quick-run.mjs` | Speed-optimized runner | ⚡⚡ | Minimal overhead, fastest path from input to answer |
+| `scripts/runner.mjs` | Full pipeline runner | ⚡ | Complete pipeline with all phases, verbose logging, and metrics |
+
+#### Mode Options
+
+All runners support the `--mode` flag:
+
+```bash
+--mode speed       # Fastest results, lightweight models
+--mode quality     # Best results, flagship models
+--mode balanced    # Default — balanced tradeoff
+--mode creative    # Creative-tier models for writing & ideation
+```
+
+#### Usage Examples
+
+```bash
+# Quick fusion via direct-fusion (fastest)
+node scripts/direct-fusion.mjs "Design a caching strategy for a CDN"
+
+# Speed-optimized quick run
+node scripts/quick-run.mjs "Explain the actor model in concurrency" --mode speed
+
+# Full pipeline with quality mode
+node scripts/runner.mjs "Design and implement a rate limiter in Go" --mode quality
+
+# Creative mode for brainstorming
+node scripts/runner.mjs "Brainstorm startup ideas for AI-powered education" --mode creative
+
+# /nexus command in a chat interface
+# User sends: /nexus Compare REST vs GraphQL for a social media API
+# → Automatically triggers the fusion pipeline
+```
+
+#### Integration Pattern
+
+```javascript
+// Detect /nexus prefix and route to the pipeline
+function handleMessage(message) {
+  if (message.startsWith('/nexus ')) {
+    const query = message.slice(7).trim();
+    return orchestrator.process(query);
+  }
+  // ... handle regular messages
+}
+```
+
+---
+
+### Custom Model Registration
+
+Register your own models beyond the default 6 GLM models. This allows you to extend the model pool with domain-specific, fine-tuned, or third-party models.
+
+#### API
+
+| Function | Description |
+|----------|-------------|
+| `registerModel(model)` | Register a single custom model |
+| `registerModels(models[])` | Register multiple custom models at once |
+| `unregisterModel(modelId)` | Remove a custom model from the registry |
+| `getRegistrySnapshot()` | Get a snapshot of all registered models (built-in + custom) |
+
+#### Code Example
+
+```javascript
+import {
+  createOrchestrator,
+  registerModel,
+  registerModels,
+  unregisterModel,
+  getRegistrySnapshot,
+} from 'nexus-dev-mmf';
+
+// Register a single custom model
+registerModel({
+  id: 'my-custom-coder',
+  name: 'Custom Code Model',
+  tier: 'custom',
+  contextWindow: 64000,
+  speedRank: 2,
+  qualityRank: 2,
+  costWeight: 1.0,
+  supportsThinking: true,
+  supportsVision: false,
+  capabilities: ['code', 'debugging', 'refactoring'],
+});
+
+// Register multiple models at once
+registerModels([
+  {
+    id: 'my-math-model',
+    name: 'Math Specialist',
+    tier: 'custom',
+    contextWindow: 32000,
+    speedRank: 3,
+    qualityRank: 1,
+    costWeight: 1.8,
+    supportsThinking: true,
+    supportsVision: false,
+    capabilities: ['math', 'reasoning', 'analysis'],
+  },
+  {
+    id: 'my-docs-model',
+    name: 'Documentation Writer',
+    tier: 'custom',
+    contextWindow: 48000,
+    speedRank: 2,
+    qualityRank: 3,
+    costWeight: 0.8,
+    supportsThinking: false,
+    supportsVision: false,
+    capabilities: ['documentation', 'summarization', 'extraction'],
+  },
+]);
+
+// The router will now consider these models alongside the built-in ones
+const orch = createOrchestrator({ defaultMode: 'quality' });
+const result = await orch.process('Implement a red-black tree in Rust');
+// The router may select 'my-custom-coder' if it scores highest for the code subtask
+
+// Remove a custom model
+unregisterModel('my-math-model');
+
+// View all registered models
+const snapshot = getRegistrySnapshot();
+console.log(snapshot.map(m => m.id));
+// ['glm-5.2-1m', 'glm-5.2', 'glm-5.1', 'glm-5', 'glm-5v-turbo', 'glm-4.7', 'my-custom-coder', 'my-docs-model']
+```
+
+#### Validation Rules
+
+When registering a custom model, the following validation rules apply:
+
+| Field | Rule |
+|-------|------|
+| `id` | Required. Must be unique (cannot overlap with existing model IDs). Non-empty string. |
+| `name` | Required. Non-empty string. |
+| `tier` | Required. One of `'flagship'`, `'standard'`, `'fast'`, `'creative'`, `'custom'`. |
+| `contextWindow` | Required. Positive integer. |
+| `speedRank` | Required. Integer 1–6 (1 = fastest). |
+| `qualityRank` | Required. Integer 1–6 (1 = best quality). |
+| `costWeight` | Required. Positive number (relative cost multiplier). |
+| `supportsThinking` | Required. Boolean. |
+| `supportsVision` | Required. Boolean. |
+| `capabilities` | Required. Non-empty array of valid `ModelCapability` strings. |
+
+> **Note:** Attempting to register a model with a duplicate `id` will throw an error. Use `unregisterModel()` first if you need to replace an existing model.
+
+---
+
+### Budget-Aware Routing
+
+Control costs by setting budget constraints on routing decisions. The router will avoid selecting models whose combined cost weight exceeds your budget.
+
+#### BudgetConstraint Interface
+
+```typescript
+interface BudgetConstraint {
+  maxTotalCostWeight: number;  // Maximum total cost weight for the entire orchestration
+}
+```
+
+#### API
+
+| Function | Description |
+|----------|-------------|
+| `optimizeForBudget(subTasks, budget)` | Re-routes subtasks to fit within a budget constraint |
+| `calculateTotalCost(routingDecisions)` | Calculate the total cost weight of a set of routing decisions |
+| `findCheapestModel(capability)` | Find the model with the lowest cost weight for a given capability |
+| `isWithinBudget(routingDecisions, budget)` | Check whether a set of routing decisions is within budget |
+
+#### Per-Request maxCostWeight
+
+You can set a maximum cost weight on individual requests:
+
+```javascript
+const result = await orchestrator.process('Explain microservices patterns', {
+  maxCostWeight: 4.0,  // Total cost weight must not exceed 4.0×
+});
+```
+
+#### Config-Level maxTotalCostWeight
+
+Set a global budget cap in the orchestrator configuration:
+
+```javascript
+const orch = createOrchestrator({
+  maxTotalCostWeight: 5.0,  // No orchestration run can exceed 5.0× total cost
+  defaultMode: 'balanced',
+});
+```
+
+#### Code Examples
+
+```javascript
+import {
+  createOrchestrator,
+  optimizeForBudget,
+  calculateTotalCost,
+  findCheapestModel,
+  isWithinBudget,
+} from 'nexus-dev-mmf';
+
+// Find the cheapest model for a capability
+const cheapest = findCheapestModel('code');
+console.log(`Cheapest code model: ${cheapest.id} (${cheapest.costWeight}×)`);
+
+// Calculate total cost of routing decisions
+const result = await orchestrator.process('Build a REST API');
+const totalCost = calculateTotalCost(result.routingDecisions);
+console.log(`Total cost weight: ${totalCost}×`);
+
+// Check if within budget
+const withinBudget = isWithinBudget(result.routingDecisions, { maxTotalCostWeight: 5.0 });
+console.log(`Within budget: ${withinBudget}`);
+
+// Optimize routing for a specific budget
+const orch = createOrchestrator({ defaultMode: 'quality' });
+const expensiveResult = await orch.process('Design a distributed system');
+const cost = calculateTotalCost(expensiveResult.routingDecisions);
+
+if (!isWithinBudget(expensiveResult.routingDecisions, { maxTotalCostWeight: 4.0 })) {
+  // Re-route to fit budget
+  const optimized = optimizeForBudget(
+    expensiveResult.subTaskResults.map(r => r.subTaskId),
+    { maxTotalCostWeight: 4.0 }
+  );
+  console.log('Re-routed to fit budget');
+}
+```
+
+---
+
+### Multi-Turn Conversations
+
+Maintain context across multiple orchestration calls within the same conversation. The `ConversationManager` automatically injects previous context into new requests.
+
+#### API
+
+| Function / Class | Description |
+|------------------|-------------|
+| `ConversationManager` | Manages conversation state and context across turns |
+| `startConversation(query, options?)` | Start a new conversation with an initial query |
+| `continueConversation(conversationId, query, options?)` | Continue an existing conversation with a follow-up query |
+
+#### Auto-Context Injection
+
+When you continue a conversation, the system automatically:
+1. Retrieves the previous `OrchestrationResult` for the conversation
+2. Extracts the answer, models used, and key metadata
+3. Injects this as context into the new request's decomposer and synthesizer
+4. Preserves the `conversationId` for traceability
+
+#### Code Examples
+
+```javascript
+import { createOrchestrator, ConversationManager } from 'nexus-dev-mmf';
+
+const orch = createOrchestrator({ defaultMode: 'quality' });
+const conversation = new ConversationManager(orch);
+
+// Start a conversation
+const result1 = await conversation.startConversation(
+  'Design a URL shortener service'
+);
+console.log(result1.answer);
+console.log(`Conversation ID: ${result1.conversationId}`);
+
+// Continue the conversation with a follow-up
+const result2 = await conversation.continueConversation(
+  result1.conversationId,
+  'Now add rate limiting and analytics to the design'
+);
+console.log(result2.answer);
+// The previous answer about the URL shortener design is automatically
+// injected as context, so the follow-up builds on it coherently.
+
+// Continue further
+const result3 = await conversation.continueConversation(
+  result1.conversationId,
+  'What database would be best for this? Compare PostgreSQL, DynamoDB, and Redis.'
+);
+console.log(result3.answer);
+// Full context of both previous turns is available.
+```
+
+#### Manual Conversation ID
+
+You can also pass `conversationId` directly in the `process()` options:
+
+```javascript
+const result = await orchestrator.process('Add caching to the API', {
+  conversationId: 'conv-abc-123',
+  preferredMode: 'quality',
+});
+```
+
+---
+
+### Pipeline Event Streaming
+
+Monitor pipeline progress in real-time with the `NexusEventEmitter`. Thirteen event types cover every stage of the pipeline lifecycle.
+
+#### NexusEventEmitter
+
+```javascript
+import { createOrchestrator } from 'nexus-dev-mmf';
+
+const orch = createOrchestrator({ enableEvents: true });
+const emitter = orch.getEventEmitter();
+```
+
+#### Event Types
+
+| Event Type | Payload | Description |
+|-----------|---------|-------------|
+| `pipeline:start` | `{ requestId, query, mode }` | Pipeline has started |
+| `pipeline:complete` | `{ requestId, result }` | Pipeline completed successfully |
+| `pipeline:error` | `{ requestId, error }` | Pipeline failed |
+| `decompose:start` | `{ requestId }` | Decomposition phase started |
+| `decompose:complete` | `{ requestId, subTasks }` | Decomposition produced subtasks |
+| `decompose:error` | `{ requestId, error }` | Decomposition failed |
+| `route:start` | `{ requestId, subTaskCount }` | Routing phase started |
+| `route:complete` | `{ requestId, decisions }` | Routing decisions made |
+| `execute:start` | `{ requestId, subTaskId, modelId }` | Subtask execution started |
+| `execute:complete` | `{ requestId, subTaskId, result }` | Subtask completed |
+| `execute:error` | `{ requestId, subTaskId, error }` | Subtask execution failed |
+| `synthesize:start` | `{ requestId }` | Synthesis phase started |
+| `synthesize:complete` | `{ requestId, qualityScore }` | Synthesis completed |
+
+#### Listeners
+
+```javascript
+// Listen for a specific event type
+emitter.on('execute:complete', (payload) => {
+  console.log(`Subtask ${payload.subTaskId} completed on ${payload.result.modelId}`);
+});
+
+// Listen for all events
+emitter.onAny((eventType, payload) => {
+  console.log(`[${eventType}]`, payload);
+});
+
+// Listen for events of a specific category
+emitter.onType('execute', (payload) => {
+  // Catches execute:start, execute:complete, execute:error
+  console.log(`Execute event for ${payload.subTaskId}`);
+});
+```
+
+#### Event Log Access
+
+```javascript
+// Get the full event log for a request
+const log = emitter.getLog('request-id-123');
+for (const entry of log) {
+  console.log(`[${entry.timestamp}] ${entry.type}:`, entry.payload);
+}
+
+// Get all events
+const allLogs = emitter.getAllLogs();
+```
+
+#### Code Example — Real-Time Progress Bar
+
+```javascript
+const orch = createOrchestrator({ enableEvents: true });
+const emitter = orch.getEventEmitter();
+
+let completed = 0;
+let total = 0;
+
+emitter.on('decompose:complete', (payload) => {
+  total = payload.subTasks.length;
+  console.log(`Decomposed into ${total} subtasks`);
+});
+
+emitter.on('execute:complete', () => {
+  completed++;
+  const pct = Math.round((completed / total) * 100);
+  console.log(`Progress: ${completed}/${total} (${pct}%)`);
+});
+
+emitter.on('pipeline:complete', (payload) => {
+  console.log(`Done! Quality: ${payload.result.qualityScore}/100`);
+});
+
+const result = await orch.process('Design a microservices architecture');
+```
+
+---
+
+### Model Performance Tracking
+
+Track model performance over time to inform routing decisions. The `PerformanceTracker` records successes and failures, then uses this data to recommend the best model for each capability.
+
+#### PerformanceTracker
+
+```javascript
+import { createOrchestrator } from 'nexus-dev-mmf';
+
+const orch = createOrchestrator({ enablePerformanceTracking: true });
+const tracker = orch.getPerformanceTracker();
+```
+
+#### API
+
+| Method | Description |
+|--------|-------------|
+| `recordSuccess(modelId, capability, executionTimeMs, qualityScore?)` | Record a successful model execution |
+| `recordFailure(modelId, capability, error)` | Record a failed model execution |
+| `getBestModelForCapability(capability)` | Get the model ID with the best track record for a capability |
+| `getReliability(modelId, capability)` | Get the reliability score (0–1) for a model on a capability |
+| `getStats(modelId?)` | Get performance stats for a model or all models |
+| `exportJSON()` | Export all tracking data as JSON |
+| `importJSON(data)` | Import tracking data from a previous export |
+
+#### Code Examples
+
+```javascript
+const orch = createOrchestrator({ enablePerformanceTracking: true });
+const tracker = orch.getPerformanceTracker();
+
+// Records are automatically captured during pipeline execution
+const result = await orch.process('Implement a red-black tree in Rust');
+
+// Query the best model for a capability
+const bestForCode = tracker.getBestModelForCapability('code');
+console.log(`Best model for code: ${bestForCode}`);
+
+// Check a specific model's reliability
+const reliability = tracker.getReliability('glm-5.2', 'reasoning');
+console.log(`glm-5.2 reasoning reliability: ${(reliability * 100).toFixed(1)}%`);
+
+// Get stats for all models
+const allStats = tracker.getStats();
+for (const [modelId, stats] of Object.entries(allStats)) {
+  console.log(`${modelId}: ${stats.successes} successes, ${stats.failures} failures`);
+}
+
+// Export tracking data for persistence
+const data = tracker.exportJSON();
+// Save to file, database, etc.
+
+// Import previously saved tracking data
+tracker.importJSON(data);
+```
+
+#### Manual Recording
+
+You can also manually record performance data:
+
+```javascript
+// Record a custom success
+tracker.recordSuccess('glm-5.2', 'reasoning', 2340, 92);
+
+// Record a failure
+tracker.recordFailure('glm-5', 'reasoning', 'Timeout after 30000ms');
+
+// Query results
+const best = tracker.getBestModelForCapability('reasoning');
+console.log(`Best for reasoning: ${best}`); // 'glm-5.2' (if it has a better track record)
+```
+
+---
+
+### Updated Configuration (v2)
+
+The following configuration options were added in v2.0.0. They are also included in the [Full Options Table](#full-options-table) above.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxTotalCostWeight` | `number` | `Infinity` | Maximum total cost weight allowed per orchestration run; routing will avoid models that would exceed this budget |
+| `enablePerformanceTracking` | `boolean` | `true` | Enable model performance tracking via `PerformanceTracker` |
+| `enableEvents` | `boolean` | `true` | Enable pipeline event streaming via `NexusEventEmitter` |
+
+#### Budget-Constrained Configuration Example
+
+```javascript
+const orch = createOrchestrator({
+  maxTotalCostWeight: 6.0,           // Cap total cost at 6.0× per run
+  enablePerformanceTracking: true,    // Track model performance over time
+  enableEvents: true,                 // Enable real-time event streaming
+  defaultMode: 'balanced',
+});
+```
+
+---
+
+### Updated Types (v2)
+
+The following new fields were added to existing types in v2.0.0.
+
+#### OrchestrationResult — New Fields
+
+```typescript
+interface OrchestrationResult {
+  // ... existing fields ...
+
+  totalCostWeight: number;        // Sum of cost weights for all models used in this run
+  conversationId?: string;        // ID of the conversation this result belongs to (if multi-turn)
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalCostWeight` | `number` | The sum of `costWeight` values for all models that were selected during routing. Useful for cost tracking and budget enforcement. |
+| `conversationId` | `string?` | If this orchestration was part of a multi-turn conversation, this is the conversation ID. Matches the `conversationId` passed in the request. |
+
+#### OrchestrationRequest — New Fields
+
+```typescript
+interface OrchestrationRequest {
+  // ... existing fields ...
+
+  conversationId?: string;        // Link to an existing conversation for multi-turn context
+  maxCostWeight?: number;         // Per-request maximum total cost weight override
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `conversationId` | `string?` | — | If provided, the orchestrator will inject context from the previous turn in this conversation. Enables multi-turn orchestration. |
+| `maxCostWeight` | `number?` | — | Per-request override for the maximum total cost weight. If set, this takes precedence over the config-level `maxTotalCostWeight` for this request only. |
+
+#### Using the New Fields
+
+```javascript
+// Multi-turn with conversation ID
+const result1 = await orch.process('Design a REST API');
+console.log(`Cost: ${result1.totalCostWeight}×`);
+
+const result2 = await orch.process('Add authentication', {
+  conversationId: result1.conversationId,
+});
+console.log(`Cost: ${result2.totalCostWeight}×`);
+
+// Per-request budget override
+const result3 = await orch.process('Quick summary', {
+  maxCostWeight: 2.0,  // Use cheap models only for this request
+});
+```
 
 ---
 

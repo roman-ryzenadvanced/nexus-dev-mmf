@@ -71,6 +71,7 @@ export class Synthesizer {
         decompositionStrategy: 'multi-model-parallel',
         synthesisStrategy: 'none-failed',
         qualityScore: 0,
+        totalCostWeight: 0,
         metadata: { error: 'all-subtasks-failed' },
       };
     }
@@ -122,6 +123,7 @@ export class Synthesizer {
       decompositionStrategy: 'multi-model-parallel',
       synthesisStrategy: qualityScore < this.config.qualityThreshold ? 'refined' : 'primary',
       qualityScore,
+      totalCostWeight: 0, // Will be filled by orchestrator
       metadata: {
         successfulSubTasks: successfulResults.length,
         failedSubTasks: failedResults.length,

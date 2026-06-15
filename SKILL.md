@@ -1,6 +1,6 @@
 ---
 name: nexus-dev-mmf
-version: 1.0.0
+version: 2.0.0
 description: |
   Multi-Model Fusion Engine (MMFE) — An adaptive multi-model orchestrator that decomposes complex tasks,
   routes subtasks to the optimal GLM models via z-ai-web-dev-sdk, executes in parallel, and synthesizes
