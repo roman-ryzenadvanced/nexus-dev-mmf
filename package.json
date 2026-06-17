@@ -1,7 +1,7 @@
 {
   "name": "nexus-dev-mmf",
-  "version": "4.0.0",
-  "description": "Multi-Model Fusion Engine (MMFE) — Adaptive multi-model orchestrator with MTP hyperthreading, code review, design skill with AI SLOPE elimination, and multi-provider support (ZAI/GLM, OpenAI, Anthropic, Google). Decomposes, routes, executes in parallel, and synthesizes results across any LLM provider.",
+  "version": "5.0.0",
+  "description": "Multi-Model Fusion Engine (MMFE) — Adaptive multi-model orchestrator with MTP hyperthreading, code review, design skill, Nexus Code TUI, and multi-provider support (ZAI/GLM, OpenAI, Anthropic). Decomposes, routes, executes in parallel, and synthesizes results across any LLM provider.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,10 +10,18 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:nexus-code": "cd packages/nexus-code && npm run build",
+    "build:all": "npm run build && npm run build:nexus-code",
     "test": "node --test tests/runner.mjs",
     "test:quick": "node --test tests/runner.mjs --quick",
-    "start": "node dist/cli.js"
+    "test:nexus-code": "cd packages/nexus-code && npm test",
+    "test:all": "npm test && npm run test:nexus-code",
+    "start": "node dist/cli.js",
+    "nexus-code": "cd packages/nexus-code && node bin/nexus.js"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "keywords": [
     "multi-model",
     "orchestrator",
@@ -34,9 +42,15 @@
     "code-review",
     "ui-ux",
     "multi-provider",
-    "llm-router"
+    "llm-router",
+    "tui",
+    "cli",
+    "terminal",
+    "nexus-code",
+    "ink",
+    "react"
   ],
-  "author": "Nexus-Dev",
+  "author": "roman-ryzenadvanced",
   "license": "MIT",
   "dependencies": {
     "csv-parse": "^7.0.0",

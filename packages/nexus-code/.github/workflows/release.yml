@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version + changelog section
+        id: extract
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Extract the matching section from CHANGELOG.md
+          # Looks for `## [X.Y.Z] — DATE` and stops at the next `## [` or end of file.
+          CHANGELOG_PATH="packages/nexus-code/CHANGELOG.md"
+          if [ -f "$CHANGELOG_PATH" ]; then
+            BODY=$(awk -v ver="$VERSION" '
+              $0 ~ "^## \\[" ver "\\]" { found=1; next }
+              found && /^## \[/ { exit }
+              found { print }
+            ' "$CHANGELOG_PATH")
+            # Write to file to preserve multi-line + special chars
+            echo "$BODY" > /tmp/release-notes.md
+            echo "Extracted release notes ($(wc -l < /tmp/release-notes.md) lines)"
+          else
+            echo "Release for v$VERSION" > /tmp/release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: nexus-code v${{ steps.extract.outputs.version }}
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: false
+          generate_release_notes: false

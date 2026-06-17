@@ -1,0 +1,59 @@
+{
+  "version": "1.1.0",
+  "activeProviderId": "zai",
+  "activeModelId": "glm-5.2",
+  "mode": "balanced",
+  "useMMFE": true,
+  "providers": [
+    {
+      "id": "zai",
+      "kind": "zai",
+      "name": "Z.ai (MMFE native)",
+      "mmfe": true,
+      "defaultModel": "glm-5.2"
+    },
+    {
+      "id": "openai",
+      "kind": "openai",
+      "name": "OpenAI",
+      "baseURL": "https://api.openai.com/v1",
+      "mmfe": false,
+      "defaultModel": "gpt-4o"
+    },
+    {
+      "id": "anthropic",
+      "kind": "anthropic",
+      "name": "Anthropic",
+      "baseURL": "https://api.anthropic.com",
+      "mmfe": false,
+      "defaultModel": "claude-3-5-sonnet-20241022"
+    },
+    {
+      "id": "ollama-local",
+      "kind": "openai",
+      "name": "Ollama (local)",
+      "baseURL": "http://localhost:11434/v1",
+      "mmfe": false,
+      "defaultModel": "llama3.1:8b"
+    },
+    {
+      "id": "openrouter",
+      "kind": "openai",
+      "name": "OpenRouter",
+      "baseURL": "https://openrouter.ai/api/v1",
+      "mmfe": false,
+      "defaultModel": "anthropic/claude-3.5-sonnet"
+    }
+  ],
+  "manualModels": [
+    { "id": "gpt-4o-mini", "providerId": "openai", "label": "GPT-4o mini", "source": "manual" },
+    { "id": "deepseek-chat", "providerId": "openrouter", "label": "DeepSeek V3", "source": "manual" }
+  ],
+  "mcpServers": [],
+  "ui": {
+    "theme": "tech-dark",
+    "showRouting": true,
+    "showTokens": true,
+    "showTimestamps": false
+  }
+}

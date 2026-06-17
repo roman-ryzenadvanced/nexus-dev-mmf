@@ -6,13 +6,13 @@
 
 **An intelligent multi-model orchestration framework that decomposes complex tasks, adaptively routes subtasks to the optimal GLM models, executes them in parallel, and synthesizes a single unified answer — with MTP hyperthreading, code review, and AI SLOPE elimination for design tasks.**
 
-[![Version](https://img.shields.io/badge/Version-v4.0.0-brightgreen.svg)](#v40-features---multi-provider)
+[![Version](https://img.shields.io/badge/Version-v5.0.0-brightgreen.svg)](#v50-features---nexus-code-tui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
-[![Models](https://img.shields.io/badge/Models-16%2B%20%7C%204%20Providers-orange.svg)](#supported-models)
+[![npm](https://img.shields.io/npm/v/nexus-code)](https://www.npmjs.com/package/nexus-code)
 
-[Installation](#installation) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Agentic Tools](#using-nexus-with-agentic-tools) · [API Reference](#api-reference) · [CLI Reference](#cli-reference) · [Design Skill](#design-skill--ai-slope-elimination) · [Code Review](#code-review-engine) · [MTP](#mtp-multi-threaded-pipeline)
+[Installation](#installation) · [Quick Start](#quick-start) · [Nexus Code TUI](#nexus-code--terminal-ai-coding-assistant) · [Architecture](#architecture) · [API Reference](#api-reference) · [Design Skill](#design-skill--ai-slope-elimination) · [Code Review](#code-review-engine) · [MTP](#mtp-multi-threaded-pipeline)
 
 </div>
 
@@ -124,6 +124,7 @@ Think of it as assembling a team of specialists: a reasoning expert, a speed dem
 
 ## Key Features
 
+- **Nexus Code TUI** — Terminal AI coding assistant with Ink + React, multi-provider chat, slash commands, streaming, tool calling, MCP support, and MMFE built in
 - **Adaptive Routing Layer (ARL)** — Weighted multi-factor scoring (capability 40pts, mode 30pts, complexity 20pts, load balance) routes each subtask to the optimal model
 - **Parallel Execution** — Dependency-aware wave-based parallel execution with automatic retry on alternative models
 - **Intelligent Synthesis** — Flagship model merges all subtask results with quality scoring and automatic refinement loops
@@ -512,6 +513,105 @@ node scripts/code-review.mjs "$(git diff -- myfile.ts)"
 # Run with MTP hyperthreading (speculative decomposition + execution)
 node scripts/mtp-fusion.mjs "Complex multi-step task requiring multiple model capabilities"
 ```
+
+---
+
+## Nexus Code — Terminal AI Coding Assistant
+
+**Nexus Code** (`nexus-code`) is a terminal UI client for chatting with GLM, OpenAI, Anthropic, and any OpenAI-compatible endpoint — with the Multi-Model Fusion Engine built in. It lives at `packages/nexus-code/`.
+
+### Install
+
+```bash
+npm install -g nexus-code
+```
+
+Or run from source:
+
+```bash
+cd packages/nexus-code
+npm install
+npm run build
+node bin/nexus.js
+```
+
+### Features
+
+- **Three provider kinds**: OpenAI-compatible, Anthropic, Z.ai (MMFE native)
+- **Auto-fetch models** via `/v1/models` for OpenAI + Anthropic
+- **Manual model add** via `/add` slash command or config file
+- **MMFE orchestrator built in** — mode switcher, routing panel, quality score
+- **Provider unlocked** — bypass MMFE with `/mmfe off` for direct provider calls
+- **Streaming responses** with token-by-token rendering
+- **20 slash commands**: `/mode`, `/model`, `/provider`, `/clear`, `/save`, `/load`, `/fetch`, `/add`, `/mcp`, `/diff`, `/init`, `/branch`, `/theme`, `/status`, `/history`, `/plugins`, `/help`, `/exit`, and more
+- **Input history** (up/down arrow navigation, persisted to `~/.nexus/history.json`)
+- **Session persistence** — save and load chat transcripts
+- **File context tools** (`fs`, `shell`, `diff`, `apply_diff`)
+- **MCP support** (Model Context Protocol) — stdio + HTTP transports
+- **Plugin system** — load custom tools/commands from `~/.nexus/plugins/*.js`
+- **Command palette** (Ctrl+P) — fuzzy-filter slash commands
+- **Web UI** (`nexus --web`) — local HTTP server + browser chat with SSE streaming
+- **Pipe mode** — `echo "prompt" | nexus` for scripting
+- **3 TUI themes**: tech-dark, editorial-light, hacker-terminal
+- **230+ tests** passing with 61% coverage
+
+### Quick Start
+
+```bash
+# Set API keys (any subset)
+export ZAI_API_KEY=...
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
+
+# Boot the TUI
+nexus
+```
+
+### First-Run Setup
+
+On first launch, `nexus-code` creates `~/.nexus/config.json` with three default providers (zai, openai, anthropic). Edit it to add custom providers, API keys, or manual model entries.
+
+### Adding a Custom Provider
+
+Edit `~/.nexus/config.json`:
+
+```json
+{
+  "providers": [
+    {
+      "id": "openrouter",
+      "kind": "openai",
+      "name": "OpenRouter",
+      "baseURL": "https://openrouter.ai/api/v1",
+      "apiKey": "sk-or-...",
+      "mmfe": false,
+      "defaultModel": "anthropic/claude-3.5-sonnet"
+    },
+    {
+      "id": "ollama-local",
+      "kind": "openai",
+      "name": "Ollama (local)",
+      "baseURL": "http://localhost:11434/v1",
+      "mmfe": false,
+      "defaultModel": "llama3.1:8b"
+    }
+  ]
+}
+```
+
+### Nexus Code Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [Features](./packages/nexus-code/docs/FEATURES.md) | Every feature, version added, how to use |
+| [Tests](./packages/nexus-code/docs/TESTS.md) | Every test suite, coverage, how to run |
+| [Root Cause Analysis](./packages/nexus-code/docs/ROOT-CAUSE-ANALYSIS.md) | Every bug, root cause, exact fix |
+| [Release Notes v1.1.7](./packages/nexus-code/docs/RELEASE-NOTES-v1.1.7.md) | Consolidated release notes |
+| [Providers](./packages/nexus-code/docs/providers.md) | Provider setup and configuration |
+| [Slash Commands](./packages/nexus-code/docs/commands.md) | Full command reference |
+| [MCP Integration](./packages/nexus-code/docs/mcp.md) | Model Context Protocol setup |
+| [Architecture](./packages/nexus-code/docs/architecture.md) | Internal architecture overview |
+| [Example Config](./packages/nexus-code/examples/config.json) | Full config example |
 
 ---
 

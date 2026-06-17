@@ -1,0 +1,88 @@
+{
+  "name": "nexus-code",
+  "version": "1.1.7",
+  "description": "Nexus Code — terminal AI coding assistant for the Nexus-Dev MMFE ecosystem. Multi-provider (OpenAI-compatible, Anthropic, z-ai-web-dev-sdk), with the Multi-Model Fusion Engine built in.",
+  "type": "module",
+  "license": "MIT",
+  "author": "roman-ryzenadvanced",
+  "homepage": "https://github.com/roman-ryzenadvanced/nexus-dev-mmf",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git",
+    "directory": "packages/nexus-code"
+  },
+  "bugs": {
+    "url": "https://github.com/roman-ryzenadvanced/nexus-dev-mmf/issues"
+  },
+  "keywords": [
+    "nexus",
+    "mmfe",
+    "multi-model",
+    "orchestrator",
+    "tui",
+    "cli",
+    "openai",
+    "anthropic",
+    "glm",
+    "z-ai",
+    "ink",
+    "react",
+    "terminal"
+  ],
+  "bin": {
+    "nexus-code": "./bin/nexus.js",
+    "nexus": "./bin/nexus.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "examples/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.tsx",
+    "start": "node bin/nexus.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:smoke": "vitest run --root . src/__tests__/smoke-real.test.ts",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist node_modules"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "diff": "^5.2.0",
+    "ink": "^5.0.1",
+    "ink-select-input": "^6.0.0",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "openai": "^4.73.0",
+    "react": "^18.3.1",
+    "z-ai-web-dev-sdk": "^0.0.18",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/diff": "^5.2.3",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^8.57.0",
+    "ink-testing-library": "^4.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.4"
+  },
+  "peerDependenciesMeta": {}
+}

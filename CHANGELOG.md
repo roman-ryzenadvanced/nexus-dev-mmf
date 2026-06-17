@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.0] — 2026-06-17
+
+### 🚀 Major New Feature: Nexus Code — Terminal AI Coding Assistant
+
+Nexus-Dev MMFE v5.0 adds **Nexus Code** (`nexus-code`), a full terminal UI coding assistant built with Ink + React that lives at `packages/nexus-code/`. Nexus Code integrates the MMFE orchestrator directly into an interactive terminal chat experience with multi-provider support, streaming, tool calling, and extensive slash command system.
+
+#### What's New
+
+- **Nexus Code TUI** — Ink + React terminal UI with streaming chat, 3 color themes, command palette
+- **Multi-provider chat** — OpenAI-compatible, Anthropic, Z.ai (MMFE native) — switch with `/provider`
+- **MMFE built in** — mode switcher (`/mode quality`), routing panel, quality score — or bypass with `/mmfe off`
+- **20 slash commands** — `/mode`, `/model`, `/provider`, `/fetch`, `/add`, `/save`, `/load`, `/diff`, `/init`, `/branch`, `/theme`, `/status`, `/history`, `/plugins`, `/mcp`, `/tools`, `/clear`, `/help`, `/exit`
+- **Streaming responses** — token-by-token rendering with Ctrl+C abort
+- **Tool calling** — provider-agnostic tool protocol, 5 builtin tools (`read_file`, `write_file`, `shell`, `diff`, `apply_diff`), up to 5 tool rounds
+- **MCP support** — Model Context Protocol with stdio + HTTP transports
+- **Plugin system** — load custom tools/commands from `~/.nexus/plugins/*.js`
+- **Web UI** — `nexus --web` launches local HTTP server + browser chat with SSE streaming
+- **Pipe mode** — `echo "prompt" | nexus` for scripting
+- **Command palette** — Ctrl+P fuzzy-filter slash commands
+- **Session persistence** — save/load chat transcripts
+- **Input history** — persisted to `~/.nexus/history.json` (500 entries)
+- **Config wizard** — `nexus init` or `/init` interactive setup
+- **Multi-line input** — Shift+Enter for newline
+- **Conversation branching** — `/branch <msgId>` fork from past message
+- **Auto-fetch models** — `/fetch` pulls model list from provider's `/v1/models`
+
+#### Monorepo Structure
+
+```
+nexus-dev-mmf/
+├── src/                          # MMFE orchestrator (v1.0+)
+├── packages/nexus-code/          # Nexus Code TUI (v1.1.0+)
+└── package.json                  # Workspace root
+```
+
+#### Test Coverage
+
+- 230+ unit tests across 20 test suites
+- 61% code coverage (threshold: 40%)
+- 8 env-gated smoke tests (real API calls)
+
+#### CI/CD
+
+- 3 GitHub Actions workflows: CI matrix (Node 18/20/22), npm publish on tag, GitHub Release with auto-changelog
+
+---
+
 ## [4.0.0] — 2026-06-15
 
 ### 🚀 Major New Feature: Multi-Provider Support (ZAI, OpenAI, Anthropic, Google)
