@@ -207,6 +207,11 @@ async function runStreamWithRetry(
       let final: ChatResponse | undefined;
       // Drain the generator — onDelta is called inside the provider's streamChat.
       while (true) {
+        // Check for abort before each chunk
+        if (opts.signal?.aborted) {
+          try { gen.return?.(undefined as any); } catch {}
+          throw new DOMException('The operation was aborted.', 'AbortError');
+        }
         const { done, value } = await gen.next();
         if (done) {
           final = value as ChatResponse | undefined;

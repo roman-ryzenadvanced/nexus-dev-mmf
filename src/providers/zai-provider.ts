@@ -1,13 +1,17 @@
 /**
  * Nexus-Dev MMFE — ZAI Provider Adapter
  *
- * Wraps the z-ai-web-dev-sdk as an LLMProvider, maintaining full
- * backward compatibility with the existing Nexus implementation.
+ * Wraps the z-ai-web-dev-sdk as an LLMProvider using the shared
+ * zai-loader for auto-config with coding-specific endpoints.
  *
- * @version 4.0.0
+ * Coding endpoints (with fallback):
+ *   Primary:   https://open.bigmodel.cn/api/coding/paas/v4
+ *   Fallback:  https://api.z.ai/api/coding/paas/v4
+ *
+ * @version 5.0.0
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
+import { loadZAIClient } from './zai-loader.js';
 import {
   LLMProvider,
   ProviderId,
@@ -16,6 +20,8 @@ import {
   ProviderCompletionOptions,
   ProviderCompletionResult,
 } from './types.js';
+
+const ZAI_CODING_BASE_PRIMARY = 'https://open.bigmodel.cn/api/coding/paas/v4';
 
 export class ZAIProvider implements LLMProvider {
   readonly providerId: ProviderId = 'zai';
@@ -29,7 +35,7 @@ export class ZAIProvider implements LLMProvider {
     'glm-4.7',
   ];
 
-  private client: ZAI | null = null;
+  private client: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
   private _isReady = false;
   private config: ProviderConfig | null = null;
 
@@ -40,12 +46,27 @@ export class ZAIProvider implements LLMProvider {
   async initialize(config: ProviderConfig): Promise<void> {
     this.config = config;
     try {
-      this.client = await ZAI.create();
+      this.client = await loadZAIClient();
       this._isReady = true;
     } catch (error: any) {
       this._isReady = false;
-      throw new Error(`ZAI provider initialization failed: ${error?.message ?? 'Unknown error'}`);
+      const msg = error?.message ?? 'Unknown error';
+      if (msg.includes('Configuration file not found')) {
+        throw new Error(
+          `ZAI provider: No .z-ai-config found. Set ZAI_API_KEY env var or create ~/.z-ai-config with: ` +
+          `{"baseUrl":"${ZAI_CODING_BASE_PRIMARY}","apiKey":"YOUR_KEY"}`
+        );
+      }
+      throw new Error(`ZAI provider initialization failed: ${msg}`);
     }
+  }
+
+  private async ensureClient(): Promise<Awaited<ReturnType<typeof loadZAIClient>>> {
+    if (!this.client) {
+      this.client = await loadZAIClient();
+      this._isReady = true;
+    }
+    return this.client;
   }
 
   async complete(
@@ -53,17 +74,14 @@ export class ZAIProvider implements LLMProvider {
     messages: ProviderMessage[],
     options?: ProviderCompletionOptions
   ): Promise<ProviderCompletionResult> {
-    if (!this.client) {
-      this.client = await ZAI.create();
-      this._isReady = true;
-    }
+    const client = await this.ensureClient();
 
     const zaiMessages = messages.map(m => ({
       role: m.role as 'system' | 'user' | 'assistant',
       content: m.content,
     }));
 
-    const requestOptions: any = {
+    const requestOptions: Record<string, unknown> = {
       model,
       messages: zaiMessages,
       temperature: options?.temperature ?? 0.4,
@@ -90,7 +108,13 @@ export class ZAIProvider implements LLMProvider {
       Object.assign(requestOptions, options.providerOptions);
     }
 
-    const response = await this.client.chat.completions.create(requestOptions);
+    const response = (await client.chat.completions.create(requestOptions)) as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+      id?: string;
+      created?: number;
+      model?: string;
+    };
 
     const content = response.choices?.[0]?.message?.content ?? '';
 
@@ -113,15 +137,12 @@ export class ZAIProvider implements LLMProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      if (!this.client) {
-        this.client = await ZAI.create();
-      }
-      // Try a minimal request to verify connectivity
-      const response = await this.client.chat.completions.create({
+      const client = await this.ensureClient();
+      const response = (await client.chat.completions.create({
         model: 'glm-5',
         messages: [{ role: 'user', content: 'ping' }],
         max_tokens: 1,
-      });
+      })) as { choices?: Array<{ message?: { content?: string } }> };
       return !!response.choices?.[0]?.message?.content;
     } catch {
       return false;

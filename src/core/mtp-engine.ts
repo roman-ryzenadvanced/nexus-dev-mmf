@@ -23,7 +23,7 @@
  * └──────────────────────────────────────────────────────────────────┘
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
+import { loadZAIClient } from '../providers/zai-loader.js';
 import { uuidv4 } from './utils/uuid.js';
 import { SubTask, SubTaskResult, OrchestrationRequest, OrchestrationResult, RoutingDecision } from './types.js';
 import { MODEL_REGISTRY } from './models.js';
@@ -74,7 +74,7 @@ OUTPUT: A single, polished, comprehensive answer.`;
 // ──────────────── MTP ENGINE ────────────────
 
 export class MTPEngine {
-  private zai: ZAI | null = null;
+  private zai: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
   private config: NexusDevConfig;
   private mtpConfig: MTPConfig;
   private threads: Map<string, MTPThread> = new Map();
@@ -99,9 +99,9 @@ export class MTPEngine {
     this.mtpConfig = { ...DEFAULT_MTP_CONFIG, ...mtpConfig };
   }
 
-  private async getClient(): Promise<ZAI> {
+  private async getClient() {
     if (!this.zai) {
-      this.zai = await ZAI.create();
+      this.zai = await loadZAIClient();
     }
     return this.zai;
   }

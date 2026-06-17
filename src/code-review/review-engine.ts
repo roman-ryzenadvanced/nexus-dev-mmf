@@ -17,7 +17,7 @@
  * - Filter runs concurrently with synthesis
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
+import { loadZAIClient } from '../providers/zai-loader.js';
 import {
   CodeReviewRequest,
   CodeReviewResult,
@@ -49,16 +49,16 @@ const REVIEW_MODEL_ASSIGNMENTS = {
 } as const;
 
 export class CodeReviewEngine {
-  private zai: ZAI | null = null;
+  private zai: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
   private config: CodeReviewConfig;
 
   constructor(config?: Partial<CodeReviewConfig>) {
     this.config = { ...DEFAULT_CODE_REVIEW_CONFIG, ...config };
   }
 
-  private async getClient(): Promise<ZAI> {
+  private async getClient() {
     if (!this.zai) {
-      this.zai = await ZAI.create();
+      this.zai = await loadZAIClient();
     }
     return this.zai;
   }

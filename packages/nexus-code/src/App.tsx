@@ -264,6 +264,10 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
       setStreaming(true);
       setStreamBuffer('');
 
+      // Create an AbortController for this request
+      const abortController = new AbortController();
+      abortRef.current = abortController;
+
       const allMessages = [...messages, userMsg];
       // Pass all registered tools to the provider so models can call them.
       const tools = toolRegistry.list().map((t: ToolDefinition) => ({
@@ -279,6 +283,7 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
           mode: config.mode,
           model: config.activeModelId,
           noMMFE: !config.useMMFE,
+          signal: abortController.signal,
           tools,
           maxToolRounds: 5,
           toolRegistry,
@@ -311,13 +316,18 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
         setStreaming(false);
         setRetryInfo(null);
         setToolCallInfo(null);
+        abortRef.current = null;
         pushMessage(res.message);
       } catch (err) {
         setStreaming(false);
         setStreamBuffer('');
         setRetryInfo(null);
         setToolCallInfo(null);
-        setError((err as Error).message);
+        abortRef.current = null;
+        // Don't show error for user-initiated aborts
+        if ((err as Error).name !== 'AbortError') {
+          setError((err as Error).message);
+        }
       }
     },
     [config, providers, messages, pushMessage]
@@ -352,6 +362,11 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
 
   const handleAbort = useCallback(() => {
     if (streaming) {
+      // Abort the in-flight request
+      if (abortRef.current) {
+        abortRef.current.abort();
+        abortRef.current = null;
+      }
       setStreaming(false);
       setStreamBuffer('');
       setError('Aborted.');
@@ -362,6 +377,7 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
 
   const pendingRoutingRef = useRef<ChatMessage['routing'] | null>(null);
   void pendingRoutingRef;
+  const abortRef = useRef<AbortController | null>(null);
 
   // Global Ctrl+P shortcut → toggle command palette
   useInput((input, key) => {

@@ -6,11 +6,15 @@
 //   const client = await ZAI.create();   // async factory
 //   await client.chat.completions.create({ model, messages, stream });
 //
+// Coding endpoints (with fallback):
+//   Primary:   https://open.bigmodel.cn/api/coding/paas/v4
+//   Fallback:  https://api.z.ai/api/coding/paas/v4
+//
 // MMFE orchestrator integration:
 //   The nexus-dev-mmf root package (this monorepo) exposes a separate
 //   `createOrchestrator` function. We try to import it dynamically; if
 //   it's not available (e.g. only the TUI package is installed), we
-//   fall back to direct provider calls and surface a warning.
+//   fall back to direct provider calls.
 // ============================================================
 
 import { BaseProvider, ProviderError } from './base.js';
@@ -20,6 +24,7 @@ import type {
   ChatResponse,
   ModelDescriptor,
   RoutingDecision,
+  ToolCall,
 } from '../types.js';
 import { BUILTIN_MODELS } from '../config/schema.js';
 
@@ -32,6 +37,7 @@ interface ZAIClient {
         messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
         stream?: boolean;
         thinking?: { type: 'enabled' | 'disabled' };
+        tools?: Array<unknown>;
       }) => Promise<unknown>;
     };
   };
@@ -57,14 +63,72 @@ interface MMFEModule {
   createOrchestrator?: (opts: Record<string, unknown>) => Orchestrator;
 }
 
-async function loadZAISDK(): Promise<ZAIClient> {
+const ZAI_CODING_BASE_PRIMARY = 'https://open.bigmodel.cn/api/coding/paas/v4';
+const ZAI_CODING_BASE_FALLBACK = 'https://api.z.ai/api/coding/paas/v4';
+
+async function loadZAISDK(apiKey?: string): Promise<ZAIClient> {
   try {
     const mod = (await import('z-ai-web-dev-sdk')) as unknown as ZAISDKModule;
+
+    // If the caller already has an API key (from config or env), write a
+    // .z-ai-config so the SDK's internal loadConfig() can find it.
+    const key = apiKey || process.env.ZAI_API_KEY;
+    if (key) {
+      const fs = await import('node:fs/promises');
+      const path = await import('node:path');
+      const os = await import('node:os');
+      const homeDir = os.homedir();
+      const configPaths = [
+        path.join(process.cwd(), '.z-ai-config'),
+        path.join(homeDir, '.z-ai-config'),
+      ];
+
+      // Check if any existing config is valid first
+      let hasValidConfig = false;
+      for (const filePath of configPaths) {
+        try {
+          const configStr = await fs.readFile(filePath, 'utf-8');
+          const config = JSON.parse(configStr);
+          if (config.baseUrl && config.apiKey) {
+            hasValidConfig = true;
+            break;
+          }
+        } catch {
+          // File doesn't exist or is invalid — continue
+        }
+      }
+
+      // Auto-create a .z-ai-config in home dir if no valid config exists
+      // Use Z.ai coding endpoint with fallback
+      if (!hasValidConfig) {
+        const configPath = path.join(homeDir, '.z-ai-config');
+        let baseUrl = ZAI_CODING_BASE_PRIMARY;
+        try {
+          const probe = await fetch(baseUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
+          if (!probe.ok) baseUrl = ZAI_CODING_BASE_FALLBACK;
+        } catch {
+          baseUrl = ZAI_CODING_BASE_FALLBACK;
+        }
+        const config = { baseUrl, apiKey: key };
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+      }
+    }
+
     return await mod.default.create();
   } catch (err) {
+    const msg = (err as Error).message || '';
+    if (msg.includes('Configuration file not found')) {
+      throw new ProviderError(
+        `Z.ai SDK needs a config file with baseUrl + apiKey. ` +
+        `Set ZAI_API_KEY env var or create ~/.z-ai-config with: ` +
+        `{"baseUrl":"${ZAI_CODING_BASE_PRIMARY}","apiKey":"YOUR_KEY"}`,
+        'zai',
+        undefined,
+        err
+      );
+    }
     throw new ProviderError(
-      `Failed to load z-ai-web-dev-sdk: ${(err as Error).message}. ` +
-      `Run: npm install z-ai-web-dev-sdk`,
+      `Failed to load z-ai-web-dev-sdk: ${msg}`,
       'zai',
       undefined,
       err
@@ -74,9 +138,6 @@ async function loadZAISDK(): Promise<ZAIClient> {
 
 async function tryLoadOrchestrator(): Promise<Orchestrator | null> {
   try {
-    // The root `nexus-dev-mmf` package — same monorepo, optional dep.
-    // Use dynamic require via createRequire to avoid TS module resolution errors
-    // when the package isn't installed standalone.
     const { createRequire } = await import('node:module');
     const require = createRequire(import.meta.url);
     const mod = require('nexus-dev-mmf') as MMFEModule;
@@ -94,6 +155,26 @@ async function tryLoadOrchestrator(): Promise<Orchestrator | null> {
   return null;
 }
 
+/**
+ * Convert ChatMessage[] to ZAI API format, properly filtering out
+ * tool messages that the ZAI API doesn't understand. Tool results
+ * are represented as assistant messages with structured content.
+ */
+function toZAIMessages(messages: ChatMessage[]): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+  const result: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+  for (const m of messages) {
+    if (m.role === 'system' || m.role === 'user' || m.role === 'assistant') {
+      result.push({ role: m.role, content: m.content });
+    } else if (m.role === 'tool') {
+      // Convert tool messages to assistant messages with context markers
+      // so the API doesn't reject unknown roles
+      const toolInfo = m.toolCalls?.map(tc => `${tc.name}(${Object.keys(tc.args).join(', ')}) → ${tc.status}`).join('; ') || 'tool result';
+      result.push({ role: 'assistant', content: `[Tool Result: ${toolInfo}]\n${m.content}` });
+    }
+  }
+  return result;
+}
+
 export class ZAIProvider extends BaseProvider {
   readonly kind = 'zai' as const;
   readonly id = 'zai';
@@ -108,7 +189,7 @@ export class ZAIProvider extends BaseProvider {
 
   private async client(): Promise<ZAIClient> {
     if (!this.cachedClient) {
-      this.cachedClient = await loadZAISDK();
+      this.cachedClient = await loadZAISDK(this.apiKey);
     }
     return this.cachedClient;
   }
@@ -121,8 +202,6 @@ export class ZAIProvider extends BaseProvider {
   }
 
   async fetchModels(): Promise<ModelDescriptor[]> {
-    // The ZAI SDK doesn't expose a listModels() method.
-    // Return the builtin roster — users can add more via /add.
     return BUILTIN_MODELS.map((m) => ({ ...m, source: 'builtin' as const }));
   }
 
@@ -163,10 +242,7 @@ export class ZAIProvider extends BaseProvider {
 
       // Direct provider call — bypass orchestrator.
       const client = await this.client();
-      const payload = messages.map((m) => ({
-        role: m.role as 'system' | 'user' | 'assistant',
-        content: m.content,
-      }));
+      const payload = toZAIMessages(messages);
 
       const res = (await client.chat.completions.create({
         model,
@@ -213,11 +289,50 @@ export class ZAIProvider extends BaseProvider {
     opts: ChatRequestOptions = {}
   ): AsyncGenerator<string, ChatResponse, unknown> {
     const model = opts.model || 'glm-5.2';
+    const start = Date.now();
+
+    // MMFE path — if orchestrator is available and MMFE is on, use it
+    // but stream the output word-by-word for a smooth UX.
+    const useMMFE = !opts.noMMFE;
+    const orch = useMMFE ? await this.orchestrator() : null;
+
+    if (useMMFE && orch) {
+      const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+      const prompt = lastUser?.content || '';
+
+      const result = await orch.process(prompt, {
+        preferredMode: opts.mode || 'balanced',
+        enableThinking: true,
+      });
+
+      if (result.routingDecisions && opts.onRouting) {
+        opts.onRouting(result.routingDecisions);
+      }
+
+      // Simulate streaming by yielding the answer word-by-word
+      const answer = result.answer || '';
+      const words = answer.split(/(\s+)/);
+      for (const word of words) {
+        if (word) yield word;
+      }
+
+      const assistantMsg: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        role: 'assistant',
+        content: answer,
+        model: result.modelsUsed.join(', '),
+        provider: this.id,
+        elapsedMs: Date.now() - start,
+        routing: result.routingDecisions,
+        qualityScore: result.qualityScore,
+        ts: Date.now(),
+      };
+      return { message: assistantMsg, raw: result };
+    }
+
+    // Direct SDK streaming path
     const client = await this.client();
-    const payload = messages.map((m) => ({
-      role: m.role as 'system' | 'user' | 'assistant',
-      content: m.content,
-    }));
+    const payload = toZAIMessages(messages);
 
     const res = (await client.chat.completions.create({
       model,
@@ -228,7 +343,6 @@ export class ZAIProvider extends BaseProvider {
     }>;
 
     let full = '';
-    const start = Date.now();
     for await (const chunk of res) {
       const delta = chunk.choices?.[0]?.delta?.content;
       if (delta) {
@@ -236,6 +350,7 @@ export class ZAIProvider extends BaseProvider {
         yield delta;
       }
     }
+
     const assistantMsg: ChatMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       role: 'assistant',

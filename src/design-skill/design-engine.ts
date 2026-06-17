@@ -15,7 +15,7 @@
  * 8. SYNTHESIZE — Merge best elements from all model outputs
  */
 
-import ZAI from 'z-ai-web-dev-sdk';
+import { loadZAIClient } from '../providers/zai-loader.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { uuidv4 } from '../core/utils/uuid.js';
@@ -150,16 +150,16 @@ Generate the complete revised design now.`;
 // ============ DESIGN SKILL ENGINE ============
 
 export class DesignSkillEngine {
-  private zai: ZAI | null = null;
+  private zai: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
   private config: DesignSkillConfig;
 
   constructor(config?: Partial<DesignSkillConfig>) {
     this.config = { ...DEFAULT_DESIGN_SKILL_CONFIG, ...config };
   }
 
-  private async getClient(): Promise<ZAI> {
+  private async getClient() {
     if (!this.zai) {
-      this.zai = await ZAI.create();
+      this.zai = await loadZAIClient();
     }
     return this.zai;
   }

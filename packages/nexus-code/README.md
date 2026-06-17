@@ -143,6 +143,16 @@ node bin/nexus.js
 - ✅ **MCP support** (Model Context Protocol) — stdio + HTTP transports
 - ✅ **Tech-dark theme** matching the MMFE brand
 
+### Screenshots
+
+**Web UI** — Browser-based chat interface launched with `nexus --web`. Features SSE streaming, provider/model/mode selectors, MMFE toggle, and quality scoring.
+
+<img src="./screenshots/web-ui.png" alt="Nexus Code Web UI" width="720" />
+
+**Dashboard** — Interactive HTML5 monitoring dashboard with live pipeline stats, model performance, cost tracking, and event log.
+
+<img src="./screenshots/dashboard.png" alt="Nexus-Dev MMFE Dashboard" width="720" />
+
 ### Quick start
 
 ```bash
