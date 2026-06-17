@@ -46,6 +46,12 @@ export const mcpServerSchema = z.object({
   env: z.record(z.string()).optional(),
 });
 
+export const observerSchema = z.object({
+  enabled: z.boolean().default(false),
+  modelId: z.string().default('glm-4.5-flash'),
+  intervalMs: z.number().int().positive().default(8000),
+});
+
 export const appConfigSchema = z.object({
   version: z.string().default('1.1.0'),
   activeProviderId: z.string().default('zai'),
@@ -55,6 +61,7 @@ export const appConfigSchema = z.object({
   providers: z.array(providerSchema).default([]),
   manualModels: z.array(modelDescriptorSchema).default([]),
   mcpServers: z.array(mcpServerSchema).default([]),
+  observer: observerSchema.default({ enabled: true, modelId: 'glm-4.5-flash', intervalMs: 8000 }),
   ui: z.object({
     theme: z.enum(['tech-dark', 'editorial-light', 'hacker-terminal']).default('tech-dark'),
     showRouting: z.boolean().default(true),

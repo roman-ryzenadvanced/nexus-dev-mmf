@@ -1,17 +1,12 @@
 /**
  * Nexus-Dev MMFE — ZAI Provider Adapter
  *
- * Wraps the z-ai-web-dev-sdk as an LLMProvider using the shared
- * zai-loader for auto-config with coding-specific endpoints.
+ * Wraps the z-ai-web-dev-sdk as an LLMProvider, maintaining full
+ * backward compatibility with the existing Nexus implementation.
  *
- * Coding endpoints (with fallback):
- *   Primary:   https://open.bigmodel.cn/api/coding/paas/v4
- *   Fallback:  https://api.z.ai/api/coding/paas/v4
- *
- * @version 5.0.0
+ * @version 4.0.0
  */
 
-import { loadZAIClient } from './zai-loader.js';
 import {
   LLMProvider,
   ProviderId,
@@ -20,8 +15,16 @@ import {
   ProviderCompletionOptions,
   ProviderCompletionResult,
 } from './types.js';
+import { loadZAIClient } from './zai-loader.js';
 
-const ZAI_CODING_BASE_PRIMARY = 'https://open.bigmodel.cn/api/coding/paas/v4';
+// Minimal structural type for the SDK client we depend on.
+interface ZAISDKClient {
+  chat: {
+    completions: {
+      create: (body: Record<string, unknown>) => Promise<any>;
+    };
+  };
+}
 
 export class ZAIProvider implements LLMProvider {
   readonly providerId: ProviderId = 'zai';
@@ -35,7 +38,7 @@ export class ZAIProvider implements LLMProvider {
     'glm-4.7',
   ];
 
-  private client: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
+  private client: ZAISDKClient | null = null;
   private _isReady = false;
   private config: ProviderConfig | null = null;
 
@@ -46,27 +49,14 @@ export class ZAIProvider implements LLMProvider {
   async initialize(config: ProviderConfig): Promise<void> {
     this.config = config;
     try {
-      this.client = await loadZAIClient();
+      // Dynamic load via the shared loader: auto-creates ~/.z-ai-config,
+      // probes the endpoint (401 ≠ down), and falls back to the secondary URL.
+      this.client = (await loadZAIClient(config.apiKey)) as ZAISDKClient;
       this._isReady = true;
     } catch (error: any) {
       this._isReady = false;
-      const msg = error?.message ?? 'Unknown error';
-      if (msg.includes('Configuration file not found')) {
-        throw new Error(
-          `ZAI provider: No .z-ai-config found. Set ZAI_API_KEY env var or create ~/.z-ai-config with: ` +
-          `{"baseUrl":"${ZAI_CODING_BASE_PRIMARY}","apiKey":"YOUR_KEY"}`
-        );
-      }
-      throw new Error(`ZAI provider initialization failed: ${msg}`);
+      throw new Error(`ZAI provider initialization failed: ${error?.message ?? 'Unknown error'}`);
     }
-  }
-
-  private async ensureClient(): Promise<Awaited<ReturnType<typeof loadZAIClient>>> {
-    if (!this.client) {
-      this.client = await loadZAIClient();
-      this._isReady = true;
-    }
-    return this.client;
   }
 
   async complete(
@@ -74,14 +64,17 @@ export class ZAIProvider implements LLMProvider {
     messages: ProviderMessage[],
     options?: ProviderCompletionOptions
   ): Promise<ProviderCompletionResult> {
-    const client = await this.ensureClient();
+    if (!this.client) {
+      this.client = (await loadZAIClient(this.config?.apiKey)) as ZAISDKClient;
+      this._isReady = true;
+    }
 
     const zaiMessages = messages.map(m => ({
       role: m.role as 'system' | 'user' | 'assistant',
       content: m.content,
     }));
 
-    const requestOptions: Record<string, unknown> = {
+    const requestOptions: any = {
       model,
       messages: zaiMessages,
       temperature: options?.temperature ?? 0.4,
@@ -108,13 +101,7 @@ export class ZAIProvider implements LLMProvider {
       Object.assign(requestOptions, options.providerOptions);
     }
 
-    const response = (await client.chat.completions.create(requestOptions)) as {
-      choices?: Array<{ message?: { content?: string } }>;
-      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-      id?: string;
-      created?: number;
-      model?: string;
-    };
+    const response = await this.client.chat.completions.create(requestOptions);
 
     const content = response.choices?.[0]?.message?.content ?? '';
 
@@ -137,12 +124,15 @@ export class ZAIProvider implements LLMProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const client = await this.ensureClient();
-      const response = (await client.chat.completions.create({
+      if (!this.client) {
+        this.client = (await loadZAIClient(this.config?.apiKey)) as ZAISDKClient;
+      }
+      // Try a minimal request to verify connectivity
+      const response = await this.client.chat.completions.create({
         model: 'glm-5',
         messages: [{ role: 'user', content: 'ping' }],
         max_tokens: 1,
-      })) as { choices?: Array<{ message?: { content?: string } }> };
+      });
       return !!response.choices?.[0]?.message?.content;
     } catch {
       return false;

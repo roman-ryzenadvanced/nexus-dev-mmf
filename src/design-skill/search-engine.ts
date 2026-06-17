@@ -19,8 +19,12 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // ============ CONFIGURATION ============
+// ESM-safe __dirname (this package is "type": "module", so the CommonJS
+// global is undefined at runtime).
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, 'data');
 const MAX_RESULTS = 3;
 

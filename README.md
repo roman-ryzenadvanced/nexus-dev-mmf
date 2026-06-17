@@ -520,6 +520,17 @@ node scripts/mtp-fusion.mjs "Complex multi-step task requiring multiple model ca
 
 **Nexus Code** (`nexus-code`) is a terminal UI client for chatting with GLM, OpenAI, Anthropic, and any OpenAI-compatible endpoint — with the Multi-Model Fusion Engine built in. It lives at `packages/nexus-code/`.
 
+> ### 🖥️ Is it a terminal app or a web app?
+>
+> **It is a terminal/TUI app first.** Nexus Code runs **inside your terminal** — it is *not* a hosted web product.
+>
+> | Mode | Command | What it is |
+> |---|---|---|
+> | **Terminal UI (primary)** | `nexus` | A full-screen, interactive **terminal UI** built with [Ink](https://github.com/vadimdemedes/ink) + React. Runs natively in your console — **no browser, no server, nothing hosted online.** This is what most people use. |
+> | **Local web UI (optional)** | `nexus --web` | For convenience only. Boots a small HTTP server bound to **`127.0.0.1:3000` (your own machine)** and serves a browser chat page. The "web" UI runs **entirely on localhost** from the same CLI binary — it is never deployed or reachable over the network. |
+>
+> **There are no hosted/web screenshots in this repository.** Every visual you see is a **terminal/ANSI render** of the TUI, not a web page. If a screenshot looks like a polished app, that is the TUI rendering in a terminal — not a browser.
+
 ### Install
 
 ```bash

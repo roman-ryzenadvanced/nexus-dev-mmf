@@ -6,6 +6,9 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Local QA harness (not part of the published package)
+_qa/
+
 # Workspace files (not part of nexus-dev-mmf)
 skills/
 tool-results/

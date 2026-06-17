@@ -94,50 +94,53 @@ export function getTheme(): ThemeTokens {
   return active;
 }
 
-// Chalk color helpers — getters so setTheme() takes effect on next access.
-// Each property is a function-less ChalkInstance that resolves `active`
-// at access time via Object.defineProperty traps below.
-const colorProxy: Record<string, ReturnType<typeof chalk.hex>> = {};
-for (const key of ['user', 'assistant', 'system', 'tool', 'muted', 'dim', 'accent', 'accent2', 'success', 'warn', 'danger']) {
-  Object.defineProperty(colorProxy, key, {
+// Chalk color helpers — getters resolved at access time so setTheme() takes
+// effect immediately. We define them directly on the exported `color` object
+// (enumerable) so `color.dim`, `color.accent`, etc. are always present.
+const COLOR_KEYS = [
+  'user',
+  'assistant',
+  'system',
+  'tool',
+  'muted',
+  'dim',
+  'accent',
+  'accent2',
+  'success',
+  'warn',
+  'danger',
+] as const;
+
+const COLOR_MAP: Record<string, (t: ThemeTokens) => string> = {
+  user: (t) => t.accent,
+  assistant: (t) => t.primary,
+  system: (t) => t.primaryDim,
+  tool: (t) => t.warn,
+  muted: (t) => t.primaryMute,
+  dim: (t) => t.primaryDim,
+  accent: (t) => t.accent,
+  accent2: (t) => t.accent2,
+  success: (t) => t.success,
+  warn: (t) => t.warn,
+  danger: (t) => t.danger,
+};
+
+type ColorHelpers = Record<(typeof COLOR_KEYS)[number], ReturnType<typeof chalk.hex>>;
+
+export const color = {
+  bold: chalk.bold,
+  dim2: chalk.dim,
+} as Record<string, unknown> & ColorHelpers & { bold: typeof chalk.bold; dim2: typeof chalk.dim };
+
+for (const key of COLOR_KEYS) {
+  Object.defineProperty(color, key, {
+    enumerable: true,
+    configurable: true,
     get() {
-      const map: Record<string, string> = {
-        user: active.accent,
-        assistant: active.primary,
-        system: active.primaryDim,
-        tool: active.warn,
-        muted: active.primaryMute,
-        dim: active.primaryDim,
-        accent: active.accent,
-        accent2: active.accent2,
-        success: active.success,
-        warn: active.warn,
-        danger: active.danger,
-      };
-      return chalk.hex(map[key]);
+      return chalk.hex(COLOR_MAP[key](active));
     },
   });
 }
-
-export const color = {
-  ...colorProxy,
-  bold: chalk.bold,
-  dim2: chalk.dim,
-} as unknown as {
-  user: ReturnType<typeof chalk.hex>;
-  assistant: ReturnType<typeof chalk.hex>;
-  system: ReturnType<typeof chalk.hex>;
-  tool: ReturnType<typeof chalk.hex>;
-  muted: ReturnType<typeof chalk.hex>;
-  dim: ReturnType<typeof chalk.hex>;
-  accent: ReturnType<typeof chalk.hex>;
-  accent2: ReturnType<typeof chalk.hex>;
-  success: ReturnType<typeof chalk.hex>;
-  warn: ReturnType<typeof chalk.hex>;
-  danger: ReturnType<typeof chalk.hex>;
-  bold: typeof chalk.bold;
-  dim2: typeof chalk.dim;
-};
 
 export const SIGILS = {
   user: '❯',

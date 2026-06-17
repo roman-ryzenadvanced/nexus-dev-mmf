@@ -96,6 +96,17 @@ export interface ChatRequestOptions {
   onDelta?: (delta: string) => void;
   /** Called when routing decisions are emitted (MMFE only). */
   onRouting?: (decisions: RoutingDecision[]) => void;
+  /** Called with live MMFE pipeline progress (stage + subtask counts). */
+  onProgress?: (progress: {
+    /** Human-readable stage label, e.g. "executing", "synthesizing". */
+    stage: string;
+    /** Subtasks completed so far this turn. */
+    subtasksDone: number;
+    /** Total subtasks routed this turn. */
+    subtasksTotal: number;
+    /** Models currently active in the fan-out. */
+    modelsActive: string[];
+  }) => void;
   /** Tools the model is allowed to call. Provider-agnostic schema. */
   tools?: ToolDefinitionInput[];
   /** Max tool-call round trips before giving up (default 5). */
@@ -147,6 +158,8 @@ export interface AppConfig {
     showTokens?: boolean;
     showTimestamps?: boolean;
   };
+  /** Observer — a cheap model that narrates what the main agent is doing. */
+  observer?: ObserverConfig;
 }
 
 export interface MCPServerConfig {
@@ -158,6 +171,15 @@ export interface MCPServerConfig {
   env?: Record<string, string>;
 }
 
+export interface ObserverConfig {
+  /** Enable the observer commentary during long tasks. */
+  enabled: boolean;
+  /** Cheap model used for observations (default: glm-4.5-flash). */
+  modelId: string;
+  /** How often to generate an observation, in ms (default: 8000). */
+  intervalMs: number;
+}
+
 export interface SlashCommandContext {
   config: AppConfig;
   session: Session;
@@ -167,6 +189,10 @@ export interface SlashCommandContext {
   clearMessages: () => void;
   saveSession: (name?: string) => Promise<void>;
   loadSession: (name: string) => Promise<boolean>;
+  /** List saved sessions (newest first), excluding the auto-restore slot. */
+  listSessions?: () => Promise<Array<{ name: string; updatedAt: number; messageCount: number }>>;
+  /** Start a fresh empty session and drop the auto-restore slot. */
+  startNewSession?: () => void;
   fetchModels: (providerId?: string) => Promise<ModelDescriptor[]>;
   addModel: (providerId: string, modelId: string, label?: string) => void;
   quit: () => void;

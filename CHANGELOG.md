@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.0] — 2026-06-15
+
+### 🖥️ Nexus Code TUI — v1.2.0: Production-Quality Terminal Experience
+
+This release transforms the Nexus Code TUI from a functional prototype into a polished, production-grade terminal coding assistant. Every change below was verified end-to-end before landing; the full 230-test suite passes with zero regressions.
+
+#### Streaming & Provider Reliability
+
+- **Fixed "no response" streaming bug** — a proper SSE chunk parser (`readSSEChunks()`) now yields both content deltas and tool-call deltas, so Z.ai/GLM streams actually render.
+- **Fixed tool-calling chains** — `toZAITools()` / `toZAIMessages()` / `parseZAIToolCalls()` round-trip tool definitions and calls correctly, enabling multi-round tool use.
+- **Fixed MMFE streaming bypass** — `sendChatStream` now routes through the orchestrator when MMFE is on and emits the fused result via `onDelta`.
+- **Fixed ESM `__dirname` crashes** in `search-engine.ts` and `design-engine.ts` (root package is `"type":"module"`).
+- **Self-contained Z.ai loader** (`zai-loader.ts`) — resolves the API key, probes/selects the correct base URL, auto-creates `~/.z-ai-config`, and dynamic-imports the SDK. No new dependencies.
+
+#### Live Metrics (the big one)
+
+- **Real-time token speed & counter** during direct streams — tokens, tok/s, and elapsed time update on every delta.
+- **Live progress during MMFE fusion** — because fusion is non-streaming, the UI now forwards *real* orchestrator events (`pipeline:stage`, `subtask:routed/completed`, `synthesis:started`) as `{stage, subtasksDone, subtasksTotal, modelsActive}`. The status bar shows `executing 2/4 8.4s` while models fan out, then the fused answer.
+- A 250 ms wall-clock ticker keeps elapsed time live even before the first delta arrives.
+
+#### UI / UX Polish
+
+- **koda-style line-window viewport (ChatView rewrite)** — the entire transcript is flattened into styled `Line[]` (per-token color/bold/dim segments) and only the visible window is rendered. This eliminates message overlap, cut-off text, and the disappearing-input bug. Content is word-wrapped to terminal width.
+- **Scrollback** — PageUp / PageDown / Ctrl+↑↓ navigate history with auto-follow and a scroll-position indicator.
+- **Multi-model message headers** — every assistant message shows all models involved (deduped from the message model + routing decisions), humanized time (`540ms` / `2.3s` / `2m30s`), tokens (`↑↓`), tok/s, and quality (`Q:n/100`).
+- **Streaming animation** — a self-contained roller (⠋⠙⠹…) + cycling dots at 80 ms/frame. No `ink-spinner` dependency.
+- **Boot animation** wired into the app.
+- **Slash command menu** — typing `/` as the first character auto-opens a filterable command list (claude-code / koda / mimo style). Further typing filters it; ↑↓ navigate; Enter/Tab runs; Esc cancels.
+
+#### Workflow Features
+
+- **Session picker on boot** — launching `nexus` shows a picker: start a fresh session or resume any saved one (`↑↓` move, `↵` select, `n`/`esc` for new). Use `--new` to skip straight to a blank session or `--continue [name]` to resume a specific one.
+- **Type while streaming (pending queue)** — follow-ups typed mid-stream are queued and sent when the current response finishes, with a `[N queued]` hint. Ctrl+C aborts and clears the queue.
+- **Session persistence** — auto-save after every message (debounced), plus `/sessions`, `/continue [name|index]`, `/new`, and `--continue` / `--new` CLI flags. A `↺ continued from` banner confirms restores.
+- **Observer — side-channel model** 👁 — when you send a prompt *while* the main agent is streaming, you're asked whether to **queue** it for the main agent or fire it at the **Observer**, a cheap model (`glm-4.5-flash` by default) that answers immediately, grounded in the live behind-the-scenes feed. Observer messages render with a distinct `👁` sigil. Toggle with `/observer [on|off|<model>]`.
+
+#### Docs
+
+- README clarifies that Nexus Code is a **terminal app first** with an optional `--web` localhost mode (no hosted/web screenshots).
+- New commands documented: `/sessions`, `/continue`, `/new`, `/observer`, `--continue`, `--new`.
+
+---
+
 ## [5.0.0] — 2026-06-17
 
 ### 🚀 Major New Feature: Nexus Code — Terminal AI Coding Assistant

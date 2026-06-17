@@ -1,6 +1,6 @@
 {
   "name": "nexus-dev-mmf",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "Multi-Model Fusion Engine (MMFE) — Adaptive multi-model orchestrator with MTP hyperthreading, code review, design skill, Nexus Code TUI, and multi-provider support (ZAI/GLM, OpenAI, Anthropic). Decomposes, routes, executes in parallel, and synthesizes results across any LLM provider.",
   "type": "module",
   "main": "dist/index.js",

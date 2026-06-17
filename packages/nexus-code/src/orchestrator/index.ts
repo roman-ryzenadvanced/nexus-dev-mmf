@@ -142,6 +142,19 @@ export async function sendChatStream(
     noMMFE: mmfeOff,
   };
 
+  // MMFE fusion is inherently non-streaming — the orchestrator returns a
+  // single fused answer + routing decisions, not a token stream. When MMFE
+  // is ON, route through sendChat so the fusion/routing path runs, then emit
+  // the finished answer via onDelta. Without this, streaming mode silently
+  // bypassed MMFE entirely.
+  // The onProgress hook forwards REAL pipeline stage + subtask throughput
+  // so the UI isn't stuck on zeroed metrics during the long fusion call.
+  if (!mmfeOff) {
+    const res = await sendChat(config, providers, messages, { ...opts, onProgress: opts.onProgress });
+    if (res.message.content && opts.onDelta) opts.onDelta(res.message.content);
+    return res;
+  }
+
   // If the provider doesn't implement streamChat(), fall back to sendChat
   // (which uses non-streaming chat() but still calls onDelta with the full text).
   if (!provider.streamChat) {

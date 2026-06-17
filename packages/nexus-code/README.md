@@ -110,6 +110,17 @@ nexus-dev "Analyze this dataset" --parallel 3 --no-thinking
 
 A terminal UI client for chatting with GLM, OpenAI, Anthropic, and any OpenAI-compatible endpoint — with MMFE built in.
 
+> ### 🖥️ Is it a terminal app or a web app?
+>
+> **It is a terminal/TUI app first.** Nexus Code runs **inside your terminal** — it is *not* a hosted web product.
+>
+> | Mode | Command | What it is |
+> |---|---|---|
+> | **Terminal UI (primary)** | `nexus` | A full-screen, interactive **terminal UI** built with [Ink](https://github.com/vadimdemedes/ink) + React. Runs natively in your console — **no browser, no server, nothing hosted online.** This is the default and what most people use. |
+> | **Local web UI (optional)** | `nexus --web` | For convenience only. Boots a small HTTP server bound to **`127.0.0.1:3000` (your own machine)** and serves a browser chat page. The "web" UI runs **entirely on localhost** from the same CLI binary — it is never deployed or reachable over the network. |
+>
+> **There are no hosted/web screenshots in this repository.** Every visual you see is a **terminal/ANSI render** of the TUI, not a web page.
+
 Inspired by [`opencode`](https://github.com/anomalyco/opencode), [`MiMo-Code`](https://github.com/XiaomiMiMo/MiMo-Code), and [`better-clawd`](https://github.com/x1xhlol/better-clawd), with all Nexus-MMFE features built in, provider unlocked, and full multi-provider support.
 
 ### Install
@@ -173,6 +184,9 @@ See [`examples/config.json`](./packages/nexus-code/examples/config.json) for a f
 
 ### Slash commands
 
+Type **`/`** in the input box to auto-open a filterable command menu — keep typing to filter,
+**↑↓** to navigate, **↵** to run, **esc** to cancel.
+
 ```
 /help                          List all slash commands
 /mode [speed|balanced|quality|creative]
@@ -184,10 +198,17 @@ See [`examples/config.json`](./packages/nexus-code/examples/config.json) for a f
 /clear                         Clear transcript
 /save [name]                   Save current session
 /load <name>                   Load a saved session
+/sessions                      List saved sessions
+/continue [name|index]         Resume a saved session
+/new                           Start a fresh session (drops auto-restore)
+/observer [on|off|<model>]     Toggle the side-channel Observer (or set its model)
 /mmfe [on|off]                 Toggle MMFE on/off
 /mcp                           List MCP servers
 /exit                          Quit
 ```
+
+CLI flags for sessions: `nexus --continue [name]` resumes a session,
+`nexus --new` starts fresh (skips auto-restore of the last session).
 
 Full reference: [`docs/commands.md`](./packages/nexus-code/docs/commands.md)
 
@@ -239,8 +260,14 @@ When MMFE is off, requests go straight to the active provider — no decompositi
 | Key | Action |
 |---|---|
 | `Enter` | Submit prompt or slash command |
-| `↑` / `↓` | Navigate input history |
-| `Ctrl+C` (streaming) | Abort current request |
+| `Shift+Enter` | Insert newline (multi-line input) |
+| `↑` / `↓` | Navigate input history (or slash menu when `/` is typed) |
+| `/` then ↑/↓ ↵ | Slash command menu — filter, navigate, run |
+| `PageUp` / `PageDn` / `Ctrl+↑↓` | Scroll transcript (auto-follows while streaming) |
+| `Tab` | Complete current word |
+| `Ctrl+P` | Toggle command palette |
+| (while streaming) `o` / `q` | Observer answers now / queue for the main agent |
+| `Ctrl+C` (streaming) | Abort current request (clears queue) |
 | `Ctrl+C` (idle) | Quit |
 
 ### Architecture
@@ -307,6 +334,23 @@ export const nexusTool = {
 ## Releases
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full release history.
+
+### v1.2.0 — production-quality TUI (streaming fix, live metrics, scrollback, sessions, Observer)
+
+- **FIXED**: "no response" while streaming — proper SSE parser for Z.ai/GLM streams (content + tool-call deltas)
+- **FIXED**: tool-calling chains now round-trip correctly across multiple rounds
+- **FIXED**: MMFE streaming bypass — fused results now stream through `onDelta`
+- **FIXED**: ESM `__dirname` crashes in the design engines
+- **ADDED**: Live metrics — real token speed/counter during direct streams, plus live MMFE fusion progress (`executing 2/4 …`) forwarded from orchestrator events
+- **ADDED**: koda-style line-window viewport (ChatView rewrite) — eliminates overlap / cut-off / disappearing-input; word-wrapped to terminal width
+- **ADDED**: Scrollback — PageUp / PageDown / Ctrl+↑↓ with auto-follow + scroll indicator
+- **ADDED**: Multi-model message headers — all involved models, humanized time, tokens, tok/s, quality score
+- **ADDED**: Streaming animation (roller + dots, no extra deps) and a boot animation
+- **ADDED**: Slash command menu — type `/` to auto-open a filterable command list (↑↓ navigate, ↵ run, esc cancel)
+- **ADDED**: Session picker on boot — choose to start fresh or resume a saved conversation (`↑↓` move, `↵` select, `n`/`esc` new). `--new` / `--continue [name]` skip the picker.
+- **ADDED**: Type while streaming — follow-ups queue with a `[N queued]` hint; Ctrl+C aborts + clears
+- **ADDED**: Session persistence — auto-resume last session, debounced auto-save, `/sessions`, `/continue [name|index]`, `/new`, `--continue` / `--new`
+- **ADDED**: Observer 👁 — when you message during a stream, choose **queue** or **Observer** (a cheap side-channel model that answers now). `/observer [on|off|<model>]`
 
 ### v1.1.7 — rebrand to Nexus Code
 

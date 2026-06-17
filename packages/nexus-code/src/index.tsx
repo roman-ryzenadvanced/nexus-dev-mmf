@@ -14,6 +14,10 @@ export interface RunOptions {
   mode?: 'speed' | 'balanced' | 'quality' | 'creative';
   useMMFE?: boolean;
   configPath?: string;
+  /** Resume a specific saved session by name on boot. */
+  resumeSession?: string;
+  /** Start fresh — skip auto-restore of the last session. */
+  noResume?: boolean;
 }
 
 export async function runTUI(opts: RunOptions = {}): Promise<void> {
@@ -25,7 +29,14 @@ export async function runTUI(opts: RunOptions = {}): Promise<void> {
   if (opts.mode) config.mode = opts.mode;
   if (typeof opts.useMMFE === 'boolean') config.useMMFE = opts.useMMFE;
 
-  const { waitUntilExit } = render(<App initialConfig={config} initialPrompt={opts.initialPrompt} />);
+  const { waitUntilExit } = render(
+    <App
+      initialConfig={config}
+      initialPrompt={opts.initialPrompt}
+      resumeSession={opts.resumeSession}
+      noResume={opts.noResume}
+    />
+  );
   await waitUntilExit();
 }
 

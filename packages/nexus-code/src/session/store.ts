@@ -2,13 +2,53 @@
 // Session store — persistence to ~/.nexus/sessions/
 // ============================================================
 
-import { readFile, writeFile, readdir, unlink } from 'node:fs/promises';
+import { readFile, writeFile, readdir, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { SESSIONS_DIR } from '../config/schema.js';
 import type { Session } from '../types.js';
 
 function sessionPath(name: string): string {
   return join(SESSIONS_DIR, `${name.replace(/[^\w-]+/g, '_')}.json`);
+}
+
+// Auto-persist slot — the "current" conversation that survives restarts.
+// koda/mimo-style: we continuously save the in-flight session here and
+// auto-resume it on the next boot (unless the user passes --new).
+const CURRENT_SESSION_NAME = '__current__';
+function currentSessionPath(): string {
+  return sessionPath(CURRENT_SESSION_NAME);
+}
+
+async function ensureSessionsDir(): Promise<void> {
+  await mkdir(SESSIONS_DIR, { recursive: true }).catch(() => undefined);
+}
+
+/** Persist the live session to the auto-restore slot. Safe to call often. */
+export async function saveCurrentSession(session: Session): Promise<void> {
+  await ensureSessionsDir();
+  const toWrite: Session = { ...session, name: session.name || CURRENT_SESSION_NAME, updatedAt: Date.now() };
+  try {
+    await writeFile(currentSessionPath(), JSON.stringify(toWrite, null, 2), 'utf8');
+  } catch {
+    // Non-fatal — auto-save must never crash the TUI.
+  }
+}
+
+/** Load the auto-restore slot, or null if none / explicitly cleared. */
+export async function loadCurrentSession(): Promise<Session | null> {
+  try {
+    const raw = await readFile(currentSessionPath(), 'utf8');
+    const s = JSON.parse(raw) as Session;
+    if (!s || !Array.isArray(s.messages)) return null;
+    return s;
+  } catch {
+    return null;
+  }
+}
+
+/** Drop the auto-restore slot (used by /clear and --new). */
+export async function clearCurrentSession(): Promise<void> {
+  await unlink(currentSessionPath()).catch(() => undefined);
 }
 
 export async function saveSession(session: Session, name?: string): Promise<Session> {

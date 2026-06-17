@@ -80,6 +80,8 @@ if (flag('--help') || flag('-h')) {
     nexus --model=<id>          # boot with a specific model active
     nexus --mode=<mode>         # boot with MMFE mode preset (speed|balanced|quality|creative)
     nexus --no-mmfe             # bypass MMFE, call the provider directly
+    nexus --continue [<name>]   # resume the last session (or a named one)
+    nexus --new                 # start fresh — skip auto-restore of the last session
     nexus --config=<path>       # use a custom config file
     nexus --version             # print version
     nexus --help                # this message
@@ -110,6 +112,9 @@ if (flag('--help') || flag('-h')) {
     /clear                      clear the chat transcript
     /save [name]                save the current session
     /load <name>                load a saved session
+    /sessions                   list saved sessions
+    /continue [name|index]      resume a session (or the last one if omitted)
+    /new                        start a fresh session
     /diff <path>                show a diff for a file
     /mcp                        list MCP servers
     /status                     full system snapshot
@@ -154,6 +159,7 @@ if (pipeMode) {
   import('../dist/index.js')
     .then(async () => {
       const { runTUI } = await import('../dist/index.js');
+      const continueVal = flagVal('--continue');
       return runTUI({
         initialPrompt: args.find((a) => !a.startsWith('-')),
         provider: typeof flagVal('--provider') === 'string' ? flagVal('--provider') : undefined,
@@ -161,6 +167,9 @@ if (pipeMode) {
         mode: typeof flagVal('--mode') === 'string' ? flagVal('--mode') : undefined,
         useMMFE: !flag('--no-mmfe'),
         configPath: typeof flagVal('--config') === 'string' ? flagVal('--config') : undefined,
+        resumeSession: typeof continueVal === 'string' ? continueVal : undefined,
+        // --new forces a fresh session; an explicit --continue still resumes.
+        noResume: flag('--new') !== undefined && typeof continueVal !== 'string',
       });
     })
     .catch((err) => {
