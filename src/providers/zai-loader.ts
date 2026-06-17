@@ -56,7 +56,9 @@ async function ensureSDKConfig(): Promise<void> {
   let baseUrl = ZAI_CODING_BASE_PRIMARY;
   try {
     const probe = await fetch(baseUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
-    if (!probe.ok) baseUrl = ZAI_CODING_BASE_FALLBACK;
+    // 401/403 means the endpoint exists but requires auth — still valid.
+    // Only fall back on 5xx (server error) or network failures.
+    if (probe.status >= 500) baseUrl = ZAI_CODING_BASE_FALLBACK;
   } catch {
     baseUrl = ZAI_CODING_BASE_FALLBACK;
   }

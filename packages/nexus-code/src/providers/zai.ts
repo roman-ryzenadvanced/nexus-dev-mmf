@@ -105,7 +105,9 @@ async function loadZAISDK(apiKey?: string): Promise<ZAIClient> {
         let baseUrl = ZAI_CODING_BASE_PRIMARY;
         try {
           const probe = await fetch(baseUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
-          if (!probe.ok) baseUrl = ZAI_CODING_BASE_FALLBACK;
+          // 401/403 means the endpoint exists but requires auth — still valid.
+          // Only fall back on 5xx (server error) or network failures.
+          if (probe.status >= 500) baseUrl = ZAI_CODING_BASE_FALLBACK;
         } catch {
           baseUrl = ZAI_CODING_BASE_FALLBACK;
         }
@@ -330,24 +332,56 @@ export class ZAIProvider extends BaseProvider {
       return { message: assistantMsg, raw: result };
     }
 
-    // Direct SDK streaming path
+    // Direct SDK streaming path.
+    // The SDK returns a raw Web ReadableStream (not an AsyncIterable of parsed
+    // JSON). We need to parse SSE events ourselves.
     const client = await this.client();
     const payload = toZAIMessages(messages);
 
-    const res = (await client.chat.completions.create({
+    const rawStream = (await client.chat.completions.create({
       model,
       messages: payload,
       stream: true,
-    })) as AsyncIterable<{
-      choices?: Array<{ delta?: { content?: string } }>;
-    }>;
+    })) as ReadableStream<Uint8Array>;
 
     let full = '';
-    for await (const chunk of res) {
-      const delta = chunk.choices?.[0]?.delta?.content;
-      if (delta) {
-        full += delta;
-        yield delta;
+
+    // If the SDK returned a ReadableStream, parse SSE events from it.
+    if (rawStream && typeof rawStream.getReader === 'function') {
+      const reader = rawStream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // keep incomplete line in buffer
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith(':')) continue; // skip empty/comments
+            if (trimmed === 'data: [DONE]') continue;
+
+            if (trimmed.startsWith('data: ')) {
+              try {
+                const json = JSON.parse(trimmed.slice(6));
+                const delta = json.choices?.[0]?.delta?.content;
+                if (delta) {
+                  full += delta;
+                  yield delta;
+                }
+              } catch {
+                // Malformed JSON chunk — skip
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
       }
     }
 
