@@ -5,7 +5,98 @@
  * Supports: default query, code-review, design
  */
 
+import { readFileSync } from 'node:fs';
+import process from 'node:process';
+
+import type { NexusDevConfig } from './core/config.js';
 import { createOrchestrator } from './index.js';
+import type { ProviderId } from './providers/types.js';
+
+/**
+ * Minimal .env loader (no dependency on dotenv).
+ * Populates process.env from a .env file in the cwd (if present) without
+ * overriding values already set in the real environment. Lets users keep their
+ * API keys in .env and run \`node dist/cli.js\` directly.
+ */
+function loadDotEnv(): void {
+  try {
+    const content = readFileSync('.env', 'utf8');
+    for (const line of content.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq === -1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      // strip surrounding quotes if any
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      // never override an existing env var (env wins over .env)
+      if (process.env[key] === undefined) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // no .env present — that's fine, rely on real env vars
+  }
+}
+loadDotEnv();
+
+/**
+ * Resolve the provider to use for this run.
+ *
+ * Priority:
+ *   1. --provider <id> CLI flag (highest)
+ *   2. NEXUS_DEFAULT_PROVIDER env var
+ *   3. the config default (zai)
+ *
+ * The router's initialize() will additionally cascade-fallback to another
+ * provider if this one fails to initialize (e.g. missing API key), so this is
+ * a hint, not a hard requirement.
+ */
+const VALID_PROVIDERS: ProviderId[] = ['zai', 'zai-anthropic', 'openai', 'freemodel', 'anthropic', 'google'];
+
+function resolveDefaultProvider(args: string[]): { provider?: ProviderId; rest: string[] } {
+  const rest: string[] = [];
+  let provider: ProviderId | undefined;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--provider' && args[i + 1]) {
+      const value = args[i + 1] as ProviderId;
+      if (VALID_PROVIDERS.includes(value)) {
+        provider = value;
+      } else {
+        console.warn(`[nexus-dev] Unknown provider '${value}', ignoring. Valid: ${VALID_PROVIDERS.join(', ')}`);
+      }
+      i++;
+    } else {
+      rest.push(arg);
+    }
+  }
+  provider ??= process.env.NEXUS_DEFAULT_PROVIDER as ProviderId | undefined;
+  if (provider && !VALID_PROVIDERS.includes(provider)) {
+    console.warn(`[nexus-dev] NEXUS_DEFAULT_PROVIDER='${provider}' is unknown, ignoring.`);
+    provider = undefined;
+  }
+  return { provider, rest };
+}
+
+/**
+ * Build the orchestrator config patch that overrides the default provider.
+ * mergeConfig() deep-merges this with the defaults, so we only need to supply
+ * the fields we want to override.
+ */
+function buildProviderConfigPatch(provider?: ProviderId): Partial<NexusDevConfig> {
+  if (!provider) return {};
+  return {
+    providers: {
+      defaultProvider: provider,
+      // ensure the chosen provider is in the providers map so initialize() picks it up
+      providers: { [provider]: { provider } },
+    } as Partial<NexusDevConfig>['providers'],
+  };
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -72,6 +163,9 @@ async function main() {
 }
 
 async function runDefaultCommand(args: string[]) {
+  const { provider, rest } = resolveDefaultProvider(args);
+  args = rest;
+
   let query = '';
   let mode: 'speed' | 'quality' | 'balanced' | 'creative' = 'balanced';
   let maxParallel = 6;
@@ -106,12 +200,14 @@ async function runDefaultCommand(args: string[]) {
   console.log(`   Query: ${query}`);
   console.log(`   Mode: ${mode}`);
   console.log(`   Parallel: ${maxParallel}`);
-  console.log(`   Thinking: ${enableThinking}\n`);
+  console.log(`   Thinking: ${enableThinking}`);
+  console.log(`   Provider: ${provider ?? '(default, with cascade fallback)'}\n`);
 
   const orchestrator = createOrchestrator({
     defaultMode: mode,
     maxParallelSubTasks: maxParallel,
     enableThinking,
+    ...buildProviderConfigPatch(provider),
   });
 
   try {

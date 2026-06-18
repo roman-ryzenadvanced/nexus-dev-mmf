@@ -89,6 +89,13 @@ export class ProviderRouter {
   /**
    * Initialize all configured providers.
    * Providers that fail initialization are logged but don't block others.
+   *
+   * If the configured default provider fails to initialize (e.g. its API key
+   * is missing), the router cascades through the other known providers and
+   * adopts the first one that initializes successfully as the effective
+   * default. This keeps the CLI usable out-of-the-box when only a non-default
+   * provider has credentials (e.g. the user has ZAI_ANTHROPIC_API_KEY but not
+   * ZAI_API_KEY).
    */
   async initialize(): Promise<void> {
     const initPromises: Promise<void>[] = [];
@@ -116,6 +123,42 @@ export class ProviderRouter {
         // ZAI might not be available in all environments
       }
     }
+
+    // Cascade fallback: if the default provider is not ready, try every other
+    // known provider in priority order and adopt the first one that works.
+    if (!this.providers.get(this.config.defaultProvider)?.isReady) {
+      this.config.defaultProvider = await this.resolveFallbackDefaultProvider();
+    }
+  }
+
+  /**
+   * Find the first known provider (other than the failed default) that can be
+   * initialized from environment variables. Returns the original default if
+   * none can be initialized (so the error message stays meaningful).
+   */
+  private async resolveFallbackDefaultProvider(): Promise<ProviderId> {
+    const original = this.config.defaultProvider;
+    // Ordered preference: keep ZAI-family first (most "native"), then the rest.
+    const candidates: ProviderId[] = ['zai-anthropic', 'zai', 'freemodel', 'anthropic', 'openai', 'google'];
+    for (const candidate of candidates) {
+      if (candidate === original) continue;
+      // Already initialized successfully earlier?
+      if (this.providers.get(candidate)?.isReady) {
+        console.warn(`[ProviderRouter] Default provider '${original}' unavailable; falling back to '${candidate}'.`);
+        return candidate;
+      }
+      // Try to initialize it now from env.
+      try {
+        await this.initProvider(candidate, { provider: candidate });
+        if (this.providers.get(candidate)?.isReady) {
+          console.warn(`[ProviderRouter] Default provider '${original}' unavailable; falling back to '${candidate}'.`);
+          return candidate;
+        }
+      } catch {
+        // continue to next candidate
+      }
+    }
+    return original;
   }
 
   /**
