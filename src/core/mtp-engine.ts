@@ -24,6 +24,7 @@
  */
 
 import { loadZAIClient } from '../providers/zai-loader.js';
+import type { ZAIClient } from '../providers/zai-loader.js';
 import { uuidv4 } from './utils/uuid.js';
 import { SubTask, SubTaskResult, OrchestrationRequest, OrchestrationResult, RoutingDecision } from './types.js';
 import { MODEL_REGISTRY } from './models.js';
@@ -438,7 +439,7 @@ Produce the subtask decomposition now.`;
    * Run a single decomposition thread.
    */
   private async runDecomposeThread(
-    client: ZAI,
+    client: ZAIClient,
     thread: MTPThread,
     modelId: string,
     prompt: string,
@@ -740,7 +741,7 @@ Produce the subtask decomposition now.`;
    * Execute a single subtask on its assigned model.
    */
   private async executeOneSubtask(
-    client: ZAI,
+    client: ZAIClient,
     task: SubTask,
     modelId: string,
     decision?: RoutingDecision,
@@ -803,7 +804,7 @@ Produce the subtask decomposition now.`;
    * Execute a speculative draft on a fast model.
    */
   private async executeSpeculative(
-    client: ZAI,
+    client: ZAIClient,
     task: SubTask,
     modelId: string,
   ): Promise<SubTaskResult> {
@@ -837,7 +838,7 @@ Produce the subtask decomposition now.`;
    * Retry with alternative model.
    */
   private async retryAlternative(
-    client: ZAI,
+    client: ZAIClient,
     task: SubTask,
     altModel: string,
     originalStart: number,

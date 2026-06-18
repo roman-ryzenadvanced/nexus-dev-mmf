@@ -16,10 +16,22 @@
 const ZAI_CODING_BASE_PRIMARY = 'https://open.bigmodel.cn/api/coding/paas/v4';
 const ZAI_CODING_BASE_FALLBACK = 'https://api.z.ai/api/coding/paas/v4';
 
-interface ZAIClient {
+/** Chat completion response shape returned by the ZAI SDK. */
+export interface ZAIChatResponse {
+  choices?: Array<{
+    message?: { content?: string | null };
+  }>;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+}
+
+export interface ZAIClient {
   chat: {
     completions: {
-      create: (body: Record<string, unknown>) => Promise<unknown>;
+      create: (body: Record<string, unknown>) => Promise<ZAIChatResponse>;
     };
   };
 }

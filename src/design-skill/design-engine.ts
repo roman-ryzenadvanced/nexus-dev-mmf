@@ -16,6 +16,7 @@
  */
 
 import { loadZAIClient } from '../providers/zai-loader.js';
+import type { ZAIClient } from '../providers/zai-loader.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { uuidv4 } from '../core/utils/uuid.js';
@@ -339,7 +340,7 @@ export class DesignSkillEngine {
   // ============ PHASE 1: ANALYZE ============
 
   private async analyzeDesignRequest(
-    client: ZAI,
+    client: ZAIClient,
     request: DesignSkillRequest
   ): Promise<Record<string, any>> {
     try {
@@ -472,7 +473,7 @@ export class DesignSkillEngine {
 
   // ============ PHASE 6: SLOPE DETECTION ============
 
-  private async detectSlope(client: ZAI, designOutput: string): Promise<AISlopeReport> {
+  private async detectSlope(client: ZAIClient, designOutput: string): Promise<AISlopeReport> {
     try {
       const prompt = SLOPE_DETECTION_PROMPT.replace(
         '{designOutput}',
@@ -588,7 +589,7 @@ export class DesignSkillEngine {
   // ============ PHASE 7: SLOPE ELIMINATION ============
 
   private async eliminateSlope(
-    client: ZAI,
+    client: ZAIClient,
     designOutput: string,
     issues: AISlopeIssue[],
     designSystemContext: string

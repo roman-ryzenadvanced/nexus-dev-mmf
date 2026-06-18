@@ -18,6 +18,7 @@
  */
 
 import { loadZAIClient } from '../providers/zai-loader.js';
+import type { ZAIClient } from '../providers/zai-loader.js';
 import {
   CodeReviewRequest,
   CodeReviewResult,
@@ -212,7 +213,7 @@ export class CodeReviewEngine {
    * Phase 1: Run the plan phase to analyze risks.
    */
   private async runPlanPhase(
-    client: ZAI,
+    client: ZAIClient,
     diff: string,
     changedFiles: string[],
     currentFilePath: string,
@@ -249,7 +250,7 @@ export class CodeReviewEngine {
    * Phase 2: Run a single model's review of the diff.
    */
   private async runReviewPhase(
-    client: ZAI,
+    client: ZAIClient,
     modelId: string,
     diff: string,
     changedFiles: string[],
@@ -295,7 +296,7 @@ export class CodeReviewEngine {
    * Phase 3: Synthesize comments from multiple models.
    */
   private async runSynthesisPhase(
-    client: ZAI,
+    client: ZAIClient,
     diff: string,
     rawComments: ReviewComment[],
     changedFiles: string[],
@@ -337,7 +338,7 @@ export class CodeReviewEngine {
    * Phase 4: Filter (fact-check) comments against the diff.
    */
   private async runFilterPhase(
-    client: ZAI,
+    client: ZAIClient,
     diff: string,
     filePath: string,
     comments: ReviewComment[],
@@ -379,7 +380,7 @@ export class CodeReviewEngine {
    * Phase 5: Re-locate a comment's existing_code via LLM.
    */
   private async runRelocationPhase(
-    client: ZAI,
+    client: ZAIClient,
     diff: string,
     existingCode: string,
     commentContent: string,
