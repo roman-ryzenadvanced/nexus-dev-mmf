@@ -12,7 +12,8 @@ import { CommandPalette } from './components/CommandPalette.js';
 import { BootAnimation } from './components/BootAnimation.js';
 import { SessionPicker, type PickerSession, type PickerChoice } from './components/SessionPicker.js';
 import { OptionPicker, type PickerOption } from './components/OptionPicker.js';
-import { saveKey } from './config/keys.js';
+import { ProviderManager, type ProviderManagerMode } from './components/ProviderManager.js';
+import { saveKey, clearKey } from './config/keys.js';
 import { buildProviders } from './providers/index.js';
 import { sendChatStream } from './orchestrator/index.js';
 import { fetchAllModels } from './models/fetcher.js';
@@ -27,7 +28,8 @@ import { loadAllPlugins, ensurePluginsDir, type LoadedPlugin } from './plugins/i
 import { setTheme as setTuiTheme } from './tui/theme.js';
 import { setTheme, getThemeName, listThemes } from './tui/theme.js';
 import { ObserverEngine, type ObserverContext } from './observer/engine.js';
-import type { AppConfig, ChatMessage, ModelDescriptor, Session, SlashCommandContext } from './types.js';
+import type { AppConfig, ChatMessage, ModelDescriptor, ProviderConfig, Session, SlashCommandContext } from './types.js';
+import type { KeyChange } from './components/ProviderManager.js';
 import type { StreamMetrics } from './components/StatusBar.js';
 import { color } from './tui/theme.js';
 
@@ -80,6 +82,8 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     onPick: (id: string) => void;
     hint?: string;
   } | null>(null);
+  // Provider add/remove/edit overlay. Opened by `/provider add|remove|edit`.
+  const [providerMgr, setProviderMgr] = useState<{ mode: ProviderManagerMode } | null>(null);
   const [metrics, setMetrics] = useState<StreamMetrics | undefined>(undefined);
   // Session-restore banner: shown briefly when we resume a prior session.
   const [restoredFrom, setRestoredFrom] = useState<string | null>(null);
@@ -425,6 +429,12 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           .join('\n');
       }
       // ── Interactive pickers (mimo-style) ────────────────────────────
+      // `/provider add|remove|edit` opens the ProviderManager overlay.
+      const provSub = input.match(/^\/provider\s+(add|remove|edit)$/);
+      if (provSub) {
+        setProviderMgr({ mode: provSub[1] as ProviderManagerMode });
+        return;
+      }
       // These four commands open a scrollable OptionPicker when invoked
       // with no argument, instead of printing a text list. An explicit
       // argument still works (e.g. "/model glm-5.2") and bypasses the menu.
@@ -816,6 +826,25 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     [config, keyCapture, handleSubmit]
   );
 
+  // Commit a provider add/remove/edit. Persists config (saveConfig strips keys)
+  // and routes key mutations through the on-disk key store (~/.nexus/keys.json).
+  const persistProviderChange = useCallback(
+    (next: { providers: ProviderConfig[]; activeProviderId?: string; keys: KeyChange }) => {
+      const withKeys = next.providers.map(p => {
+        if (p.kind === 'zai' || p.apiKey) return p;
+        const set = next.keys.set?.[p.id];
+        return set ? { ...p, apiKey: set } : p;
+      });
+      setConfig({
+        providers: withKeys,
+        ...(next.activeProviderId !== undefined ? { activeProviderId: next.activeProviderId } : {}),
+      });
+      if (next.keys.set) for (const [pid, k] of Object.entries(next.keys.set)) saveKey(pid, k);
+      if (next.keys.clear) for (const pid of next.keys.clear) clearKey(pid);
+    },
+    [setConfig]
+  );
+
   const handleTab = useCallback(
     (currentInput: string): string[] => {
       if (currentInput.startsWith('/')) {
@@ -973,6 +1002,15 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
                 hint={openPicker.hint}
                 onPick={openPicker.onPick}
                 onClose={() => setOpenPicker(null)}
+              />
+            )}
+            {providerMgr && (
+              <ProviderManager
+                mode={providerMgr.mode}
+                providers={config.providers}
+                activeProviderId={config.activeProviderId}
+                onClose={() => setProviderMgr(null)}
+                onPersist={persistProviderChange}
               />
             )}
             {showPalette && (
