@@ -11,6 +11,8 @@ const ENV_KEYS: Record<string, { env: string; field: 'apiKey' }> = {
   openai: { env: 'OPENAI_API_KEY', field: 'apiKey' },
   anthropic: { env: 'ANTHROPIC_API_KEY', field: 'apiKey' },
   zai: { env: 'ZAI_API_KEY', field: 'apiKey' },
+  // FreeModel (https://api.freemodel.dev) — OpenAI-compatible gateway.
+  freemodel: { env: 'FREEMODEL_API_KEY', field: 'apiKey' },
 };
 
 function applyEnv(config: AppConfig): AppConfig {
