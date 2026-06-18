@@ -32,6 +32,7 @@ export { detectLanguage, getReviewRule, getReviewRuleForFile, getSupportedLangua
 
 // v4.0 modules — Multi-Provider Support
 export { AnthropicProvider } from './providers/anthropic-provider.js';
+export { FreeModelProvider } from './providers/freemodel-provider.js';
 export { GoogleProvider } from './providers/google-provider.js';
 export { OpenAIProvider } from './providers/openai-provider.js';
 export { createProviderRouter, ProviderRouter } from './providers/provider-router.js';
