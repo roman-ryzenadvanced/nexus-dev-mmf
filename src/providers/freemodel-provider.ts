@@ -15,7 +15,7 @@
  * @version 5.2.0
  */
 
-import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult,ProviderConfig, ProviderId, ProviderMessage } from './types.js';
+import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult, ProviderConfig, ProviderId, ProviderMessage } from './types.js';
 
 /**
  * Default base URL for the FreeModel OpenAI-compatible endpoint.
@@ -97,7 +97,7 @@ export class FreeModelProvider implements LLMProvider {
       throw new Error(`FreeModel API error (${response.status}): ${errorText}`);
     }
 
-    const data = (await response.json());
+    const data = await response.json();
 
     const content = data.choices?.[0]?.message?.content ?? '';
 
