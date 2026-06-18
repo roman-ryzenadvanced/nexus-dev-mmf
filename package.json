@@ -21,7 +21,8 @@
     "nexus-code": "cd packages/nexus-code && node bin/nexus.js",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "setup": "node scripts/setup.mjs"
   },
   "workspaces": [
     "packages/*"

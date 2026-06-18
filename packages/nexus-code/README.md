@@ -123,11 +123,27 @@ Inspired by [`opencode`](https://github.com/anomalyco/opencode), [`MiMo-Code`](h
 
 ### Install
 
+#### One command (recommended) — gets you a global `nexus` command
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git
+cd nexus-dev-mmf
+node scripts/setup.mjs        # ⭐ installs + builds + enables `nexus` globally
+```
+
+After it finishes, run **`nexus`** from anywhere. (`npm run setup` works too.)
+
+The script handles the npm-workspaces quirk that breaks plain `npm link`,
+verifies `nexus --version` resolves on your PATH, and prints next steps for
+your API key.
+
+#### From npm (when published)
+
 ```bash
 npm install -g nexus-code
 ```
 
-Or run from source:
+#### Run from source (no global command)
 
 ```bash
 git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git
@@ -135,6 +151,28 @@ cd nexus-dev-mmf/packages/nexus-code
 npm install
 npm run build
 node bin/nexus.js
+```
+
+> The from-source steps build the TUI but do **not** create a global `nexus`
+> command. Run `node scripts/setup.mjs` from the repo root to get `nexus` on
+> your PATH.
+
+#### Add your API key
+
+```bash
+# Z.ai (GLM — MMFE native, free tier available). Get a key at https://z.ai:
+mkdir -p ~/.config
+printf '{"apiKey":"YOUR_ZAI_KEY","baseUrl":"https://open.bigmodel.cn/api/coding/paas/v4"}' > ~/.z-ai-config
+chmod 600 ~/.z-ai-config
+
+# Or: launch nexus, then use the /provider picker to switch providers and add
+# any OpenAI / Anthropic key inline.
+```
+
+Then start coding:
+
+```bash
+nexus
 ```
 
 ### Features

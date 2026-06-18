@@ -414,14 +414,47 @@ Each model is rated across 16+ capabilities. The router uses these scores alongs
 git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git
 cd nexus-dev-mmf
 
-# Install dependencies
-npm install
+# ⭐ ONE COMMAND installs everything AND enables the `nexus` TUI globally:
+node scripts/setup.mjs
+```
 
-# Build TypeScript
-npm run build
+That's it — after the script finishes, the **`nexus`** command works from
+anywhere. The script does six things for you:
 
-# Verify installation
-node dist/cli.js --help
+1. Verifies Node.js ≥ 18
+2. Installs + builds the root orchestrator SDK (`dist/`)
+3. Installs + builds the **Nexus Code TUI** (`packages/nexus-code/dist/`)
+4. Links **`nexus`** + **`nexus-code`** onto your global PATH (handles the
+   npm-workspaces quirk that breaks plain `npm link`)
+5. Verifies `nexus --version` actually resolves
+6. Prints clear next steps for your API key
+
+> **You can run `npm run setup` instead of `node scripts/setup.mjs`** — both
+> are equivalent.
+
+#### Manual / step-by-step (if you prefer)
+
+```bash
+git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git
+cd nexus-dev-mmf
+
+npm install          # install root deps
+npm run build        # build the orchestrator SDK
+cd packages/nexus-code
+npm install          # install TUI deps
+npm run build        # build the TUI
+node bin/nexus.js    # run the TUI from source (no global command yet)
+```
+
+> The manual steps build the TUI but do **not** create a global `nexus`
+> command. Run `node scripts/setup.mjs` (or `npm run setup`) to get `nexus`
+> on your PATH, or run the TUI directly with `node packages/nexus-code/bin/nexus.js`.
+
+#### Verify installation
+
+```bash
+node dist/cli.js --help   # the orchestrator CLI
+nexus --version           # the TUI (global command, if you ran setup)
 ```
 
 ### SDK Configuration
