@@ -90,11 +90,19 @@ describe('config schema', () => {
     expect(ids).toEqual(['anthropic', 'freemodel', 'openai', 'zai']);
   });
 
-  it('BUILTIN_MODELS has 6 GLM models', () => {
-    expect(BUILTIN_MODELS).toHaveLength(6);
-    for (const m of BUILTIN_MODELS) {
-      expect(m.providerId).toBe('zai');
+  it('BUILTIN_MODELS includes the GLM family', () => {
+    const glm = BUILTIN_MODELS.filter(m => m.providerId === 'zai');
+    expect(glm.length).toBeGreaterThanOrEqual(6);
+    for (const m of glm) {
       expect(m.id).toMatch(/^glm-/);
+    }
+  });
+
+  it('BUILTIN_MODELS includes the FreeModel GPT-5.x family', () => {
+    const fm = BUILTIN_MODELS.filter(m => m.providerId === 'freemodel');
+    expect(fm.length).toBeGreaterThanOrEqual(4);
+    for (const m of fm) {
+      expect(m.id).toMatch(/^gpt-5\./);
     }
   });
 });

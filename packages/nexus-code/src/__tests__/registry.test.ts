@@ -81,9 +81,9 @@ describe('model registry', () => {
     expect(findModel(reg, 'zai', 'nonexistent')).toBeUndefined();
   });
 
-  it('BUILTIN_MODELS all have providerId zai', () => {
+  it('BUILTIN_MODELS all belong to a known provider', () => {
     for (const m of BUILTIN_MODELS) {
-      expect(m.providerId).toBe('zai');
+      expect(['zai', 'freemodel']).toContain(m.providerId);
     }
   });
 });
