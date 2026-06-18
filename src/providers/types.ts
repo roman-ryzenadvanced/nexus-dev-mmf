@@ -15,6 +15,7 @@ export type ProviderId =
   | 'zai' // z-ai-web-dev-sdk, OpenAI-compatible coding endpoint (GLM models)
   | 'zai-anthropic' // ZAI Anthropic-compatible endpoint (https://api.z.ai/api/anthropic) — GLM via Messages API
   | 'openai' // OpenAI API (GPT-4o, o3, o4-mini, etc.)
+  | 'freemodel' // FreeModel OpenAI-compatible endpoint (https://api.freemodel.dev/v1) — gpt-5.x / codex
   | 'anthropic' // Anthropic API (Claude 4, Sonnet 4, Haiku 3.5, etc.)
   | 'google'; // Google AI / Vertex AI (Gemini 2.5 Pro/Flash, etc.)
 

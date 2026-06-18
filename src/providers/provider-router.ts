@@ -14,6 +14,7 @@
  */
 
 import { AnthropicProvider } from './anthropic-provider.js';
+import { FreeModelProvider } from './freemodel-provider.js';
 import { GoogleProvider } from './google-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
 import type {
@@ -40,6 +41,8 @@ function createProviderInstance(providerId: ProviderId): LLMProvider {
       return new ZAIAnthropicProvider();
     case 'openai':
       return new OpenAIProvider();
+    case 'freemodel':
+      return new FreeModelProvider();
     case 'anthropic':
       return new AnthropicProvider();
     case 'google':
@@ -65,7 +68,7 @@ function parseModelId(modelId: string): {
   const prefix = modelId.substring(0, slashIndex) as ProviderId;
   const model = modelId.substring(slashIndex + 1);
 
-  const validProviders: ProviderId[] = ['zai', 'zai-anthropic', 'openai', 'anthropic', 'google'];
+  const validProviders: ProviderId[] = ['zai', 'zai-anthropic', 'openai', 'freemodel', 'anthropic', 'google'];
   if (validProviders.includes(prefix)) {
     return { provider: prefix, model };
   }
