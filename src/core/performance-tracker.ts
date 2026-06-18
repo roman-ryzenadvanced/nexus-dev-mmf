@@ -16,8 +16,8 @@ export interface ModelPerformanceRecord {
 }
 
 export class PerformanceTracker {
-  private records: Map<string, ModelPerformanceRecord> = new Map();
-  private maxHistory: number;
+  private readonly records: Map<string, ModelPerformanceRecord> = new Map();
+  private readonly maxHistory: number;
 
   constructor(maxHistory = 1000) {
     this.maxHistory = maxHistory;
@@ -26,13 +26,7 @@ export class PerformanceTracker {
   /**
    * Record a successful model execution.
    */
-  recordSuccess(
-    modelId: string,
-    executionTimeMs: number,
-    qualityScore?: number,
-    tokensUsed?: number,
-    capabilities?: string[]
-  ): void {
+  recordSuccess(modelId: string, executionTimeMs: number, qualityScore?: number, tokensUsed?: number, capabilities?: string[]): void {
     const record = this.getOrCreate(modelId);
     record.totalCalls++;
     record.successfulCalls++;

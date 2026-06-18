@@ -6,10 +6,7 @@ import type { MMFEMode } from '../types.js';
 
 export const ALL_MODES: MMFEMode[] = ['speed', 'balanced', 'quality', 'creative'];
 
-export const MODE_METADATA: Record<
-  MMFEMode,
-  { label: string; tagline: string; preferredModels: string[]; color: string }
-> = {
+export const MODE_METADATA: Record<MMFEMode, { label: string; tagline: string; preferredModels: string[]; color: string }> = {
   speed: {
     label: 'speed',
     tagline: 'prioritizes glm-5, glm-5v-turbo',

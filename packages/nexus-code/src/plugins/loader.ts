@@ -41,7 +41,7 @@ interface PluginModule {
 export async function discoverPlugins(): Promise<string[]> {
   if (!existsSync(PLUGINS_DIR)) return [];
   const files = await readdir(PLUGINS_DIR);
-  return files.filter((f) => f.endsWith('.js') || f.endsWith('.mjs'));
+  return files.filter(f => f.endsWith('.js') || f.endsWith('.mjs'));
 }
 
 export async function loadPlugin(filename: string): Promise<LoadedPlugin> {
@@ -59,15 +59,14 @@ export async function loadPlugin(filename: string): Promise<LoadedPlugin> {
     }
     const def = mod.default;
     const tools: ToolDefinition[] = (def.tools || [])
-      .filter((t) => t.name && t.handler)
-      .map((t) => ({
+      .filter(t => t.name && t.handler)
+      .map(t => ({
         name: t.name,
         description: t.description || `Plugin tool: ${t.name}`,
         parameters: t.parameters || { type: 'object', properties: {} },
         handler: t.handler!,
       }));
-    const commands: SlashCommand[] = (def.commands || [])
-      .filter((c) => c.name && typeof c.run === 'function');
+    const commands: SlashCommand[] = (def.commands || []).filter(c => c.name && typeof c.run === 'function');
     return {
       filename,
       name: def.name || filename,

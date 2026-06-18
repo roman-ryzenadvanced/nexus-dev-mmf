@@ -20,15 +20,7 @@ const BANNER = [
   ' ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝',
 ];
 
-const STEPS = [
-  'Loading configuration',
-  'Initializing providers',
-  'Fetching models',
-  'Loading plugins',
-  'Registering tools',
-  'Connecting MCP servers',
-  'Ready',
-];
+const STEPS = ['Loading configuration', 'Initializing providers', 'Fetching models', 'Loading plugins', 'Registering tools', 'Connecting MCP servers', 'Ready'];
 
 const ROLLER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 const STEP_MS = 180; // time to resolve each step
@@ -70,10 +62,15 @@ export function BootAnimation({ onDone }: Props) {
     <Box flexDirection="column" paddingX={2} paddingY={1}>
       <Box flexDirection="column" marginBottom={1}>
         {BANNER.map((line, i) => (
-          <Text key={i} color={t.accent}>{line}</Text>
+          <Text key={i} color={t.accent}>
+            {line}
+          </Text>
         ))}
-        <Text color={t.accent2} bold>            C O D E</Text>
-        <Text color={t.primaryDim}>      multi-model fusion · terminal native</Text>
+        <Text color={t.accent2} bold>
+          {' '}
+          C O D E
+        </Text>
+        <Text color={t.primaryDim}> multi-model fusion · terminal native</Text>
       </Box>
 
       <Box flexDirection="column" marginTop={1}>

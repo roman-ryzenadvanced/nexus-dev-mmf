@@ -23,31 +23,31 @@ npx vitest
 
 ## Test files
 
-| File | Tests | Covers |
-|---|---|---|
-| `config.test.ts` | 14 | Schema parsing, load/save, env-merge, key-stripping |
-| `registry.test.ts` | 8 | Model registry merge precedence, manual add/remove |
-| `commands.test.ts` | 22 | All 20 builtin slash commands, aliases, error paths |
-| `session.test.ts` | 7 | newSession, save/load, list, delete |
-| `modes.test.ts` | 7 | 4 MMFE modes, metadata, validation |
-| `tools.test.ts` | 15 | ToolRegistry, error isolation, schema converters |
-| `retry.test.ts` | 5 | Retryable errors, maxRetries, onRetry callback |
-| `orchestrator.test.ts` | 6 | Tool-call loop, maxToolRounds, no-registry bypass |
-| `providers.test.ts` | 14 | OpenAI + Anthropic request/response with mocked HTTP |
-| `command-palette.test.ts` | 10 | filterEntries pure function |
-| `mcp.test.ts` | 6 | **Live** filesystem MCP server + failure handling |
-| `history.test.ts` | 9 | load/append/clear/search, duplicate suppression |
-| `theme.test.ts` | 9 | 3 themes, distinct palettes, luminance checks |
-| `autocomplete.test.ts` | 17 | Slash command + history completion |
-| `pipe.test.ts` | 3 | PipeOptions interface |
-| `components.test.tsx` | 16 | StatusBar, HelpOverlay, ChatView Ink rendering |
-| `plugins.test.ts` | 9 | loadPlugin, loadAllPlugins, writeExamplePlugin |
-| `wizard.test.ts` | 5 | Non-interactive mode basics |
-| `wizard-interactive.test.ts` | 7 | Mocked readline, edge cases |
-| `new-commands.test.ts` | 9 | /diff, /branch, /init, /plugins |
-| `web.test.ts` | 11 | **Live** HTTP server, all endpoints, HTML shape |
-| `plugin-commands.test.ts` | 15 | Register/unregister, runSlash integration, end-to-end |
-| `smoke-real.test.ts` | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated) |
+| File                         | Tests     | Covers                                                |
+| ---------------------------- | --------- | ----------------------------------------------------- |
+| `config.test.ts`             | 14        | Schema parsing, load/save, env-merge, key-stripping   |
+| `registry.test.ts`           | 8         | Model registry merge precedence, manual add/remove    |
+| `commands.test.ts`           | 22        | All 20 builtin slash commands, aliases, error paths   |
+| `session.test.ts`            | 7         | newSession, save/load, list, delete                   |
+| `modes.test.ts`              | 7         | 4 MMFE modes, metadata, validation                    |
+| `tools.test.ts`              | 15        | ToolRegistry, error isolation, schema converters      |
+| `retry.test.ts`              | 5         | Retryable errors, maxRetries, onRetry callback        |
+| `orchestrator.test.ts`       | 6         | Tool-call loop, maxToolRounds, no-registry bypass     |
+| `providers.test.ts`          | 14        | OpenAI + Anthropic request/response with mocked HTTP  |
+| `command-palette.test.ts`    | 10        | filterEntries pure function                           |
+| `mcp.test.ts`                | 6         | **Live** filesystem MCP server + failure handling     |
+| `history.test.ts`            | 9         | load/append/clear/search, duplicate suppression       |
+| `theme.test.ts`              | 9         | 3 themes, distinct palettes, luminance checks         |
+| `autocomplete.test.ts`       | 17        | Slash command + history completion                    |
+| `pipe.test.ts`               | 3         | PipeOptions interface                                 |
+| `components.test.tsx`        | 16        | StatusBar, HelpOverlay, ChatView Ink rendering        |
+| `plugins.test.ts`            | 9         | loadPlugin, loadAllPlugins, writeExamplePlugin        |
+| `wizard.test.ts`             | 5         | Non-interactive mode basics                           |
+| `wizard-interactive.test.ts` | 7         | Mocked readline, edge cases                           |
+| `new-commands.test.ts`       | 9         | /diff, /branch, /init, /plugins                       |
+| `web.test.ts`                | 11        | **Live** HTTP server, all endpoints, HTML shape       |
+| `plugin-commands.test.ts`    | 15        | Register/unregister, runSlash integration, end-to-end |
+| `smoke-real.test.ts`         | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated)      |
 
 **Total:** 238 tests (230 passing + 8 env-gated skipped)
 

@@ -38,21 +38,21 @@
 
 ## Module map
 
-| Path | Responsibility |
-|---|---|
-| `bin/nexus.js` | CLI entry — parses flags, boots TUI |
-| `src/index.tsx` | Renders the Ink app, loads config |
-| `src/App.tsx` | Root component — wires all subsystems |
-| `src/types.ts` | Shared TypeScript types |
-| `src/config/` | Schema + load/save + env merge |
-| `src/providers/` | Provider abstraction (base, openai, anthropic, zai) |
-| `src/orchestrator/` | MMFE bridge — `sendChat()` unified entry |
-| `src/models/` | Auto-fetcher + registry |
-| `src/commands/` | Slash command registry + builtins |
-| `src/components/` | Ink TUI components |
-| `src/tools/` | fs / shell / diff utilities |
-| `src/session/` | Save/load chat sessions |
-| `src/tui/` | Theme + markdown renderer |
+| Path                | Responsibility                                      |
+| ------------------- | --------------------------------------------------- |
+| `bin/nexus.js`      | CLI entry — parses flags, boots TUI                 |
+| `src/index.tsx`     | Renders the Ink app, loads config                   |
+| `src/App.tsx`       | Root component — wires all subsystems               |
+| `src/types.ts`      | Shared TypeScript types                             |
+| `src/config/`       | Schema + load/save + env merge                      |
+| `src/providers/`    | Provider abstraction (base, openai, anthropic, zai) |
+| `src/orchestrator/` | MMFE bridge — `sendChat()` unified entry            |
+| `src/models/`       | Auto-fetcher + registry                             |
+| `src/commands/`     | Slash command registry + builtins                   |
+| `src/components/`   | Ink TUI components                                  |
+| `src/tools/`        | fs / shell / diff utilities                         |
+| `src/session/`      | Save/load chat sessions                             |
+| `src/tui/`          | Theme + markdown renderer                           |
 
 ## Data flow
 

@@ -14,14 +14,7 @@
 // ============================================================
 
 import { BaseProvider, ProviderError } from './base.js';
-import type {
-  ChatMessage,
-  ChatRequestOptions,
-  ChatResponse,
-  ModelDescriptor,
-  RoutingDecision,
-  ToolCall,
-} from '../types.js';
+import type { ChatMessage, ChatRequestOptions, ChatResponse, ModelDescriptor, RoutingDecision, ToolCall } from '../types.js';
 import { BUILTIN_MODELS } from '../config/schema.js';
 import { loadZAIClient } from './zai-loader.js';
 
@@ -45,7 +38,10 @@ type SSEChunk = {
     };
     message?: {
       content?: string;
-      tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
+      tool_calls?: Array<{
+        id: string;
+        function: { name: string; arguments: string };
+      }>;
     };
     finish_reason?: string;
   }>;
@@ -54,9 +50,7 @@ type SSEChunk = {
 // Yield parsed SSE chunk objects from whatever the SDK returned. Extracts both
 // content deltas and tool-call deltas, so callers can render streaming text AND
 // drive tool-call chains.
-async function* readSSEChunks(
-  body: unknown,
-): AsyncGenerator<SSEChunk, void, unknown> {
+async function* readSSEChunks(body: unknown): AsyncGenerator<SSEChunk, void, unknown> {
   if (body == null) return;
 
   // IMPORTANT: detect raw byte streams (getReader / Node `.on`) BEFORE the
@@ -98,7 +92,7 @@ async function* readSSEChunks(
     const nodeStream = body as NodeJS.ReadableStream;
     const decoder = new TextDecoder();
     const chunks: string[] = [];
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       nodeStream.on('data', (chunk: Buffer | string) => {
         chunks.push(typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true }));
       });
@@ -147,7 +141,11 @@ type ZAIMessage =
 
 type ZAITool = {
   type: 'function';
-  function: { name: string; description: string; parameters: Record<string, unknown> };
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
 };
 
 interface ZAIClient {
@@ -223,9 +221,7 @@ async function tryLoadOrchestrator(): Promise<Orchestrator | null> {
     // Path resolution failed — skip the relative candidate.
   }
 
-  const mods = await Promise.all(
-    candidateUrls.map((u) => import(u).then((m) => m as MMFEModule).catch(() => null as unknown as MMFEModule))
-  );
+  const mods = await Promise.all(candidateUrls.map(u => import(u).then(m => m as MMFEModule).catch(() => null as unknown as MMFEModule)));
   for (const mod of mods) {
     if (mod && typeof mod.createOrchestrator === 'function') {
       return mod.createOrchestrator({
@@ -268,7 +264,7 @@ export class ZAIProvider extends BaseProvider {
   async fetchModels(): Promise<ModelDescriptor[]> {
     // The ZAI SDK doesn't expose a listModels() method.
     // Return the builtin roster — users can add more via /add.
-    return BUILTIN_MODELS.map((m) => ({ ...m, source: 'builtin' as const }));
+    return BUILTIN_MODELS.map(m => ({ ...m, source: 'builtin' as const }));
   }
 
   async chat(messages: ChatMessage[], opts: ChatRequestOptions = {}): Promise<ChatResponse> {
@@ -281,7 +277,7 @@ export class ZAIProvider extends BaseProvider {
       const orch = useMMFE ? await this.orchestrator() : null;
 
       if (useMMFE && orch) {
-        const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+        const lastUser = [...messages].reverse().find(m => m.role === 'user');
         const prompt = lastUser?.content || '';
 
         // Subscribe to live pipeline events so the UI can show REAL progress
@@ -364,7 +360,13 @@ export class ZAIProvider extends BaseProvider {
         tool_choice: tools ? 'auto' : undefined,
       })) as {
         choices?: Array<{
-          message?: { content?: string; tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }> };
+          message?: {
+            content?: string;
+            tool_calls?: Array<{
+              id: string;
+              function: { name: string; arguments: string };
+            }>;
+          };
           delta?: { content?: string };
           finish_reason?: string;
         }>;
@@ -395,19 +397,11 @@ export class ZAIProvider extends BaseProvider {
       return { message: assistantMsg, raw: res };
     } catch (err) {
       if (err instanceof ProviderError) throw err;
-      throw new ProviderError(
-        `Z.ai chat failed: ${(err as Error).message}`,
-        this.id,
-        undefined,
-        err
-      );
+      throw new ProviderError(`Z.ai chat failed: ${(err as Error).message}`, this.id, undefined, err);
     }
   }
 
-  async *streamChat(
-    messages: ChatMessage[],
-    opts: ChatRequestOptions = {}
-  ): AsyncGenerator<string, ChatResponse, unknown> {
+  async *streamChat(messages: ChatMessage[], opts: ChatRequestOptions = {}): AsyncGenerator<string, ChatResponse, unknown> {
     const model = opts.model || 'glm-5.2';
     const client = await this.client();
     const payload = toZAIMessages(messages);
@@ -425,10 +419,7 @@ export class ZAIProvider extends BaseProvider {
     const start = Date.now();
     // Accumulate tool calls across SSE chunks (GLM streams them in pieces,
     // same as OpenAI: id+name first, arguments appended across frames).
-    const toolAccumulator = new Map<
-      number,
-      { id: string; name: string; arguments: string }
-    >();
+    const toolAccumulator = new Map<number, { id: string; name: string; arguments: string }>();
 
     // The z-ai-web-dev-sdk returns the raw fetch ReadableStream (SSE text)
     // when stream:true — readSSEChunks parses the `data: {...}` frames.
@@ -444,7 +435,11 @@ export class ZAIProvider extends BaseProvider {
       if (tcds) {
         for (const tcd of tcds) {
           const idx = tcd.index;
-          const existing = toolAccumulator.get(idx) || { id: '', name: '', arguments: '' };
+          const existing = toolAccumulator.get(idx) || {
+            id: '',
+            name: '',
+            arguments: '',
+          };
           if (tcd.id) existing.id = tcd.id;
           if (tcd.function?.name) existing.name = tcd.function.name;
           if (tcd.function?.arguments) existing.arguments += tcd.function.arguments;
@@ -462,7 +457,12 @@ export class ZAIProvider extends BaseProvider {
       } catch {
         args = { _raw: acc.arguments };
       }
-      toolCalls.push({ id: acc.id, name: acc.name, args, status: 'pending' as const });
+      toolCalls.push({
+        id: acc.id,
+        name: acc.name,
+        args,
+        status: 'pending' as const,
+      });
     }
 
     const assistantMsg: ChatMessage = {
@@ -483,9 +483,13 @@ export class ZAIProvider extends BaseProvider {
 
 function toZAITools(tools?: ChatRequestOptions['tools']): ZAITool[] | undefined {
   if (!tools?.length) return undefined;
-  return tools.map((t) => ({
+  return tools.map(t => ({
     type: 'function' as const,
-    function: { name: t.name, description: t.description, parameters: t.parameters },
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters,
+    },
   }));
 }
 
@@ -493,35 +497,45 @@ function toZAIMessages(messages: ChatMessage[]): ZAIMessage[] {
   const out: ZAIMessage[] = [];
   for (const m of messages) {
     if (m.role === 'tool') {
-      out.push({ role: 'tool', content: m.content, tool_call_id: m.toolCalls?.[0]?.id || 'unknown' });
+      out.push({
+        role: 'tool',
+        content: m.content,
+        tool_call_id: m.toolCalls?.[0]?.id || 'unknown',
+      });
     } else if (m.role === 'assistant' && m.toolCalls?.length) {
       out.push({
         role: 'assistant',
         content: m.content || null,
-        tool_calls: m.toolCalls.map((tc) => ({
+        tool_calls: m.toolCalls.map(tc => ({
           id: tc.id,
           type: 'function',
           function: { name: tc.name, arguments: JSON.stringify(tc.args) },
         })),
       });
     } else {
-      out.push({ role: m.role as 'system' | 'user' | 'assistant', content: m.content });
+      out.push({
+        role: m.role as 'system' | 'user' | 'assistant',
+        content: m.content,
+      });
     }
   }
   return out;
 }
 
-function parseZAIToolCalls(
-  raw?: Array<{ id: string; function: { name: string; arguments: string } }>
-): ToolCall[] {
+function parseZAIToolCalls(raw?: Array<{ id: string; function: { name: string; arguments: string } }>): ToolCall[] {
   if (!raw?.length) return [];
-  return raw.map((tc) => {
+  return raw.map(tc => {
     let args: Record<string, unknown> = {};
     try {
       args = JSON.parse(tc.function.arguments || '{}');
     } catch {
       args = { _raw: tc.function.arguments };
     }
-    return { id: tc.id, name: tc.function.name, args, status: 'pending' as const };
+    return {
+      id: tc.id,
+      name: tc.function.name,
+      args,
+      status: 'pending' as const,
+    };
   });
 }

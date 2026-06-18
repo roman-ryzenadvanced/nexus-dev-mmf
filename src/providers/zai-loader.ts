@@ -13,9 +13,9 @@
 // requires `{ baseUrl, apiKey }`. It then POSTs to `${baseUrl}/chat/completions`.
 // ============================================================
 
+import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 
 /** Primary coding endpoint (Fix #1). */
 export const ZAI_PRIMARY_BASE_URL = 'https://open.bigmodel.cn/api/coding/paas/v4';
@@ -44,7 +44,11 @@ interface ZAIChoice {
 }
 interface ZAIResponse {
   choices?: ZAIChoice[];
-  usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number };
+  usage?: {
+    total_tokens?: number;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+  };
 }
 interface ZAIClient {
   chat: {
@@ -84,10 +88,7 @@ export function resolveApiKey(explicit?: string): string {
   if (env) return env;
   const existing = readExistingConfig();
   if (existing?.apiKey) return existing.apiKey;
-  throw new Error(
-    'No ZAI API key found. Set ZAI_API_KEY, pass an apiKey, or put ' +
-      '"apiKey" in ~/.z-ai-config.'
-  );
+  throw new Error('No ZAI API key found. Set ZAI_API_KEY, pass an apiKey, or put ' + '"apiKey" in ~/.z-ai-config.');
 }
 
 function readExistingConfig(): ZAIConfigFile | null {
@@ -106,11 +107,7 @@ function readExistingConfig(): ZAIConfigFile | null {
  */
 export function ensureZAIConfig(opts: { apiKey: string; baseUrl: string }): void {
   const existing = readExistingConfig();
-  const needsWrite =
-    !existing ||
-    !existing.baseUrl ||
-    !existing.apiKey ||
-    existing.baseUrl !== opts.baseUrl;
+  const needsWrite = !existing?.baseUrl || !existing.apiKey || existing.baseUrl !== opts.baseUrl;
 
   if (!needsWrite) return;
 
@@ -133,11 +130,7 @@ export function ensureZAIConfig(opts: { apiKey: string; baseUrl: string }): void
  * failure / non-HTTP error. We send an intentionally-bad tiny request; ANY
  * HTTP response (even 400/401/403) means the endpoint is reachable and alive.
  */
-export async function probeEndpoint(
-  baseUrl: string,
-  apiKey: string,
-  timeoutMs = 4000
-): Promise<number | null> {
+export async function probeEndpoint(baseUrl: string, apiKey: string, timeoutMs = 4000): Promise<number | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -202,9 +195,6 @@ export async function loadZAIClient(explicitApiKey?: string): Promise<ZAIClient>
     cachedBaseUrl = baseUrl;
     return cachedClient;
   } catch (err) {
-    throw new Error(
-      `Failed to load z-ai-web-dev-sdk against ${baseUrl}: ` +
-        `${(err as Error).message}. Run: npm install z-ai-web-dev-sdk`
-    );
+    throw new Error(`Failed to load z-ai-web-dev-sdk against ${baseUrl}: ` + `${(err as Error).message}. Run: npm install z-ai-web-dev-sdk`);
   }
 }

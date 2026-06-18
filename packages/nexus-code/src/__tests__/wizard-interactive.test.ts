@@ -93,7 +93,10 @@ describe('config wizard — edge cases', () => {
     const cfgPath = join(tmp, 'config.json');
     await writeFile(cfgPath, '{"existing":true}', 'utf8');
     try {
-      const summary = await runWizard({ nonInteractive: true, configPath: cfgPath });
+      const summary = await runWizard({
+        nonInteractive: true,
+        configPath: cfgPath,
+      });
       expect(summary).toContain('already exists');
       const raw = await readFile(cfgPath, 'utf8');
       expect(raw).toBe('{"existing":true}');

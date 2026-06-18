@@ -5,7 +5,7 @@
  * Each language gets a tailored review checklist injected into the LLM prompt.
  */
 
-import { ReviewLanguage } from './types.js';
+import type { ReviewLanguage } from './types.js';
 
 const rules: Record<ReviewLanguage, string> = {
   default: `#### Correctness
@@ -260,7 +260,7 @@ Do test cases cover boundary conditions?`,
 - Do not use gets() - use fgets() instead`,
 
   go: `#### Error Handling
-- Always check error return values; never discard errors with \`\_\`
+- Always check error return values; never discard errors with \`_\`
 - Wrap errors with context using fmt.Errorf("...: %w", err) for error chain
 - Handle errors at the appropriate level (return, retry, or handle)
 
@@ -359,30 +359,30 @@ Do test cases cover boundary conditions?`,
 export function detectLanguage(filePath: string): ReviewLanguage {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
   const extMap: Record<string, ReviewLanguage> = {
-    'ts': 'typescript',
-    'tsx': 'typescript',
-    'js': 'javascript',
-    'jsx': 'javascript',
-    'mts': 'typescript',
-    'mjs': 'javascript',
-    'java': 'java',
-    'kt': 'kotlin',
-    'kts': 'kotlin',
-    'rs': 'rust',
-    'cpp': 'cpp',
-    'cc': 'cpp',
-    'cxx': 'cpp',
-    'hpp': 'cpp',
-    'c': 'c',
-    'h': 'c',
-    'go': 'go',
-    'py': 'python',
-    'properties': 'properties',
-    'json': 'json',
-    'yaml': 'yaml',
-    'yml': 'yaml',
-    'xml': 'xml',
-    'ets': 'arkts',
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    mts: 'typescript',
+    mjs: 'javascript',
+    java: 'java',
+    kt: 'kotlin',
+    kts: 'kotlin',
+    rs: 'rust',
+    cpp: 'cpp',
+    cc: 'cpp',
+    cxx: 'cpp',
+    hpp: 'cpp',
+    c: 'c',
+    h: 'c',
+    go: 'go',
+    py: 'python',
+    properties: 'properties',
+    json: 'json',
+    yaml: 'yaml',
+    yml: 'yaml',
+    xml: 'xml',
+    ets: 'arkts',
   };
   return extMap[ext] ?? 'default';
 }

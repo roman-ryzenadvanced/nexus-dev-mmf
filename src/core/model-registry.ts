@@ -3,7 +3,8 @@
  * Allows registering new models into the registry at runtime.
  */
 
-import { MODEL_REGISTRY, ModelProfile, ModelCapability } from './models.js';
+import type { ModelProfile } from './models.js';
+import { MODEL_REGISTRY, ModelCapability } from './models.js';
 
 /**
  * Register a new model into the global model registry.

@@ -46,8 +46,18 @@
     }
   ],
   "manualModels": [
-    { "id": "gpt-4o-mini", "providerId": "openai", "label": "GPT-4o mini", "source": "manual" },
-    { "id": "deepseek-chat", "providerId": "openrouter", "label": "DeepSeek V3", "source": "manual" }
+    {
+      "id": "gpt-4o-mini",
+      "providerId": "openai",
+      "label": "GPT-4o mini",
+      "source": "manual"
+    },
+    {
+      "id": "deepseek-chat",
+      "providerId": "openrouter",
+      "label": "DeepSeek V3",
+      "source": "manual"
+    }
   ],
   "mcpServers": [],
   "ui": {

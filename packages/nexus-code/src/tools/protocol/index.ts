@@ -35,7 +35,7 @@ export interface ProviderToolSchema {
 
 /** Convert internal ToolDefinition[] to OpenAI tool schema. */
 export function toOpenAITools(tools: ToolDefinition[]): unknown[] {
-  return tools.map((t) => ({
+  return tools.map(t => ({
     type: 'function' as const,
     function: {
       name: t.name,
@@ -47,7 +47,7 @@ export function toOpenAITools(tools: ToolDefinition[]): unknown[] {
 
 /** Convert internal ToolDefinition[] to Anthropic tool schema. */
 export function toAnthropicTools(tools: ToolDefinition[]): unknown[] {
-  return tools.map((t) => ({
+  return tools.map(t => ({
     name: t.name,
     description: t.description,
     input_schema: t.parameters,
@@ -105,10 +105,7 @@ export class ToolRegistry {
     return {
       id: call.id,
       role: 'tool',
-      content:
-        typeof call.result === 'string'
-          ? call.result
-          : JSON.stringify(call.result, null, 2),
+      content: typeof call.result === 'string' ? call.result : JSON.stringify(call.result, null, 2),
       ts: Date.now(),
       toolCalls: [call],
     };

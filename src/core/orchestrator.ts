@@ -11,39 +11,36 @@
  *   - MTP (Multi-Threaded Pipeline) hyperthreading
  */
 
-import { uuidv4 } from './utils/uuid.js';
 import { Decomposer } from '../decomposer/decomposer.js';
+import type { ProviderRouter } from '../providers/provider-router.js';
+import { createProviderRouter } from '../providers/provider-router.js';
 import { AdaptiveRouter } from '../router/adaptive-router.js';
-import { ParallelExecutor } from './executor.js';
 import { Synthesizer } from '../synthesis/synthesizer.js';
-import { NexusEventEmitter } from './events.js';
-import { PerformanceTracker } from './performance-tracker.js';
+import { calculateTotalCost, optimizeForBudget } from './budget-routing.js';
+import type { NexusDevConfig } from './config.js';
+import { DEFAULT_CONFIG, mergeConfig } from './config.js';
 import { ConversationManager } from './conversation.js';
 import { EmbeddingSimilarity } from './embedding-similarity.js';
-import { optimizeForBudget, calculateTotalCost } from './budget-routing.js';
+import { NexusEventEmitter } from './events.js';
+import { ParallelExecutor } from './executor.js';
 import { MODEL_REGISTRY } from './models.js';
-import {
-  OrchestrationRequest,
-  OrchestrationResult,
-  PipelineState,
-  PipelineStage,
-} from './types.js';
-import { NexusDevConfig, DEFAULT_CONFIG, mergeConfig } from './config.js';
 import { MTPEngine } from './mtp-engine.js';
-import { ProviderRouter, createProviderRouter } from '../providers/provider-router.js';
+import { PerformanceTracker } from './performance-tracker.js';
+import type { OrchestrationRequest, OrchestrationResult, PipelineStage, PipelineState } from './types.js';
+import { uuidv4 } from './utils/uuid.js';
 
 export class Orchestrator {
-  private config: NexusDevConfig;
-  private providerRouter: ProviderRouter;
-  private decomposer: Decomposer;
-  private router: AdaptiveRouter;
-  private executor: ParallelExecutor;
-  private synthesizer: Synthesizer;
-  private pipelines: Map<string, PipelineState>;
-  private events: NexusEventEmitter;
-  private perfTracker: PerformanceTracker;
-  private conversations: ConversationManager;
-  private embeddings: EmbeddingSimilarity;
+  private readonly config: NexusDevConfig;
+  private readonly providerRouter: ProviderRouter;
+  private readonly decomposer: Decomposer;
+  private readonly router: AdaptiveRouter;
+  private readonly executor: ParallelExecutor;
+  private readonly synthesizer: Synthesizer;
+  private readonly pipelines: Map<string, PipelineState>;
+  private readonly events: NexusEventEmitter;
+  private readonly perfTracker: PerformanceTracker;
+  private readonly conversations: ConversationManager;
+  private readonly embeddings: EmbeddingSimilarity;
   private mtpEngine: MTPEngine | null = null;
 
   constructor(config?: Partial<NexusDevConfig>) {
@@ -143,9 +140,7 @@ export class Orchestrator {
     // If part of a conversation, inject conversation context
     if (request.conversationId && this.conversations.hasConversation(request.conversationId)) {
       const convContext = this.conversations.buildContext(request.conversationId);
-      request.context = request.context
-        ? `${convContext}\n\nADDITIONAL CONTEXT:\n${request.context}`
-        : convContext;
+      request.context = request.context ? `${convContext}\n\nADDITIONAL CONTEXT:\n${request.context}` : convContext;
     }
 
     this.updatePipeline(requestId, 'received', 0, 0);
@@ -158,7 +153,10 @@ export class Orchestrator {
       const subtasks = await this.decomposer.decompose(request);
 
       this.updatePipeline(requestId, 'routing', subtasks.length, 0);
-      this.emitEvent('pipeline:stage', requestId, { stage: 'routing', subtaskCount: subtasks.length });
+      this.emitEvent('pipeline:stage', requestId, {
+        stage: 'routing',
+        subtaskCount: subtasks.length,
+      });
 
       // Phase 2: Adaptive Routing
       let routingDecisions = this.router.route(subtasks, request);
@@ -183,7 +181,11 @@ export class Orchestrator {
             preferCheaper: true,
             costOptimizationThreshold: 50,
           });
-          this.emitEvent('pipeline:stage', requestId, { stage: 'budget-optimized', originalCost: currentCost, optimizedCost: calculateTotalCost(routingDecisions) });
+          this.emitEvent('pipeline:stage', requestId, {
+            stage: 'budget-optimized',
+            originalCost: currentCost,
+            optimizedCost: calculateTotalCost(routingDecisions),
+          });
         }
       }
 
@@ -191,22 +193,13 @@ export class Orchestrator {
       this.emitEvent('pipeline:stage', requestId, { stage: 'executing' });
 
       // Phase 3: Parallel Execution
-      const subTaskResults = await this.executor.execute(
-        subtasks,
-        routingDecisions,
-        request.customSystemPrompt
-      );
+      const subTaskResults = await this.executor.execute(subtasks, routingDecisions, request.customSystemPrompt);
 
       // Track performance, embeddings, and emit events
       const subtaskMap = new Map(subtasks.map(s => [s.id, s]));
       for (const result of subTaskResults.values()) {
         if (result.success) {
-          this.perfTracker.recordSuccess(
-            result.modelId,
-            result.executionTimeMs,
-            undefined,
-            result.tokenUsage?.total,
-          );
+          this.perfTracker.recordSuccess(result.modelId, result.executionTimeMs, undefined, result.tokenUsage?.total);
           // Record embedding for similarity matching
           const subtask = subtaskMap.get(result.subTaskId);
           if (subtask) {
@@ -215,7 +208,7 @@ export class Orchestrator {
               result.modelId,
               50, // Default quality; will be updated after synthesis
               subtask.requiredCapabilities.map(c => c as string),
-              result.executionTimeMs,
+              result.executionTimeMs
             );
           }
           this.emitEvent('subtask:completed', requestId, {
@@ -238,12 +231,7 @@ export class Orchestrator {
       this.emitEvent('pipeline:stage', requestId, { stage: 'synthesizing' });
 
       // Phase 4: Synthesis
-      const result = await this.synthesizer.synthesize(
-        request,
-        subTaskResults,
-        routingDecisions,
-        Date.now() - startTime
-      );
+      const result = await this.synthesizer.synthesize(request, subTaskResults, routingDecisions, Date.now() - startTime);
 
       // Add cost calculation
       const totalCostWeight = calculateTotalCost(routingDecisions);
@@ -274,7 +262,6 @@ export class Orchestrator {
       });
 
       return finalResult;
-
     } catch (error: any) {
       this.updatePipeline(requestId, 'failed', 0, 0, error?.message);
       this.emitEvent('pipeline:failed', requestId, { error: error?.message });
@@ -413,13 +400,7 @@ export class Orchestrator {
   /**
    * Update pipeline state.
    */
-  private updatePipeline(
-    requestId: string,
-    stage: PipelineStage,
-    subTaskCount: number,
-    completedSubTasks: number,
-    error?: string
-  ): void {
+  private updatePipeline(requestId: string, stage: PipelineStage, subTaskCount: number, completedSubTasks: number, error?: string): void {
     const existing = this.pipelines.get(requestId);
     this.pipelines.set(requestId, {
       requestId,

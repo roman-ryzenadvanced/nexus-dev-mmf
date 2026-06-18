@@ -7,14 +7,7 @@
  * @version 4.0.0
  */
 
-import {
-  LLMProvider,
-  ProviderId,
-  ProviderConfig,
-  ProviderMessage,
-  ProviderCompletionOptions,
-  ProviderCompletionResult,
-} from './types.js';
+import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult, ProviderConfig, ProviderId, ProviderMessage } from './types.js';
 import { loadZAIClient } from './zai-loader.js';
 
 // Minimal structural type for the SDK client we depend on.
@@ -29,14 +22,7 @@ interface ZAISDKClient {
 export class ZAIProvider implements LLMProvider {
   readonly providerId: ProviderId = 'zai';
   readonly name = 'ZAI (z-ai-web-dev-sdk)';
-  readonly supportedModels: string[] = [
-    'glm-5.2-1m',
-    'glm-5.2',
-    'glm-5.1',
-    'glm-5',
-    'glm-5v-turbo',
-    'glm-4.7',
-  ];
+  readonly supportedModels: string[] = ['glm-5.2-1m', 'glm-5.2', 'glm-5.1', 'glm-5', 'glm-5v-turbo', 'glm-4.7'];
 
   private client: ZAISDKClient | null = null;
   private _isReady = false;
@@ -51,7 +37,7 @@ export class ZAIProvider implements LLMProvider {
     try {
       // Dynamic load via the shared loader: auto-creates ~/.z-ai-config,
       // probes the endpoint (401 ≠ down), and falls back to the secondary URL.
-      this.client = (await loadZAIClient(config.apiKey)) as ZAISDKClient;
+      this.client = await loadZAIClient(config.apiKey);
       this._isReady = true;
     } catch (error: any) {
       this._isReady = false;
@@ -59,18 +45,14 @@ export class ZAIProvider implements LLMProvider {
     }
   }
 
-  async complete(
-    model: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult> {
+  async complete(model: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult> {
     if (!this.client) {
-      this.client = (await loadZAIClient(this.config?.apiKey)) as ZAISDKClient;
+      this.client = await loadZAIClient(this.config?.apiKey);
       this._isReady = true;
     }
 
     const zaiMessages = messages.map(m => ({
-      role: m.role as 'system' | 'user' | 'assistant',
+      role: m.role,
       content: m.content,
     }));
 
@@ -109,11 +91,13 @@ export class ZAIProvider implements LLMProvider {
       content,
       model,
       provider: 'zai',
-      usage: response.usage ? {
-        promptTokens: response.usage.prompt_tokens ?? 0,
-        completionTokens: response.usage.completion_tokens ?? 0,
-        totalTokens: response.usage.total_tokens ?? 0,
-      } : undefined,
+      usage: response.usage
+        ? {
+            promptTokens: response.usage.prompt_tokens ?? 0,
+            completionTokens: response.usage.completion_tokens ?? 0,
+            totalTokens: response.usage.total_tokens ?? 0,
+          }
+        : undefined,
       metadata: {
         id: response.id,
         created: response.created,
@@ -125,7 +109,7 @@ export class ZAIProvider implements LLMProvider {
   async healthCheck(): Promise<boolean> {
     try {
       if (!this.client) {
-        this.client = (await loadZAIClient(this.config?.apiKey)) as ZAISDKClient;
+        this.client = await loadZAIClient(this.config?.apiKey);
       }
       // Try a minimal request to verify connectivity
       const response = await this.client.chat.completions.create({

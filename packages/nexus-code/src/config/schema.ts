@@ -28,12 +28,14 @@ export const modelDescriptorSchema = z.object({
   label: z.string().optional(),
   source: z.enum(['auto', 'manual', 'builtin']),
   contextWindow: z.number().int().positive().optional(),
-  capabilities: z.object({
-    vision: z.boolean().optional(),
-    tools: z.boolean().optional(),
-    streaming: z.boolean().optional(),
-    thinking: z.boolean().optional(),
-  }).optional(),
+  capabilities: z
+    .object({
+      vision: z.boolean().optional(),
+      tools: z.boolean().optional(),
+      streaming: z.boolean().optional(),
+      thinking: z.boolean().optional(),
+    })
+    .optional(),
   fetchedAt: z.number().int().nonnegative().optional(),
 });
 
@@ -61,13 +63,19 @@ export const appConfigSchema = z.object({
   providers: z.array(providerSchema).default([]),
   manualModels: z.array(modelDescriptorSchema).default([]),
   mcpServers: z.array(mcpServerSchema).default([]),
-  observer: observerSchema.default({ enabled: true, modelId: 'glm-4.5-flash', intervalMs: 8000 }),
-  ui: z.object({
-    theme: z.enum(['tech-dark', 'editorial-light', 'hacker-terminal']).default('tech-dark'),
-    showRouting: z.boolean().default(true),
-    showTokens: z.boolean().default(true),
-    showTimestamps: z.boolean().default(false),
-  }).default({}),
+  observer: observerSchema.default({
+    enabled: true,
+    modelId: 'glm-4.5-flash',
+    intervalMs: 8000,
+  }),
+  ui: z
+    .object({
+      theme: z.enum(['tech-dark', 'editorial-light', 'hacker-terminal']).default('tech-dark'),
+      showRouting: z.boolean().default(true),
+      showTokens: z.boolean().default(true),
+      showTimestamps: z.boolean().default(false),
+    })
+    .default({}),
 });
 
 export type AppConfigSchema = z.infer<typeof appConfigSchema>;
@@ -104,10 +112,82 @@ export const DEFAULT_PROVIDERS = [
 ];
 
 export const BUILTIN_MODELS = [
-  { id: 'glm-5.2-1m', providerId: 'zai', label: 'GLM 5.2 (1M context)', source: 'builtin' as const, contextWindow: 1_000_000, capabilities: { vision: true, tools: true, streaming: true, thinking: true } },
-  { id: 'glm-5.2', providerId: 'zai', label: 'GLM 5.2 (flagship)', source: 'builtin' as const, contextWindow: 128_000, capabilities: { vision: true, tools: true, streaming: true, thinking: true } },
-  { id: 'glm-5.1', providerId: 'zai', label: 'GLM 5.1', source: 'builtin' as const, contextWindow: 128_000, capabilities: { vision: false, tools: true, streaming: true, thinking: false } },
-  { id: 'glm-5', providerId: 'zai', label: 'GLM 5 (fast)', source: 'builtin' as const, contextWindow: 128_000, capabilities: { vision: false, tools: true, streaming: true, thinking: false } },
-  { id: 'glm-5v-turbo', providerId: 'zai', label: 'GLM 5v Turbo (vision)', source: 'builtin' as const, contextWindow: 64_000, capabilities: { vision: true, tools: true, streaming: true, thinking: false } },
-  { id: 'glm-4.7', providerId: 'zai', label: 'GLM 4.7 (creative)', source: 'builtin' as const, contextWindow: 128_000, capabilities: { vision: false, tools: true, streaming: true, thinking: true } },
+  {
+    id: 'glm-5.2-1m',
+    providerId: 'zai',
+    label: 'GLM 5.2 (1M context)',
+    source: 'builtin' as const,
+    contextWindow: 1_000_000,
+    capabilities: {
+      vision: true,
+      tools: true,
+      streaming: true,
+      thinking: true,
+    },
+  },
+  {
+    id: 'glm-5.2',
+    providerId: 'zai',
+    label: 'GLM 5.2 (flagship)',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: true,
+      tools: true,
+      streaming: true,
+      thinking: true,
+    },
+  },
+  {
+    id: 'glm-5.1',
+    providerId: 'zai',
+    label: 'GLM 5.1',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: false,
+      tools: true,
+      streaming: true,
+      thinking: false,
+    },
+  },
+  {
+    id: 'glm-5',
+    providerId: 'zai',
+    label: 'GLM 5 (fast)',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: false,
+      tools: true,
+      streaming: true,
+      thinking: false,
+    },
+  },
+  {
+    id: 'glm-5v-turbo',
+    providerId: 'zai',
+    label: 'GLM 5v Turbo (vision)',
+    source: 'builtin' as const,
+    contextWindow: 64_000,
+    capabilities: {
+      vision: true,
+      tools: true,
+      streaming: true,
+      thinking: false,
+    },
+  },
+  {
+    id: 'glm-4.7',
+    providerId: 'zai',
+    label: 'GLM 4.7 (creative)',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: false,
+      tools: true,
+      streaming: true,
+      thinking: true,
+    },
+  },
 ];

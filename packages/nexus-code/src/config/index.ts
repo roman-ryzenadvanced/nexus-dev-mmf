@@ -14,7 +14,7 @@ const ENV_KEYS: Record<string, { env: string; field: 'apiKey' }> = {
 };
 
 function applyEnv(config: AppConfig): AppConfig {
-  const providers = config.providers.map((p) => {
+  const providers = config.providers.map(p => {
     const envKey = ENV_KEYS[p.id]?.env;
     if (envKey && process.env[envKey] && !p.apiKey) {
       return { ...p, apiKey: process.env[envKey] };
@@ -51,13 +51,13 @@ export async function saveConfig(config: AppConfig, path?: string): Promise<void
   // Strip API keys before persisting — never write secrets to disk.
   const safe: AppConfig = {
     ...config,
-    providers: config.providers.map((p) => ({ ...p, apiKey: undefined })),
+    providers: config.providers.map(p => ({ ...p, apiKey: undefined })),
   };
   await writeFile(configPath, JSON.stringify(safe, null, 2), 'utf8');
 }
 
 export function getActiveProvider(config: AppConfig): ProviderConfig {
-  const p = config.providers.find((x) => x.id === config.activeProviderId);
+  const p = config.providers.find(x => x.id === config.activeProviderId);
   if (!p) throw new Error(`No provider with id "${config.activeProviderId}"`);
   return p;
 }

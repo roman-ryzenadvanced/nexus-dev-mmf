@@ -18,18 +18,22 @@
  */
 
 import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
+import { findCodeInDiff, getChangedFiles, getFileDiff, getHunksForFile, getTotalChangedLines, parseDiff } from './diff-parser.js';
 import {
-  CodeReviewRequest,
-  CodeReviewResult,
-  CodeReviewConfig,
-  ReviewComment,
-  ReviewPlan,
-  DEFAULT_CODE_REVIEW_CONFIG,
-} from './types.js';
-import { fillTemplate, MAIN_REVIEW_SYSTEM, MAIN_REVIEW_USER, PLAN_REVIEW_SYSTEM, PLAN_REVIEW_USER, REVIEW_FILTER_SYSTEM, REVIEW_FILTER_USER, RE_LOCATION_SYSTEM, RE_LOCATION_USER, SYNTHESIS_PROMPT } from './prompts.js';
+  fillTemplate,
+  MAIN_REVIEW_SYSTEM,
+  MAIN_REVIEW_USER,
+  PLAN_REVIEW_SYSTEM,
+  PLAN_REVIEW_USER,
+  RE_LOCATION_SYSTEM,
+  RE_LOCATION_USER,
+  REVIEW_FILTER_SYSTEM,
+  REVIEW_FILTER_USER,
+  SYNTHESIS_PROMPT,
+} from './prompts.js';
 import { getReviewRuleForFile } from './rules.js';
-import { parseDiff, getChangedFiles, getTotalChangedLines, findCodeInDiff, getFileDiff, getHunksForFile } from './diff-parser.js';
-import type { DiffHunk } from './types.js';
+import type { CodeReviewConfig, CodeReviewRequest, CodeReviewResult, DiffHunk, ReviewComment, ReviewPlan } from './types.js';
+import { DEFAULT_CODE_REVIEW_CONFIG } from './types.js';
 
 /**
  * Model assignments for code review pipeline.
@@ -37,20 +41,20 @@ import type { DiffHunk } from './types.js';
  * standard for synthesis, independent for filtering.
  */
 const REVIEW_MODEL_ASSIGNMENTS = {
-  plan: 'glm-5',           // Fast model for risk analysis
+  plan: 'glm-5', // Fast model for risk analysis
   review: {
     speed: ['glm-5', 'glm-5v-turbo'],
     quality: ['glm-5.2-1m', 'glm-5.2'],
     balanced: ['glm-5.2', 'glm-5.1', 'glm-5'],
   },
-  synthesis: 'glm-5.2',    // Flagship for merging reviews
-  filter: 'glm-5.1',       // Independent model for fact-checking
-  relocation: 'glm-5',     // Fast model for re-location
+  synthesis: 'glm-5.2', // Flagship for merging reviews
+  filter: 'glm-5.1', // Independent model for fact-checking
+  relocation: 'glm-5', // Fast model for re-location
 } as const;
 
 export class CodeReviewEngine {
   private zai: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
-  private config: CodeReviewConfig;
+  private readonly config: CodeReviewConfig;
 
   constructor(config?: Partial<CodeReviewConfig>) {
     this.config = { ...DEFAULT_CODE_REVIEW_CONFIG, ...config };
@@ -73,14 +77,11 @@ export class CodeReviewEngine {
 
     // Parse the diff
     const hunks = parseDiff(request.diff);
-    const changedFiles = request.changedFiles.length > 0
-      ? request.changedFiles
-      : getChangedFiles(request.diff);
+    const changedFiles = request.changedFiles.length > 0 ? request.changedFiles : getChangedFiles(request.diff);
 
     // Determine if plan phase should run
     const totalLines = getTotalChangedLines(hunks);
-    const enablePlan = request.enablePlanPhase ??
-      (totalLines > this.config.planLineThreshold);
+    const enablePlan = request.enablePlanPhase ?? totalLines > this.config.planLineThreshold;
 
     // ═══ PHASE 1: PLAN (optional) ═══
     let plan: ReviewPlan | undefined;
@@ -98,8 +99,7 @@ export class CodeReviewEngine {
     }
 
     // ═══ PHASE 2: PARALLEL REVIEW ═══
-    const reviewModels = REVIEW_MODEL_ASSIGNMENTS.review[mode] ??
-      REVIEW_MODEL_ASSIGNMENTS.review.balanced;
+    const reviewModels = REVIEW_MODEL_ASSIGNMENTS.review[mode] ?? REVIEW_MODEL_ASSIGNMENTS.review.balanced;
 
     // Build review tasks — one per model, each reviews the full diff
     const reviewPromises: Promise<ReviewComment[]>[] = [];
@@ -109,13 +109,14 @@ export class CodeReviewEngine {
       const rule = request.customRule ?? getReviewRuleForFile(currentFile);
 
       // In MTP mode, start reviews before plan completes
-      const planGuidance = this.config.enableMTP && planPromise
-        ? 'Review in progress. Plan phase running concurrently — focus on the most critical issues.'
-        : (plan ? plan.issues.map(i => `[${i.severity}] ${i.description}`).join('\n') : '');
+      const planGuidance =
+        this.config.enableMTP && planPromise
+          ? 'Review in progress. Plan phase running concurrently — focus on the most critical issues.'
+          : plan
+            ? plan.issues.map(i => `[${i.severity}] ${i.description}`).join('\n')
+            : '';
 
-      reviewPromises.push(
-        this.runReviewPhase(client, modelId, request.diff, changedFiles, currentFile, rule, planGuidance, request.requirementBackground)
-      );
+      reviewPromises.push(this.runReviewPhase(client, modelId, request.diff, changedFiles, currentFile, rule, planGuidance, request.requirementBackground));
     }
 
     // Wait for all reviews
@@ -134,18 +135,14 @@ export class CodeReviewEngine {
     }
 
     // ═══ PHASE 3: SYNTHESIS ═══
-    const synthesizedComments = await this.runSynthesisPhase(
-      client, request.diff, rawComments, changedFiles
-    );
+    const synthesizedComments = await this.runSynthesisPhase(client, request.diff, rawComments, changedFiles);
 
     // ═══ PHASE 4: FILTER (fact-check) ═══
     let finalComments = synthesizedComments;
     let filteredCount = 0;
 
     if (this.config.enableFilterPhase && synthesizedComments.length > 0) {
-      const filterResult = await this.runFilterPhase(
-        client, request.diff, request.currentFilePath ?? changedFiles[0] ?? '', synthesizedComments
-      );
+      const filterResult = await this.runFilterPhase(client, request.diff, request.currentFilePath ?? changedFiles[0] ?? '', synthesizedComments);
       finalComments = filterResult.kept;
       filteredCount = filterResult.filtered;
     }
@@ -160,9 +157,7 @@ export class CodeReviewEngine {
           comment.endLine = located.endLine;
         } else {
           // Try re-location via LLM
-          const relocated = await this.runRelocationPhase(
-            client, request.diff, comment.existingCode, comment.content
-          );
+          const relocated = await this.runRelocationPhase(client, request.diff, comment.existingCode, comment.content);
           if (relocated) {
             comment.existingCode = relocated;
             const located2 = findCodeInDiff(hunks, comment.path, relocated);
@@ -217,7 +212,7 @@ export class CodeReviewEngine {
     changedFiles: string[],
     currentFilePath: string,
     rule: string,
-    background?: string,
+    background?: string
   ): Promise<ReviewPlan | undefined> {
     try {
       const userMsg = fillTemplate(PLAN_REVIEW_USER, {
@@ -256,7 +251,7 @@ export class CodeReviewEngine {
     currentFilePath: string,
     rule: string,
     planGuidance: string,
-    background?: string,
+    background?: string
   ): Promise<ReviewComment[]> {
     try {
       const userMsg = fillTemplate(MAIN_REVIEW_USER, {
@@ -282,7 +277,7 @@ export class CodeReviewEngine {
         opts.thinking = { type: 'enabled' };
       }
 
-      const response = await client.chat.completions.create(opts as any);
+      const response = await client.chat.completions.create(opts);
       const content = response.choices?.[0]?.message?.content ?? '';
 
       return this.parseComments(content, currentFilePath, modelId);
@@ -294,23 +289,21 @@ export class CodeReviewEngine {
   /**
    * Phase 3: Synthesize comments from multiple models.
    */
-  private async runSynthesisPhase(
-    client: ZAI,
-    diff: string,
-    rawComments: ReviewComment[],
-    changedFiles: string[],
-  ): Promise<ReviewComment[]> {
+  private async runSynthesisPhase(client: ZAI, diff: string, rawComments: ReviewComment[], changedFiles: string[]): Promise<ReviewComment[]> {
     if (rawComments.length === 0) return [];
     if (rawComments.length === 1) return rawComments;
 
     try {
-      const commentsText = rawComments.map((c, i) =>
-        `[ID: ${c.id}] [Model: ${c.modelId}] [Severity: ${c.severity}]\n` +
-        `Path: ${c.path}\n` +
-        `Content: ${c.content}\n` +
-        `Existing Code: ${c.existingCode}\n` +
-        (c.suggestionCode ? `Suggestion: ${c.suggestionCode}\n` : '')
-      ).join('\n---\n\n');
+      const commentsText = rawComments
+        .map(
+          (c, i) =>
+            `[ID: ${c.id}] [Model: ${c.modelId}] [Severity: ${c.severity}]\n` +
+            `Path: ${c.path}\n` +
+            `Content: ${c.content}\n` +
+            `Existing Code: ${c.existingCode}\n` +
+            (c.suggestionCode ? `Suggestion: ${c.suggestionCode}\n` : '')
+        )
+        .join('\n---\n\n');
 
       const response = await client.chat.completions.create({
         model: REVIEW_MODEL_ASSIGNMENTS.synthesis,
@@ -336,19 +329,17 @@ export class CodeReviewEngine {
   /**
    * Phase 4: Filter (fact-check) comments against the diff.
    */
-  private async runFilterPhase(
-    client: ZAI,
-    diff: string,
-    filePath: string,
-    comments: ReviewComment[],
-  ): Promise<{ kept: ReviewComment[]; filtered: number }> {
+  private async runFilterPhase(client: ZAI, diff: string, filePath: string, comments: ReviewComment[]): Promise<{ kept: ReviewComment[]; filtered: number }> {
     if (comments.length === 0) return { kept: [], filtered: 0 };
 
     try {
-      const commentsText = comments.map(c =>
-        `[ID: ${c.id}] Path: ${c.path}\nContent: ${c.content}\nExisting Code: ${c.existingCode}\n` +
-        (c.suggestionCode ? `Suggestion: ${c.suggestionCode}` : '')
-      ).join('\n---\n\n');
+      const commentsText = comments
+        .map(
+          c =>
+            `[ID: ${c.id}] Path: ${c.path}\nContent: ${c.content}\nExisting Code: ${c.existingCode}\n` +
+            (c.suggestionCode ? `Suggestion: ${c.suggestionCode}` : '')
+        )
+        .join('\n---\n\n');
 
       const userMsg = fillTemplate(REVIEW_FILTER_USER, {
         path: filePath,
@@ -378,12 +369,7 @@ export class CodeReviewEngine {
   /**
    * Phase 5: Re-locate a comment's existing_code via LLM.
    */
-  private async runRelocationPhase(
-    client: ZAI,
-    diff: string,
-    existingCode: string,
-    commentContent: string,
-  ): Promise<string | null> {
+  private async runRelocationPhase(client: ZAI, diff: string, existingCode: string, commentContent: string): Promise<string | null> {
     try {
       const userMsg = fillTemplate(RE_LOCATION_USER, {
         diff: diff.slice(0, 20000),
@@ -418,17 +404,19 @@ export class CodeReviewEngine {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
         changeSummary: parsed.change_summary ?? parsed.changeSummary ?? '',
-        issues: Array.isArray(parsed.issues) ? parsed.issues.map((i: any) => ({
-          severity: i.severity ?? 'medium',
-          description: i.description ?? '',
-          toolGuidance: Array.isArray(i.tool_guidance ?? i.toolGuidance)
-            ? (i.tool_guidance ?? i.toolGuidance).map((g: any) => ({
-                name: g.name ?? '',
-                reason: g.reason ?? '',
-                arguments: g.arguments ?? '',
-              }))
-            : [],
-        })) : [],
+        issues: Array.isArray(parsed.issues)
+          ? parsed.issues.map((i: any) => ({
+              severity: i.severity ?? 'medium',
+              description: i.description ?? '',
+              toolGuidance: Array.isArray(i.tool_guidance ?? i.toolGuidance)
+                ? (i.tool_guidance ?? i.toolGuidance).map((g: any) => ({
+                    name: g.name ?? '',
+                    reason: g.reason ?? '',
+                    arguments: g.arguments ?? '',
+                  }))
+                : [],
+            }))
+          : [],
       };
     } catch {
       return undefined;

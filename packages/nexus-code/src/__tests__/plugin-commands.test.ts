@@ -1,21 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import {
-  loadPlugin,
-  loadAllPlugins,
-  discoverPlugins,
-  ensurePluginsDir,
-  PLUGINS_DIR,
-} from '../plugins/index.js';
-import {
-  registerPluginCommand,
-  unregisterPluginCommand,
-  allCommands,
-  clearPluginCommands,
-  runSlash,
-  REGISTRY,
-} from '../commands/index.js';
+import { loadPlugin, loadAllPlugins, discoverPlugins, ensurePluginsDir, PLUGINS_DIR } from '../plugins/index.js';
+import { registerPluginCommand, unregisterPluginCommand, allCommands, clearPluginCommands, runSlash, REGISTRY } from '../commands/index.js';
 import type { SlashCommandContext, AppConfig, Session } from '../types.js';
 import { newSession } from '../session/store.js';
 
@@ -27,11 +14,22 @@ function makeCtx(): SlashCommandContext {
     mode: 'balanced',
     useMMFE: true,
     providers: [
-      { id: 'zai', kind: 'zai', name: 'Z.ai', mmfe: true, defaultModel: 'glm-5.2' },
+      {
+        id: 'zai',
+        kind: 'zai',
+        name: 'Z.ai',
+        mmfe: true,
+        defaultModel: 'glm-5.2',
+      },
     ],
     manualModels: [],
     mcpServers: [],
-    ui: { theme: 'tech-dark', showRouting: true, showTokens: true, showTimestamps: false },
+    ui: {
+      theme: 'tech-dark',
+      showRouting: true,
+      showTokens: true,
+      showTimestamps: false,
+    },
   };
   const session: Session = newSession({
     providerId: 'zai',
@@ -69,11 +67,13 @@ describe('plugin command registration', () => {
       name: 'test_plugin_cmd',
       description: 'test',
       usage: '/test_plugin_cmd',
-      async run() { return 'ok'; },
+      async run() {
+        return 'ok';
+      },
     });
     expect(ok).toBe(true);
     expect(allCommands().length).toBe(before + 1);
-    expect(allCommands().map((c) => c.name)).toContain('test_plugin_cmd');
+    expect(allCommands().map(c => c.name)).toContain('test_plugin_cmd');
   });
 
   it('registerPluginCommand refuses duplicate name', () => {
@@ -81,13 +81,17 @@ describe('plugin command registration', () => {
       name: 'dup',
       description: 'first',
       usage: '/dup',
-      async run() { return '1'; },
+      async run() {
+        return '1';
+      },
     });
     const ok = registerPluginCommand({
       name: 'dup',
       description: 'second',
       usage: '/dup',
-      async run() { return '2'; },
+      async run() {
+        return '2';
+      },
     });
     expect(ok).toBe(false);
   });
@@ -97,7 +101,9 @@ describe('plugin command registration', () => {
       name: 'mode',
       description: 'should not override builtin',
       usage: '/mode',
-      async run() { return 'nope'; },
+      async run() {
+        return 'nope';
+      },
     });
     expect(ok).toBe(false);
   });
@@ -107,12 +113,14 @@ describe('plugin command registration', () => {
       name: 'temp',
       description: 'temp',
       usage: '/temp',
-      async run() { return ''; },
+      async run() {
+        return '';
+      },
     });
-    expect(allCommands().some((c) => c.name === 'temp')).toBe(true);
+    expect(allCommands().some(c => c.name === 'temp')).toBe(true);
     const ok = unregisterPluginCommand('temp');
     expect(ok).toBe(true);
-    expect(allCommands().some((c) => c.name === 'temp')).toBe(false);
+    expect(allCommands().some(c => c.name === 'temp')).toBe(false);
   });
 
   it('unregisterPluginCommand returns false for unknown name', () => {
@@ -120,8 +128,22 @@ describe('plugin command registration', () => {
   });
 
   it('clearPluginCommands removes all plugin commands', () => {
-    registerPluginCommand({ name: 'a', description: 'a', usage: '/a', async run() { return ''; } });
-    registerPluginCommand({ name: 'b', description: 'b', usage: '/b', async run() { return ''; } });
+    registerPluginCommand({
+      name: 'a',
+      description: 'a',
+      usage: '/a',
+      async run() {
+        return '';
+      },
+    });
+    registerPluginCommand({
+      name: 'b',
+      description: 'b',
+      usage: '/b',
+      async run() {
+        return '';
+      },
+    });
     expect(allCommands().length).toBeGreaterThan(REGISTRY.length);
     clearPluginCommands();
     expect(allCommands().length).toBe(REGISTRY.length);
@@ -155,7 +177,9 @@ describe('plugin commands via runSlash', () => {
       name: 'ping',
       description: 'Pong',
       usage: '/ping',
-      async run() { return 'pong'; },
+      async run() {
+        return 'pong';
+      },
     });
     const result = await runSlash('/ping', makeCtx());
     expect(result).toBe('pong');
@@ -171,7 +195,9 @@ describe('plugin commands via runSlash', () => {
       name: 'special_plugin_cmd',
       description: 'A special plugin command',
       usage: '/special_plugin_cmd',
-      async run() { return ''; },
+      async run() {
+        return '';
+      },
     });
     const result = await runSlash('/help', makeCtx());
     expect(result).toContain('special_plugin_cmd');
@@ -183,7 +209,9 @@ describe('plugin commands via runSlash', () => {
       name: 'detailed',
       description: 'A detailed plugin command',
       usage: '/detailed <arg>',
-      async run() { return ''; },
+      async run() {
+        return '';
+      },
     });
     const result = await runSlash('/help detailed', makeCtx());
     expect(result).toContain('detailed');
@@ -270,12 +298,20 @@ describe('discoverPlugins + loadAllPlugins integration', () => {
     const f1 = `test-multi-a-${Date.now()}.mjs`;
     const f2 = `test-multi-b-${Date.now()}.mjs`;
     const f3 = `test-multi-c-${Date.now()}.mjs`;
-    await writeFile(join(PLUGINS_DIR, f1), `export default { name: 'a', tools: [{ name: 'a_t', description: 'x', parameters: {}, handler: async () => 1 }], commands: [] };`, 'utf8');
-    await writeFile(join(PLUGINS_DIR, f2), `export default { name: 'b', tools: [], commands: [{ name: 'b_c', description: 'y', usage: '/b_c', async run() { return 'b'; } }] };`, 'utf8');
+    await writeFile(
+      join(PLUGINS_DIR, f1),
+      `export default { name: 'a', tools: [{ name: 'a_t', description: 'x', parameters: {}, handler: async () => 1 }], commands: [] };`,
+      'utf8'
+    );
+    await writeFile(
+      join(PLUGINS_DIR, f2),
+      `export default { name: 'b', tools: [], commands: [{ name: 'b_c', description: 'y', usage: '/b_c', async run() { return 'b'; } }] };`,
+      'utf8'
+    );
     await writeFile(join(PLUGINS_DIR, f3), `export default { name: 'c', tools: [], commands: [] };`, 'utf8');
     try {
       const all = await loadAllPlugins();
-      const names = all.map((p) => p.name);
+      const names = all.map(p => p.name);
       expect(names).toContain('a');
       expect(names).toContain('b');
       expect(names).toContain('c');
@@ -295,7 +331,7 @@ describe('discoverPlugins + loadAllPlugins integration', () => {
     // Drop a .txt file that should be ignored
     await writeFile(join(PLUGINS_DIR, 'ignore-me.txt'), 'not a plugin', 'utf8');
     const files = await discoverPlugins();
-    expect(files.every((f) => f.endsWith('.js') || f.endsWith('.mjs'))).toBe(true);
+    expect(files.every(f => f.endsWith('.js') || f.endsWith('.mjs'))).toBe(true);
     await rm(join(PLUGINS_DIR, 'ignore-me.txt'), { force: true });
   });
 });

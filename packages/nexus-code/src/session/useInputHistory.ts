@@ -5,11 +5,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  loadHistory,
-  appendHistory,
-  type HistoryEntry,
-} from '../session/history.js';
+import { loadHistory, appendHistory, type HistoryEntry } from '../session/history.js';
 
 export function useInputHistory() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -22,7 +18,7 @@ export function useInputHistory() {
   }, []);
 
   const append = useCallback((entry: HistoryEntry) => {
-    setHistory((h) => [...h, entry].slice(-500));
+    setHistory(h => [...h, entry].slice(-500));
     void appendHistory(entry);
   }, []);
 

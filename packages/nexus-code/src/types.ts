@@ -205,7 +205,12 @@ export interface SlashCommandContext {
     models: ModelDescriptor[];
   };
   /** Returns MCP server statuses if any are configured. */
-  getMcpStatuses?: () => Array<{ id: string; connected: boolean; toolCount: number; lastError?: string }>;
+  getMcpStatuses?: () => Array<{
+    id: string;
+    connected: boolean;
+    toolCount: number;
+    lastError?: string;
+  }>;
 }
 
 export interface SlashCommand {

@@ -35,7 +35,7 @@ export class MCPClient {
   constructor(private servers: MCPServerConfig[] = []) {}
 
   async connectAll(): Promise<MCPServerStatus[]> {
-    return Promise.all(this.servers.map((s) => this.connect(s)));
+    return Promise.all(this.servers.map(s => this.connect(s)));
   }
 
   async connect(server: MCPServerConfig): Promise<MCPServerStatus> {
@@ -93,16 +93,19 @@ export class MCPClient {
       }>;
     };
 
-    const tools: ToolDefinition[] = (toolsResult.tools || []).map((t) => ({
+    const tools: ToolDefinition[] = (toolsResult.tools || []).map(t => ({
       name: `mcp_${server.id}_${t.name}`,
       description: t.description || `MCP tool ${t.name} from ${server.id}`,
-      parameters: (t.inputSchema as never) || { type: 'object', properties: {} },
-      handler: async (args) => {
+      parameters: (t.inputSchema as never) || {
+        type: 'object',
+        properties: {},
+      },
+      handler: async args => {
         const result = (await this.sendStdio(child, 'tools/call', {
           name: t.name,
           arguments: args,
         })) as { content?: Array<{ type: string; text?: string }> };
-        return result.content?.map((c) => c.text).join('\n') ?? null;
+        return result.content?.map(c => c.text).join('\n') ?? null;
       },
     }));
 
@@ -138,16 +141,19 @@ export class MCPClient {
       }>;
     };
 
-    const tools: ToolDefinition[] = (toolsResult.tools || []).map((t) => ({
+    const tools: ToolDefinition[] = (toolsResult.tools || []).map(t => ({
       name: `mcp_${server.id}_${t.name}`,
       description: t.description || `MCP tool ${t.name} from ${server.id}`,
-      parameters: (t.inputSchema as never) || { type: 'object', properties: {} },
-      handler: async (args) => {
+      parameters: (t.inputSchema as never) || {
+        type: 'object',
+        properties: {},
+      },
+      handler: async args => {
         const result = (await this.sendHttp(server.url!, 'tools/call', {
           name: t.name,
           arguments: args,
         })) as { content?: Array<{ type: string; text?: string }> };
-        return result.content?.map((c) => c.text).join('\n') ?? null;
+        return result.content?.map(c => c.text).join('\n') ?? null;
       },
     }));
 
@@ -161,12 +167,7 @@ export class MCPClient {
     return status;
   }
 
-  private sendStdio(
-    child: ChildProcess,
-    method: string,
-    params: Record<string, unknown>,
-    timeoutMs = 10_000
-  ): Promise<unknown> {
+  private sendStdio(child: ChildProcess, method: string, params: Record<string, unknown>, timeoutMs = 10_000): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const id = Math.floor(Math.random() * 1_000_000);
       const req = JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n';
@@ -206,21 +207,12 @@ export class MCPClient {
     });
   }
 
-  private notifyStdio(
-    child: ChildProcess,
-    method: string,
-    params: Record<string, unknown>
-  ): void {
+  private notifyStdio(child: ChildProcess, method: string, params: Record<string, unknown>): void {
     const msg = JSON.stringify({ jsonrpc: '2.0', method, params }) + '\n';
     child.stdin?.write(msg);
   }
 
-  private async sendHttp(
-    url: string,
-    method: string,
-    params: Record<string, unknown>,
-    timeoutMs = 10_000
-  ): Promise<unknown> {
+  private async sendHttp(url: string, method: string, params: Record<string, unknown>, timeoutMs = 10_000): Promise<unknown> {
     const id = Math.floor(Math.random() * 1_000_000);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -263,8 +255,6 @@ export class MCPClient {
   }
 
   async disconnectAll(): Promise<void> {
-    await Promise.all(
-      Array.from(this.processes.keys()).map((id) => this.disconnect(id))
-    );
+    await Promise.all(Array.from(this.processes.keys()).map(id => this.disconnect(id)));
   }
 }

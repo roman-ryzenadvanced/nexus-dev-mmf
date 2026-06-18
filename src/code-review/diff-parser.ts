@@ -7,7 +7,7 @@
  * Adapted from Alibaba Open Code Review's diff/parser.go.
  */
 
-import { DiffHunk, DiffLine } from './types.js';
+import type { DiffHunk, DiffLine } from './types.js';
 
 /**
  * Parse a unified diff string into an array of DiffHunk objects.
@@ -54,8 +54,7 @@ export function parseDiff(diffText: string): DiffHunk[] {
       while (i < lines.length) {
         const hline = lines[i];
         // Stop at next hunk header or file header
-        if (hline.startsWith('@@') || hline.startsWith('diff --git') ||
-            hline.startsWith('--- ') || hline.startsWith('+++ ')) {
+        if (hline.startsWith('@@') || hline.startsWith('diff --git') || hline.startsWith('--- ') || hline.startsWith('+++ ')) {
           break;
         }
 
@@ -146,8 +145,7 @@ export function getAddedLines(hunk: DiffHunk): DiffLine[] {
  * Get the total number of changed lines (added + removed) across all hunks.
  */
 export function getTotalChangedLines(hunks: DiffHunk[]): number {
-  return hunks.reduce((sum, h) =>
-    sum + h.lines.filter(l => l.type === 'added' || l.type === 'removed').length, 0);
+  return hunks.reduce((sum, h) => sum + h.lines.filter(l => l.type === 'added' || l.type === 'removed').length, 0);
 }
 
 /**
@@ -155,11 +153,7 @@ export function getTotalChangedLines(hunks: DiffHunk[]): number {
  * Tries to match against new-file lines first, then falls back to old-file lines.
  * Returns { startLine, endLine } or null if not found.
  */
-export function findCodeInDiff(
-  hunks: DiffHunk[],
-  filePath: string,
-  codeSnippet: string,
-): { startLine: number; endLine: number } | null {
+export function findCodeInDiff(hunks: DiffHunk[], filePath: string, codeSnippet: string): { startLine: number; endLine: number } | null {
   const fileHunks = getHunksForFile(hunks, filePath);
   const snippetLines = codeSnippet.split('\n').map(l => l.trim());
 

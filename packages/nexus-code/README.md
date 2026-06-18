@@ -14,10 +14,10 @@ Now ships with **Nexus Code** — a terminal AI coding assistant (`nexus-code`) 
 
 ## What's inside
 
-| Package | Path | Description |
-|---|---|---|
-| **nexus-dev-mmf** | `/` (root) | The orchestrator SDK + CLI |
-| **nexus-code** | `packages/nexus-code` | Nexus Code — terminal AI coding assistant (NEW in v1.1.0) |
+| Package           | Path                  | Description                                               |
+| ----------------- | --------------------- | --------------------------------------------------------- |
+| **nexus-dev-mmf** | `/` (root)            | The orchestrator SDK + CLI                                |
+| **nexus-code**    | `packages/nexus-code` | Nexus Code — terminal AI coding assistant (NEW in v1.1.0) |
 
 ---
 
@@ -40,9 +40,7 @@ const orchestrator = createOrchestrator({
   enableThinking: true,
 });
 
-const result = await orchestrator.process(
-  'Design a microservices architecture for an e-commerce platform'
-);
+const result = await orchestrator.process('Design a microservices architecture for an e-commerce platform');
 
 console.log(result.answer);
 console.log(`Models used: ${result.modelsUsed.join(', ')}`);
@@ -57,23 +55,23 @@ Request → Decomposer (glm-5.2) → Adaptive Router → Parallel Executor → S
 
 ### Models
 
-| Model | Tier | Strengths |
-|---|---|---|
-| `glm-5.2-1m` | Flagship | Advanced reasoning, 1M context, complex decomposition |
-| `glm-5.2` | Flagship | Baseline high-performance, balanced quality-speed |
-| `glm-5.1` | Standard | Nuanced language, context sensitivity, summarization |
-| `glm-5` | Fast | Speed, efficiency, rapid drafts, high-throughput |
-| `glm-5v-turbo` | Fast | Accelerated feedback, vision support, quick iteration |
-| `glm-4.7` | Creative | Creative generation, deep knowledge, code synthesis |
+| Model          | Tier     | Strengths                                             |
+| -------------- | -------- | ----------------------------------------------------- |
+| `glm-5.2-1m`   | Flagship | Advanced reasoning, 1M context, complex decomposition |
+| `glm-5.2`      | Flagship | Baseline high-performance, balanced quality-speed     |
+| `glm-5.1`      | Standard | Nuanced language, context sensitivity, summarization  |
+| `glm-5`        | Fast     | Speed, efficiency, rapid drafts, high-throughput      |
+| `glm-5v-turbo` | Fast     | Accelerated feedback, vision support, quick iteration |
+| `glm-4.7`      | Creative | Creative generation, deep knowledge, code synthesis   |
 
 ### Execution modes
 
-| Mode | Behavior | Use case |
-|---|---|---|
-| `speed` | Prioritizes `glm-5`, `glm-5v-turbo` | Drafts, rapid iteration |
-| `balanced` *(default)* | Spreads across all models | Most prompts |
-| `quality` | Prioritizes `glm-5.2`, `glm-5.2-1m` | Final deliverables |
-| `creative` | Biases toward `glm-4.7` | Writing, brainstorming |
+| Mode                   | Behavior                            | Use case                |
+| ---------------------- | ----------------------------------- | ----------------------- |
+| `speed`                | Prioritizes `glm-5`, `glm-5v-turbo` | Drafts, rapid iteration |
+| `balanced` _(default)_ | Spreads across all models           | Most prompts            |
+| `quality`              | Prioritizes `glm-5.2`, `glm-5.2-1m` | Final deliverables      |
+| `creative`             | Biases toward `glm-4.7`             | Writing, brainstorming  |
 
 ### CLI
 
@@ -86,17 +84,17 @@ nexus-dev "Analyze this dataset" --parallel 3 --no-thinking
 
 ### Configuration
 
-| Option | Default | Description |
-|---|---|---|
-| `defaultMode` | `'balanced'` | Default execution mode |
-| `maxParallelSubTasks` | `6` | Maximum concurrent model calls |
-| `enableThinking` | `true` | Enable chain-of-thought reasoning |
-| `subTaskTimeout` | `120000` | Timeout per subtask (ms) |
-| `verboseRouting` | `true` | Include routing metadata in responses |
-| `maxDecompositionDepth` | `3` | Maximum decomposition depth |
-| `qualityThreshold` | `70` | Score threshold for re-synthesis |
-| `enableRetry` | `true` | Retry failed subtasks with alternative models |
-| `maxRetries` | `2` | Maximum retry attempts per subtask |
+| Option                  | Default      | Description                                   |
+| ----------------------- | ------------ | --------------------------------------------- |
+| `defaultMode`           | `'balanced'` | Default execution mode                        |
+| `maxParallelSubTasks`   | `6`          | Maximum concurrent model calls                |
+| `enableThinking`        | `true`       | Enable chain-of-thought reasoning             |
+| `subTaskTimeout`        | `120000`     | Timeout per subtask (ms)                      |
+| `verboseRouting`        | `true`       | Include routing metadata in responses         |
+| `maxDecompositionDepth` | `3`          | Maximum decomposition depth                   |
+| `qualityThreshold`      | `70`         | Score threshold for re-synthesis              |
+| `enableRetry`           | `true`       | Retry failed subtasks with alternative models |
+| `maxRetries`            | `2`          | Maximum retry attempts per subtask            |
 
 ### Prerequisites
 
@@ -112,11 +110,11 @@ A terminal UI client for chatting with GLM, OpenAI, Anthropic, and any OpenAI-co
 
 > ### 🖥️ Is it a terminal app or a web app?
 >
-> **It is a terminal/TUI app first.** Nexus Code runs **inside your terminal** — it is *not* a hosted web product.
+> **It is a terminal/TUI app first.** Nexus Code runs **inside your terminal** — it is _not_ a hosted web product.
 >
-> | Mode | Command | What it is |
-> |---|---|---|
-> | **Terminal UI (primary)** | `nexus` | A full-screen, interactive **terminal UI** built with [Ink](https://github.com/vadimdemedes/ink) + React. Runs natively in your console — **no browser, no server, nothing hosted online.** This is the default and what most people use. |
+> | Mode                        | Command       | What it is                                                                                                                                                                                                                                                  |
+> | --------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | **Terminal UI (primary)**   | `nexus`       | A full-screen, interactive **terminal UI** built with [Ink](https://github.com/vadimdemedes/ink) + React. Runs natively in your console — **no browser, no server, nothing hosted online.** This is the default and what most people use.                   |
 > | **Local web UI (optional)** | `nexus --web` | For convenience only. Boots a small HTTP server bound to **`127.0.0.1:3000` (your own machine)** and serves a browser chat page. The "web" UI runs **entirely on localhost** from the same CLI binary — it is never deployed or reachable over the network. |
 >
 > **There are no hosted/web screenshots in this repository.** Every visual you see is a **terminal/ANSI render** of the TUI, not a web page.
@@ -257,18 +255,18 @@ When MMFE is off, requests go straight to the active provider — no decompositi
 
 ### Keyboard shortcuts
 
-| Key | Action |
-|---|---|
-| `Enter` | Submit prompt or slash command |
-| `Shift+Enter` | Insert newline (multi-line input) |
-| `↑` / `↓` | Navigate input history (or slash menu when `/` is typed) |
-| `/` then ↑/↓ ↵ | Slash command menu — filter, navigate, run |
-| `PageUp` / `PageDn` / `Ctrl+↑↓` | Scroll transcript (auto-follows while streaming) |
-| `Tab` | Complete current word |
-| `Ctrl+P` | Toggle command palette |
-| (while streaming) `o` / `q` | Observer answers now / queue for the main agent |
-| `Ctrl+C` (streaming) | Abort current request (clears queue) |
-| `Ctrl+C` (idle) | Quit |
+| Key                             | Action                                                   |
+| ------------------------------- | -------------------------------------------------------- |
+| `Enter`                         | Submit prompt or slash command                           |
+| `Shift+Enter`                   | Insert newline (multi-line input)                        |
+| `↑` / `↓`                       | Navigate input history (or slash menu when `/` is typed) |
+| `/` then ↑/↓ ↵                  | Slash command menu — filter, navigate, run               |
+| `PageUp` / `PageDn` / `Ctrl+↑↓` | Scroll transcript (auto-follows while streaming)         |
+| `Tab`                           | Complete current word                                    |
+| `Ctrl+P`                        | Toggle command palette                                   |
+| (while streaming) `o` / `q`     | Observer answers now / queue for the main agent          |
+| `Ctrl+C` (streaming)            | Abort current request (clears queue)                     |
+| `Ctrl+C` (idle)                 | Quit                                                     |
 
 ### Architecture
 

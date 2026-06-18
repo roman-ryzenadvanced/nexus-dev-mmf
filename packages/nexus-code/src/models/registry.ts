@@ -10,10 +10,7 @@ export interface RegistrySnapshot {
   flat: ModelDescriptor[];
 }
 
-export function buildRegistry(
-  config: AppConfig,
-  autoFetched: ModelDescriptor[] = []
-): RegistrySnapshot {
+export function buildRegistry(config: AppConfig, autoFetched: ModelDescriptor[] = []): RegistrySnapshot {
   const staticModels = getAllModels(config);
   const seen = new Set<string>();
   const flat: ModelDescriptor[] = [];
@@ -33,15 +30,8 @@ export function buildRegistry(
   return { byProvider, flat };
 }
 
-export function addManualModel(
-  config: AppConfig,
-  providerId: string,
-  modelId: string,
-  label?: string
-): AppConfig {
-  const exists = config.manualModels.some(
-    (m) => m.providerId === providerId && m.id === modelId
-  );
+export function addManualModel(config: AppConfig, providerId: string, modelId: string, label?: string): AppConfig {
+  const exists = config.manualModels.some(m => m.providerId === providerId && m.id === modelId);
   if (exists) return config;
   const newModel: ModelDescriptor = {
     id: modelId,
@@ -53,23 +43,13 @@ export function addManualModel(
   return { ...config, manualModels: [...config.manualModels, newModel] };
 }
 
-export function removeManualModel(
-  config: AppConfig,
-  providerId: string,
-  modelId: string
-): AppConfig {
+export function removeManualModel(config: AppConfig, providerId: string, modelId: string): AppConfig {
   return {
     ...config,
-    manualModels: config.manualModels.filter(
-      (m) => !(m.providerId === providerId && m.id === modelId)
-    ),
+    manualModels: config.manualModels.filter(m => !(m.providerId === providerId && m.id === modelId)),
   };
 }
 
-export function findModel(
-  registry: RegistrySnapshot,
-  providerId: string,
-  modelId: string
-): ModelDescriptor | undefined {
-  return registry.byProvider[providerId]?.find((m) => m.id === modelId);
+export function findModel(registry: RegistrySnapshot, providerId: string, modelId: string): ModelDescriptor | undefined {
+  return registry.byProvider[providerId]?.find(m => m.id === modelId);
 }

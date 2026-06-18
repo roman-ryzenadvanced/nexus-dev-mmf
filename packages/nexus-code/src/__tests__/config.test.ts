@@ -13,7 +13,13 @@ const SAMPLE_CONFIG: AppConfig = {
   mode: 'balanced',
   useMMFE: true,
   providers: [
-    { id: 'zai', kind: 'zai', name: 'Z.ai', mmfe: true, defaultModel: 'glm-5.2' },
+    {
+      id: 'zai',
+      kind: 'zai',
+      name: 'Z.ai',
+      mmfe: true,
+      defaultModel: 'glm-5.2',
+    },
     {
       id: 'openai',
       kind: 'openai',
@@ -80,7 +86,7 @@ describe('config schema', () => {
 
   it('DEFAULT_PROVIDERS has exactly 3 entries', () => {
     expect(DEFAULT_PROVIDERS).toHaveLength(3);
-    const ids = DEFAULT_PROVIDERS.map((p) => p.id).sort();
+    const ids = DEFAULT_PROVIDERS.map(p => p.id).sort();
     expect(ids).toEqual(['anthropic', 'openai', 'zai']);
   });
 
@@ -126,7 +132,7 @@ describe('config load/save', () => {
     const configPath = join(tmpDir, 'config.json');
     const withKeys: AppConfig = {
       ...SAMPLE_CONFIG,
-      providers: SAMPLE_CONFIG.providers.map((p) => ({
+      providers: SAMPLE_CONFIG.providers.map(p => ({
         ...p,
         apiKey: 'sk-secret-must-not-persist',
       })),
@@ -150,7 +156,7 @@ describe('config load/save', () => {
     const configPath = join(tmpDir, 'config.json');
     await saveConfig(SAMPLE_CONFIG, configPath);
     const loaded = await loadConfig(configPath);
-    const openai = loaded.providers.find((p) => p.id === 'openai');
+    const openai = loaded.providers.find(p => p.id === 'openai');
     expect(openai?.apiKey).toBe('sk-from-env');
     delete process.env.OPENAI_API_KEY;
   });
@@ -164,13 +170,16 @@ describe('config helpers', () => {
   });
 
   it('getActiveProvider throws for unknown id', () => {
-    const bad: AppConfig = { ...SAMPLE_CONFIG, activeProviderId: 'nonexistent' };
+    const bad: AppConfig = {
+      ...SAMPLE_CONFIG,
+      activeProviderId: 'nonexistent',
+    };
     expect(() => getActiveProvider(bad)).toThrow();
   });
 
   it('getAllModels merges manual + builtin', () => {
     const all = getAllModels(SAMPLE_CONFIG);
-    const ids = all.map((m) => m.id).sort();
+    const ids = all.map(m => m.id).sort();
     expect(ids).toContain('custom-model');
     expect(ids).toContain('glm-5.2');
     expect(ids).toContain('glm-4.7');

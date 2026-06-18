@@ -17,7 +17,7 @@ async function startServer(): Promise<void> {
   // Start server in background — runWebServer returns a never-resolving promise
   runWebServer({ port: serverPort, configPath: testConfigPath }).catch(() => {});
   // Give it time to boot
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 500));
 }
 
 beforeAll(async () => {
@@ -34,11 +34,22 @@ beforeAll(async () => {
       mode: 'balanced',
       useMMFE: true,
       providers: [
-        { id: 'zai', kind: 'zai', name: 'Z.ai', mmfe: true, defaultModel: 'glm-5.2' },
+        {
+          id: 'zai',
+          kind: 'zai',
+          name: 'Z.ai',
+          mmfe: true,
+          defaultModel: 'glm-5.2',
+        },
       ],
       manualModels: [],
       mcpServers: [],
-      ui: { theme: 'tech-dark', showRouting: true, showTokens: true, showTimestamps: false },
+      ui: {
+        theme: 'tech-dark',
+        showRouting: true,
+        showTokens: true,
+        showTimestamps: false,
+      },
     }),
     'utf8'
   );
@@ -91,7 +102,9 @@ describe('web UI server', () => {
 
   it('POST /api/clear returns ok', async () => {
     await startServer();
-    const res = await fetch(`http://127.0.0.1:${serverPort}/api/clear`, { method: 'POST' });
+    const res = await fetch(`http://127.0.0.1:${serverPort}/api/clear`, {
+      method: 'POST',
+    });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.ok).toBe(true);

@@ -11,13 +11,7 @@
 // ============================================================
 
 import type { Provider } from '../providers/base.js';
-import type {
-  AppConfig,
-  ChatMessage,
-  ChatRequestOptions,
-  ChatResponse,
-  ToolCall,
-} from '../types.js';
+import type { AppConfig, ChatMessage, ChatRequestOptions, ChatResponse, ToolCall } from '../types.js';
 import { getActiveProvider } from '../config/index.js';
 import { chatWithRetry } from '../providers/retry.js';
 import type { ToolRegistry } from '../tools/protocol/index.js';
@@ -84,10 +78,7 @@ export async function sendChat(
         const toolMsg: ChatMessage = {
           id: executed.id,
           role: 'tool',
-          content:
-            typeof executed.result === 'string'
-              ? executed.result
-              : JSON.stringify(executed.result, null, 2),
+          content: typeof executed.result === 'string' ? executed.result : JSON.stringify(executed.result, null, 2),
           toolCalls: [executed],
           ts: Date.now(),
         };
@@ -150,7 +141,10 @@ export async function sendChatStream(
   // The onProgress hook forwards REAL pipeline stage + subtask throughput
   // so the UI isn't stuck on zeroed metrics during the long fusion call.
   if (!mmfeOff) {
-    const res = await sendChat(config, providers, messages, { ...opts, onProgress: opts.onProgress });
+    const res = await sendChat(config, providers, messages, {
+      ...opts,
+      onProgress: opts.onProgress,
+    });
     if (res.message.content && opts.onDelta) opts.onDelta(res.message.content);
     return res;
   }
@@ -178,10 +172,7 @@ export async function sendChatStream(
         const toolMsg: ChatMessage = {
           id: executed.id,
           role: 'tool',
-          content:
-            typeof executed.result === 'string'
-              ? executed.result
-              : JSON.stringify(executed.result, null, 2),
+          content: typeof executed.result === 'string' ? executed.result : JSON.stringify(executed.result, null, 2),
           toolCalls: [executed],
           ts: Date.now(),
         };
@@ -222,7 +213,9 @@ async function runStreamWithRetry(
       while (true) {
         // Check for abort before each chunk
         if (opts.signal?.aborted) {
-          try { gen.return?.(undefined as any); } catch {}
+          try {
+            gen.return?.(undefined as any);
+          } catch {}
           throw new DOMException('The operation was aborted.', 'AbortError');
         }
         const { done, value } = await gen.next();
@@ -256,8 +249,12 @@ async function runStreamWithRetry(
       const exp = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);
       const jitter = Math.floor(Math.random() * 250);
       const delayMs = exp + jitter;
-      retryOpts?.onRetry?.({ attempt: attempt + 1, error: lastError, nextDelayMs: delayMs });
-      await new Promise<void>((r) => setTimeout(r, delayMs));
+      retryOpts?.onRetry?.({
+        attempt: attempt + 1,
+        error: lastError,
+        nextDelayMs: delayMs,
+      });
+      await new Promise<void>(r => setTimeout(r, delayMs));
     }
   }
   throw lastError ?? new Error('runStreamWithRetry: unknown failure');

@@ -19,14 +19,7 @@
  * @version 5.1.0
  */
 
-import {
-  LLMProvider,
-  ProviderId,
-  ProviderConfig,
-  ProviderMessage,
-  ProviderCompletionOptions,
-  ProviderCompletionResult,
-} from './types.js';
+import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult, ProviderConfig, ProviderId, ProviderMessage } from './types.js';
 
 /**
  * User-Agent sent to identify as a Claude Code client.
@@ -48,15 +41,7 @@ const DEFAULT_ZAI_ANTHROPIC_BASE_URL = 'https://api.z.ai/api/anthropic';
  * GLM model ids exposed through the Anthropic-compatible endpoint.
  * Mirrors the catalog from the OpenAI-compatible `zai` provider.
  */
-const ZAI_ANTHROPIC_MODELS = [
-  'glm-5.2',
-  'glm-5.2-1m',
-  'glm-5.1',
-  'glm-5',
-  'glm-5v-turbo',
-  'glm-4.7',
-  'glm-4.6',
-] as const;
+const ZAI_ANTHROPIC_MODELS = ['glm-5.2', 'glm-5.2-1m', 'glm-5.1', 'glm-5', 'glm-5v-turbo', 'glm-4.7', 'glm-4.6'] as const;
 
 export class ZAIAnthropicProvider implements LLMProvider {
   readonly providerId: ProviderId = 'zai-anthropic';
@@ -75,21 +60,12 @@ export class ZAIAnthropicProvider implements LLMProvider {
     // Prefer a dedicated ZAI_ANTHROPIC_API_KEY so the same process can carry a
     // distinct key for this endpoint vs. the OpenAI-compatible `zai` provider,
     // but fall back to the shared ZAI_API_KEY.
-    this.apiKey =
-      config.apiKey ??
-      process.env.ZAI_ANTHROPIC_API_KEY ??
-      process.env.ZAI_API_KEY ??
-      '';
+    this.apiKey = config.apiKey ?? process.env.ZAI_ANTHROPIC_API_KEY ?? process.env.ZAI_API_KEY ?? '';
 
-    this.baseURL =
-      config.baseURL ??
-      process.env.ZAI_ANTHROPIC_BASE_URL ??
-      DEFAULT_ZAI_ANTHROPIC_BASE_URL;
+    this.baseURL = config.baseURL ?? process.env.ZAI_ANTHROPIC_BASE_URL ?? DEFAULT_ZAI_ANTHROPIC_BASE_URL;
 
     if (!this.apiKey) {
-      throw new Error(
-        'ZAI Anthropic provider requires ZAI_ANTHROPIC_API_KEY (or ZAI_API_KEY) env var, or apiKey in config.'
-      );
+      throw new Error('ZAI Anthropic provider requires ZAI_ANTHROPIC_API_KEY (or ZAI_API_KEY) env var, or apiKey in config.');
     }
 
     this._isReady = true;
@@ -105,11 +81,7 @@ export class ZAIAnthropicProvider implements LLMProvider {
     return `${trimmed}/v1/messages`;
   }
 
-  async complete(
-    model: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult> {
+  async complete(model: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult> {
     if (!this._isReady) {
       throw new Error('ZAI Anthropic provider not initialized');
     }
@@ -167,7 +139,7 @@ export class ZAIAnthropicProvider implements LLMProvider {
       'Content-Type': 'application/json',
       // Z.AI's Anthropic endpoint authenticates with a Bearer token (the
       // official Claude Code setup uses ANTHROPIC_AUTH_TOKEN), not x-api-key.
-      'Authorization': `Bearer ${this.apiKey}`,
+      Authorization: `Bearer ${this.apiKey}`,
       'anthropic-version': '2023-06-01',
       'User-Agent': CLAUDE_CODE_USER_AGENT,
     };
@@ -184,7 +156,7 @@ export class ZAIAnthropicProvider implements LLMProvider {
       throw new Error(`ZAI Anthropic API error (${response.status}): ${errorText}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json();
 
     // Extract text from Anthropic-style content blocks.
     let content = '';
@@ -202,11 +174,13 @@ export class ZAIAnthropicProvider implements LLMProvider {
       content,
       model: data.model ?? model,
       provider: 'zai-anthropic',
-      usage: data.usage ? {
-        promptTokens: data.usage.input_tokens ?? 0,
-        completionTokens: data.usage.output_tokens ?? 0,
-        totalTokens: (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
-      } : undefined,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.input_tokens ?? 0,
+            completionTokens: data.usage.output_tokens ?? 0,
+            totalTokens: (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
+          }
+        : undefined,
       thinkingUsed: options?.enableThinking,
       metadata: {
         id: data.id,
@@ -218,7 +192,7 @@ export class ZAIAnthropicProvider implements LLMProvider {
   async healthCheck(): Promise<boolean> {
     try {
       const headers: Record<string, string> = {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
         'User-Agent': CLAUDE_CODE_USER_AGENT,

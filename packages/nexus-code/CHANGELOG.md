@@ -132,31 +132,31 @@ Final closure pass: plugin commands are now wired into the slash command dispatc
 
 #### Tests (230 passing, 8 skipped — up from 196 in v1.1.5)
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `config.test.ts` | 14 | schema, load/save, env-merge |
-| `registry.test.ts` | 8 | merge precedence, manual add/remove |
-| `commands.test.ts` | 22 | all 20 builtin commands, aliases, errors |
-| `session.test.ts` | 7 | newSession, save/load, list, delete |
-| `modes.test.ts` | 7 | 4 modes, metadata, validation |
-| `tools.test.ts` | 15 | ToolRegistry, error isolation, schema converters |
-| `retry.test.ts` | 5 | retryable errors, maxRetries, onRetry |
-| `orchestrator.test.ts` | 6 | tool-call loop, maxToolRounds, no-registry bypass |
-| `providers.test.ts` | 14 | OpenAI + Anthropic request/response with mocked HTTP |
-| `command-palette.test.ts` | 10 | filterEntries pure function |
-| `mcp.test.ts` | 6 | Live filesystem MCP server + failure handling |
-| `history.test.ts` | 9 | load/append/clear/search, duplicate suppression |
-| `theme.test.ts` | 9 | 3 themes, distinct palettes, luminance checks |
-| `autocomplete.test.ts` | 17 | slash command completion, history completion |
-| `pipe.test.ts` | 3 | PipeOptions interface |
-| `components.test.tsx` | 16 | StatusBar, HelpOverlay, ChatView Ink rendering |
-| `plugins.test.ts` | 9 | loadPlugin, loadAllPlugins, writeExamplePlugin |
-| `wizard.test.ts` | 5 | non-interactive mode basics |
-| `wizard-interactive.test.ts` | 7 | mocked readline, edge cases |
-| `new-commands.test.ts` | 9 | /diff, /branch, /init, /plugins |
-| `web.test.ts` | 11 | HTTP server, all endpoints, HTML shape |
-| `plugin-commands.test.ts` | 15 | register/unregister, runSlash integration, end-to-end |
-| `smoke-real.test.ts` | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated) |
+| Suite                        | Tests     | Coverage                                              |
+| ---------------------------- | --------- | ----------------------------------------------------- |
+| `config.test.ts`             | 14        | schema, load/save, env-merge                          |
+| `registry.test.ts`           | 8         | merge precedence, manual add/remove                   |
+| `commands.test.ts`           | 22        | all 20 builtin commands, aliases, errors              |
+| `session.test.ts`            | 7         | newSession, save/load, list, delete                   |
+| `modes.test.ts`              | 7         | 4 modes, metadata, validation                         |
+| `tools.test.ts`              | 15        | ToolRegistry, error isolation, schema converters      |
+| `retry.test.ts`              | 5         | retryable errors, maxRetries, onRetry                 |
+| `orchestrator.test.ts`       | 6         | tool-call loop, maxToolRounds, no-registry bypass     |
+| `providers.test.ts`          | 14        | OpenAI + Anthropic request/response with mocked HTTP  |
+| `command-palette.test.ts`    | 10        | filterEntries pure function                           |
+| `mcp.test.ts`                | 6         | Live filesystem MCP server + failure handling         |
+| `history.test.ts`            | 9         | load/append/clear/search, duplicate suppression       |
+| `theme.test.ts`              | 9         | 3 themes, distinct palettes, luminance checks         |
+| `autocomplete.test.ts`       | 17        | slash command completion, history completion          |
+| `pipe.test.ts`               | 3         | PipeOptions interface                                 |
+| `components.test.tsx`        | 16        | StatusBar, HelpOverlay, ChatView Ink rendering        |
+| `plugins.test.ts`            | 9         | loadPlugin, loadAllPlugins, writeExamplePlugin        |
+| `wizard.test.ts`             | 5         | non-interactive mode basics                           |
+| `wizard-interactive.test.ts` | 7         | mocked readline, edge cases                           |
+| `new-commands.test.ts`       | 9         | /diff, /branch, /init, /plugins                       |
+| `web.test.ts`                | 11        | HTTP server, all endpoints, HTML shape                |
+| `plugin-commands.test.ts`    | 15        | register/unregister, runSlash integration, end-to-end |
+| `smoke-real.test.ts`         | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated)      |
 
 ### Migration notes
 
@@ -251,28 +251,28 @@ v1.1.5 → v1.1.6 is a drop-in upgrade:
 
 #### Tests (196 passing, 8 skipped — up from 152 in v1.1.4)
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `config.test.ts` | 14 | schema, load/save, env-merge |
-| `registry.test.ts` | 8 | merge precedence, manual add/remove |
-| `commands.test.ts` | 22 | all 20 slash commands, aliases, errors |
-| `session.test.ts` | 7 | newSession, save/load, list, delete |
-| `modes.test.ts` | 7 | 4 modes, metadata, validation |
-| `tools.test.ts` | 15 | ToolRegistry, error isolation, schema converters |
-| `retry.test.ts` | 5 | retryable errors, maxRetries, onRetry |
-| `orchestrator.test.ts` | 6 | tool-call loop, maxToolRounds, no-registry bypass |
-| `providers.test.ts` | 14 | OpenAI + Anthropic request/response with mocked HTTP |
-| `command-palette.test.ts` | 10 | filterEntries pure function |
-| `mcp.test.ts` | 6 | Live filesystem MCP server + failure handling |
-| `history.test.ts` | 9 | load/append/clear/search, duplicate suppression |
-| `theme.test.ts` | 9 | 3 themes, distinct palettes, luminance checks |
-| `autocomplete.test.ts` | 17 | slash command completion, history completion |
-| `pipe.test.ts` | 3 | PipeOptions interface |
-| `components.test.tsx` | 16 | StatusBar, HelpOverlay, ChatView Ink rendering |
-| `plugins.test.ts` | 9 | loadPlugin, loadAllPlugins, writeExamplePlugin, error handling |
-| `wizard.test.ts` | 5 | non-interactive mode, key stripping, overwrite refusal |
-| `new-commands.test.ts` | 9 | /diff, /branch, /init, /plugins discovery + execution |
-| `smoke-real.test.ts` | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated) |
+| Suite                     | Tests     | Coverage                                                       |
+| ------------------------- | --------- | -------------------------------------------------------------- |
+| `config.test.ts`          | 14        | schema, load/save, env-merge                                   |
+| `registry.test.ts`        | 8         | merge precedence, manual add/remove                            |
+| `commands.test.ts`        | 22        | all 20 slash commands, aliases, errors                         |
+| `session.test.ts`         | 7         | newSession, save/load, list, delete                            |
+| `modes.test.ts`           | 7         | 4 modes, metadata, validation                                  |
+| `tools.test.ts`           | 15        | ToolRegistry, error isolation, schema converters               |
+| `retry.test.ts`           | 5         | retryable errors, maxRetries, onRetry                          |
+| `orchestrator.test.ts`    | 6         | tool-call loop, maxToolRounds, no-registry bypass              |
+| `providers.test.ts`       | 14        | OpenAI + Anthropic request/response with mocked HTTP           |
+| `command-palette.test.ts` | 10        | filterEntries pure function                                    |
+| `mcp.test.ts`             | 6         | Live filesystem MCP server + failure handling                  |
+| `history.test.ts`         | 9         | load/append/clear/search, duplicate suppression                |
+| `theme.test.ts`           | 9         | 3 themes, distinct palettes, luminance checks                  |
+| `autocomplete.test.ts`    | 17        | slash command completion, history completion                   |
+| `pipe.test.ts`            | 3         | PipeOptions interface                                          |
+| `components.test.tsx`     | 16        | StatusBar, HelpOverlay, ChatView Ink rendering                 |
+| `plugins.test.ts`         | 9         | loadPlugin, loadAllPlugins, writeExamplePlugin, error handling |
+| `wizard.test.ts`          | 5         | non-interactive mode, key stripping, overwrite refusal         |
+| `new-commands.test.ts`    | 9         | /diff, /branch, /init, /plugins discovery + execution          |
+| `smoke-real.test.ts`      | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated)               |
 
 #### Slash command registry (now 20 commands)
 
@@ -356,24 +356,24 @@ End-to-end CI/CD pipeline (3 GitHub Actions workflows), three TUI color themes w
 
 #### Tests (152 passing, 8 skipped — up from 123 in v1.1.3)
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `config.test.ts` | 14 | schema, load/save, env-merge |
-| `registry.test.ts` | 8 | merge precedence, manual add/remove |
-| `commands.test.ts` | 22 | all 16 slash commands, aliases, errors |
-| `session.test.ts` | 7 | newSession, save/load, list, delete |
-| `modes.test.ts` | 7 | 4 modes, metadata, validation |
-| `tools.test.ts` | 15 | ToolRegistry, error isolation, schema converters |
-| `retry.test.ts` | 5 | retryable errors, maxRetries, onRetry |
-| `orchestrator.test.ts` | 6 | tool-call loop, maxToolRounds, no-registry bypass |
-| `providers.test.ts` | 14 | OpenAI + Anthropic request/response with mocked HTTP |
-| `command-palette.test.ts` | 10 | filterEntries pure function |
-| `mcp.test.ts` | 6 | Live filesystem MCP server + failure handling |
-| `history.test.ts` | 9 | load/append/clear/search, duplicate suppression |
-| `theme.test.ts` | 8 | 3 themes, distinct palettes, luminance checks |
-| `autocomplete.test.ts` | 18 | slash command completion, history completion, edge cases |
-| `pipe.test.ts` | 3 | PipeOptions interface |
-| `smoke-real.test.ts` | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated) |
+| Suite                     | Tests     | Coverage                                                 |
+| ------------------------- | --------- | -------------------------------------------------------- |
+| `config.test.ts`          | 14        | schema, load/save, env-merge                             |
+| `registry.test.ts`        | 8         | merge precedence, manual add/remove                      |
+| `commands.test.ts`        | 22        | all 16 slash commands, aliases, errors                   |
+| `session.test.ts`         | 7         | newSession, save/load, list, delete                      |
+| `modes.test.ts`           | 7         | 4 modes, metadata, validation                            |
+| `tools.test.ts`           | 15        | ToolRegistry, error isolation, schema converters         |
+| `retry.test.ts`           | 5         | retryable errors, maxRetries, onRetry                    |
+| `orchestrator.test.ts`    | 6         | tool-call loop, maxToolRounds, no-registry bypass        |
+| `providers.test.ts`       | 14        | OpenAI + Anthropic request/response with mocked HTTP     |
+| `command-palette.test.ts` | 10        | filterEntries pure function                              |
+| `mcp.test.ts`             | 6         | Live filesystem MCP server + failure handling            |
+| `history.test.ts`         | 9         | load/append/clear/search, duplicate suppression          |
+| `theme.test.ts`           | 8         | 3 themes, distinct palettes, luminance checks            |
+| `autocomplete.test.ts`    | 18        | slash command completion, history completion, edge cases |
+| `pipe.test.ts`            | 3         | PipeOptions interface                                    |
+| `smoke-real.test.ts`      | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated)         |
 
 #### Slash command registry (now 16 commands)
 
@@ -450,21 +450,21 @@ End-to-end wiring of `streamChat()` into the live TUI, tool-call capture from st
 
 #### Tests (123 passing, 8 skipped — up from 114 in v1.1.2)
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `config.test.ts` | 14 | schema, load/save, env-merge, key-stripping |
-| `registry.test.ts` | 8 | merge precedence, manual add/remove |
-| `commands.test.ts` | 22 | all 15 slash commands, aliases, error paths |
-| `session.test.ts` | 7 | newSession, save/load, list, delete |
-| `modes.test.ts` | 7 | 4 modes, metadata, validation |
-| `tools.test.ts` | 15 | ToolRegistry, error isolation, schema converters |
-| `retry.test.ts` | 5 | retryable errors, maxRetries, onRetry |
-| `orchestrator.test.ts` | 6 | tool-call loop, maxToolRounds, no-registry bypass |
-| `providers.test.ts` | 14 | OpenAI + Anthropic request/response with mocked HTTP |
-| `command-palette.test.ts` | 10 | filterEntries pure function, edge cases |
-| `mcp.test.ts` | 6 | Live filesystem MCP server + failure handling |
-| `history.test.ts` | 9 | load/append/clear/search, duplicate suppression |
-| `smoke-real.test.ts` | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated) |
+| Suite                     | Tests     | Coverage                                             |
+| ------------------------- | --------- | ---------------------------------------------------- |
+| `config.test.ts`          | 14        | schema, load/save, env-merge, key-stripping          |
+| `registry.test.ts`        | 8         | merge precedence, manual add/remove                  |
+| `commands.test.ts`        | 22        | all 15 slash commands, aliases, error paths          |
+| `session.test.ts`         | 7         | newSession, save/load, list, delete                  |
+| `modes.test.ts`           | 7         | 4 modes, metadata, validation                        |
+| `tools.test.ts`           | 15        | ToolRegistry, error isolation, schema converters     |
+| `retry.test.ts`           | 5         | retryable errors, maxRetries, onRetry                |
+| `orchestrator.test.ts`    | 6         | tool-call loop, maxToolRounds, no-registry bypass    |
+| `providers.test.ts`       | 14        | OpenAI + Anthropic request/response with mocked HTTP |
+| `command-palette.test.ts` | 10        | filterEntries pure function, edge cases              |
+| `mcp.test.ts`             | 6         | Live filesystem MCP server + failure handling        |
+| `history.test.ts`         | 9         | load/append/clear/search, duplicate suppression      |
+| `smoke-real.test.ts`      | 8 skipped | Real OpenAI + Anthropic + Z.ai calls (env-gated)     |
 
 #### Slash command registry (now 15 commands)
 
@@ -538,19 +538,19 @@ End-to-end implementation of provider-agnostic tool calling, streaming responses
 
 #### Tests (114 total, all passing — up from 78 in v1.1.1)
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `config.test.ts` | 14 | schema, load/save, env-merge, key-stripping, corrupt-JSON |
-| `registry.test.ts` | 8 | merge precedence, manual add/remove, findModel |
-| `commands.test.ts` | 22 | all 11 slash commands, aliases, error paths |
-| `session.test.ts` | 7 | newSession, save/load, list, delete |
-| `modes.test.ts` | 7 | 4 modes, metadata, validation |
-| `tools.test.ts` | 15 | ToolRegistry, error isolation, schema converters, 5 builtin tools |
-| `retry.test.ts` | 5 | retryable/non-retryable errors, maxRetries cap, onRetry callback |
-| `orchestrator.test.ts` | 6 | tool-call execution loop: single call, multi-round chain, maxToolRounds cap, error handling, no-registry bypass |
-| `providers.test.ts` | 14 | OpenAI + Anthropic request construction + response parsing with mocked HTTP |
-| `command-palette.test.ts` | 10 | filterEntries pure function, edge cases, custom entry lists |
-| `mcp.test.ts` | 6 | Live filesystem MCP server integration + failure-handling tests |
+| Suite                     | Tests | Coverage                                                                                                        |
+| ------------------------- | ----- | --------------------------------------------------------------------------------------------------------------- |
+| `config.test.ts`          | 14    | schema, load/save, env-merge, key-stripping, corrupt-JSON                                                       |
+| `registry.test.ts`        | 8     | merge precedence, manual add/remove, findModel                                                                  |
+| `commands.test.ts`        | 22    | all 11 slash commands, aliases, error paths                                                                     |
+| `session.test.ts`         | 7     | newSession, save/load, list, delete                                                                             |
+| `modes.test.ts`           | 7     | 4 modes, metadata, validation                                                                                   |
+| `tools.test.ts`           | 15    | ToolRegistry, error isolation, schema converters, 5 builtin tools                                               |
+| `retry.test.ts`           | 5     | retryable/non-retryable errors, maxRetries cap, onRetry callback                                                |
+| `orchestrator.test.ts`    | 6     | tool-call execution loop: single call, multi-round chain, maxToolRounds cap, error handling, no-registry bypass |
+| `providers.test.ts`       | 14    | OpenAI + Anthropic request construction + response parsing with mocked HTTP                                     |
+| `command-palette.test.ts` | 10    | filterEntries pure function, edge cases, custom entry lists                                                     |
+| `mcp.test.ts`             | 6     | Live filesystem MCP server integration + failure-handling tests                                                 |
 
 ### Fixed
 
@@ -587,15 +587,15 @@ End-to-end hardening of the `nexus-tui` package: all TypeScript errors fixed, bu
 
 #### Tests (78 total, all passing)
 
-| Suite | Tests | Coverage |
-|---|---|---|
-| `config.test.ts` | 14 | schema parsing, defaults, round-trip save/load, API-key stripping, env-var merge, corrupt-JSON fallback |
-| `registry.test.ts` | 8 | model registry merge precedence (auto > manual > builtin), manual add/remove, findModel |
-| `commands.test.ts` | 22 | all 11 slash commands, alias resolution, error paths, help detail |
-| `session.test.ts` | 7 | newSession defaults + overrides, save/load round-trip, list, delete |
-| `modes.test.ts` | 7 | 4 modes, metadata completeness, mode validation, describeMode format |
-| `tools.test.ts` | 14 | ToolRegistry register/unregister/execute, error handling, schema converters, 5 builtin tools |
-| `retry.test.ts` | 5 | first-attempt success, retryable status codes, non-retryable errors, max-retries cap, onRetry callback |
+| Suite              | Tests | Coverage                                                                                                |
+| ------------------ | ----- | ------------------------------------------------------------------------------------------------------- |
+| `config.test.ts`   | 14    | schema parsing, defaults, round-trip save/load, API-key stripping, env-var merge, corrupt-JSON fallback |
+| `registry.test.ts` | 8     | model registry merge precedence (auto > manual > builtin), manual add/remove, findModel                 |
+| `commands.test.ts` | 22    | all 11 slash commands, alias resolution, error paths, help detail                                       |
+| `session.test.ts`  | 7     | newSession defaults + overrides, save/load round-trip, list, delete                                     |
+| `modes.test.ts`    | 7     | 4 modes, metadata completeness, mode validation, describeMode format                                    |
+| `tools.test.ts`    | 14    | ToolRegistry register/unregister/execute, error handling, schema converters, 5 builtin tools            |
+| `retry.test.ts`    | 5     | first-attempt success, retryable status codes, non-retryable errors, max-retries cap, onRetry callback  |
 
 #### Tool calling protocol (`src/tools/protocol/index.ts`)
 
@@ -609,13 +609,13 @@ End-to-end hardening of the `nexus-tui` package: all TypeScript errors fixed, bu
 
 5 tools registered automatically on TUI boot:
 
-| Tool | Purpose |
-|---|---|
-| `read_file` | Read file contents (size-capped at 200KB default) |
-| `write_file` | Overwrite a file with new content |
-| `shell` | Execute shell commands with cwd + timeout |
-| `diff` | Generate unified diff between current and proposed content |
-| `apply_diff` | Apply new content to a file |
+| Tool         | Purpose                                                    |
+| ------------ | ---------------------------------------------------------- |
+| `read_file`  | Read file contents (size-capped at 200KB default)          |
+| `write_file` | Overwrite a file with new content                          |
+| `shell`      | Execute shell commands with cwd + timeout                  |
+| `diff`       | Generate unified diff between current and proposed content |
+| `apply_diff` | Apply new content to a file                                |
 
 #### MCP client runtime (`src/mcp/client.ts`)
 
@@ -716,19 +716,19 @@ Inspired by [`opencode`](https://github.com/anomalyco/opencode), [`MiMo-Code`](h
 
 11 builtins:
 
-| Command | Purpose |
-|---|---|
-| `/help [command]` | List commands or show detail for one |
-| `/mode [speed\|balanced\|quality\|creative]` | Show/set MMFE mode |
-| `/provider [id]` | Show/switch active provider |
-| `/model [id]` | Show/switch active model |
-| `/fetch [providerId]` | Auto-fetch models from `/v1/models` |
-| `/add <providerId> <modelId> [label]` | Manually register a model |
-| `/clear` | Clear the chat transcript |
-| `/save [name]` | Save the current session |
-| `/load <name>` | Load a saved session |
-| `/mmfe [on\|off]` | Toggle MMFE on/off |
-| `/exit` | Quit the TUI |
+| Command                                      | Purpose                              |
+| -------------------------------------------- | ------------------------------------ |
+| `/help [command]`                            | List commands or show detail for one |
+| `/mode [speed\|balanced\|quality\|creative]` | Show/set MMFE mode                   |
+| `/provider [id]`                             | Show/switch active provider          |
+| `/model [id]`                                | Show/switch active model             |
+| `/fetch [providerId]`                        | Auto-fetch models from `/v1/models`  |
+| `/add <providerId> <modelId> [label]`        | Manually register a model            |
+| `/clear`                                     | Clear the chat transcript            |
+| `/save [name]`                               | Save the current session             |
+| `/load <name>`                               | Load a saved session                 |
+| `/mmfe [on\|off]`                            | Toggle MMFE on/off                   |
+| `/exit`                                      | Quit the TUI                         |
 
 #### TUI features
 
@@ -794,17 +794,17 @@ Existing v1.0 users upgrading to v1.1.0:
 
 ## Release history
 
-| Version | Date | Highlights |
-|---|---|---|
-| 1.1.7 | 2026-06-17 | **Rebrand to Nexus Code** — package renamed `nexus-tui` → `nexus-code`, all branding strings updated, CI/CD paths updated, no functional changes |
-| 1.1.6 | 2026-06-17 | Plugin commands wired into `/help` + `runSlash`, web UI HTTP integration tests (11), wizard interactive-mode tests (7), plugin loader end-to-end tests (15), coverage 56% → 65%, 230 tests |
-| 1.1.5 | 2026-06-17 | `/diff` + `/branch` + `/init` + `/plugins` commands, multi-line input (Shift+Enter), config wizard, plugin system, web UI mode (`nexus --web`), real Ink component tests, 196 tests |
-| 1.1.4 | 2026-06-17 | CI/CD (3 workflows), 3 TUI themes + `/theme`, tab autocomplete, pipe mode (`echo "prompt" \| nexus`), Anthropic streaming tool-call capture, coverage thresholds, lazy provider clients, 152 tests |
-| 1.1.3 | 2026-06-17 | Streaming pipeline wired end-to-end, tool-call capture from streams, `/status` + `/history` commands, input history persistence, ESLint zero warnings, real-API smoke tests (env-gated) |
-| 1.1.2 | 2026-06-17 | Tool calling (provider-agnostic, multi-round), streaming for all 3 providers, command palette (Ctrl+P), 114 tests including live MCP integration |
-| 1.1.1 | 2026-06-17 | Production-readiness: 0 TS errors, 78 tests passing, tool calling protocol, MCP client runtime, retry + error recovery |
-| 1.1.0 | 2026-06-17 | `nexus-code` terminal UI client; multi-provider (OpenAI + Anthropic + Z.ai); auto-fetch models; slash commands; MCP support; session persistence |
-| 1.0.0 | 2025-09-15 | Initial release: MMFE orchestrator, six GLM models, four modes, `nexus-dev` CLI |
+| Version | Date       | Highlights                                                                                                                                                                                         |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.1.7   | 2026-06-17 | **Rebrand to Nexus Code** — package renamed `nexus-tui` → `nexus-code`, all branding strings updated, CI/CD paths updated, no functional changes                                                   |
+| 1.1.6   | 2026-06-17 | Plugin commands wired into `/help` + `runSlash`, web UI HTTP integration tests (11), wizard interactive-mode tests (7), plugin loader end-to-end tests (15), coverage 56% → 65%, 230 tests         |
+| 1.1.5   | 2026-06-17 | `/diff` + `/branch` + `/init` + `/plugins` commands, multi-line input (Shift+Enter), config wizard, plugin system, web UI mode (`nexus --web`), real Ink component tests, 196 tests                |
+| 1.1.4   | 2026-06-17 | CI/CD (3 workflows), 3 TUI themes + `/theme`, tab autocomplete, pipe mode (`echo "prompt" \| nexus`), Anthropic streaming tool-call capture, coverage thresholds, lazy provider clients, 152 tests |
+| 1.1.3   | 2026-06-17 | Streaming pipeline wired end-to-end, tool-call capture from streams, `/status` + `/history` commands, input history persistence, ESLint zero warnings, real-API smoke tests (env-gated)            |
+| 1.1.2   | 2026-06-17 | Tool calling (provider-agnostic, multi-round), streaming for all 3 providers, command palette (Ctrl+P), 114 tests including live MCP integration                                                   |
+| 1.1.1   | 2026-06-17 | Production-readiness: 0 TS errors, 78 tests passing, tool calling protocol, MCP client runtime, retry + error recovery                                                                             |
+| 1.1.0   | 2026-06-17 | `nexus-code` terminal UI client; multi-provider (OpenAI + Anthropic + Z.ai); auto-fetch models; slash commands; MCP support; session persistence                                                   |
+| 1.0.0   | 2025-09-15 | Initial release: MMFE orchestrator, six GLM models, four modes, `nexus-dev` CLI                                                                                                                    |
 
 ---
 

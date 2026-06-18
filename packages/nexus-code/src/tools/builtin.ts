@@ -10,9 +10,7 @@ import type { ToolDefinition } from './protocol/index.js';
 
 export const readFileTool: ToolDefinition = {
   name: 'read_file',
-  description:
-    'Read the contents of a file from the local filesystem. ' +
-    'Use for inspecting source code, configs, or logs.',
+  description: 'Read the contents of a file from the local filesystem. ' + 'Use for inspecting source code, configs, or logs.',
   parameters: {
     type: 'object',
     properties: {
@@ -34,8 +32,7 @@ export const readFileTool: ToolDefinition = {
 
 export const writeFileTool: ToolDefinition = {
   name: 'write_file',
-  description:
-    'Write content to a file on the local filesystem. Overwrites existing content.',
+  description: 'Write content to a file on the local filesystem. Overwrites existing content.',
   parameters: {
     type: 'object',
     properties: {
@@ -52,9 +49,7 @@ export const writeFileTool: ToolDefinition = {
 
 export const shellTool: ToolDefinition = {
   name: 'shell',
-  description:
-    'Execute a shell command and return stdout/stderr. ' +
-    'Use for running tests, git operations, build commands.',
+  description: 'Execute a shell command and return stdout/stderr. ' + 'Use for running tests, git operations, build commands.',
   parameters: {
     type: 'object',
     properties: {
@@ -84,8 +79,7 @@ export const shellTool: ToolDefinition = {
 
 export const diffTool: ToolDefinition = {
   name: 'diff',
-  description:
-    'Generate a unified diff between the current file contents and proposed new contents.',
+  description: 'Generate a unified diff between the current file contents and proposed new contents.',
   parameters: {
     type: 'object',
     properties: {
@@ -96,7 +90,12 @@ export const diffTool: ToolDefinition = {
   },
   async handler(args) {
     const diff = await diffFile(String(args.path), String(args.newContent));
-    return { path: diff.path, added: diff.added, removed: diff.removed, patch: diff.patch };
+    return {
+      path: diff.path,
+      added: diff.added,
+      removed: diff.removed,
+      patch: diff.patch,
+    };
   },
 };
 
@@ -113,14 +112,13 @@ export const applyDiffTool: ToolDefinition = {
   },
   async handler(args) {
     const result = await applyDiff(String(args.path), String(args.newContent));
-    return { applied: result.applied, path: result.path, added: result.added, removed: result.removed };
+    return {
+      applied: result.applied,
+      path: result.path,
+      added: result.added,
+      removed: result.removed,
+    };
   },
 };
 
-export const BUILTIN_TOOLS: ToolDefinition[] = [
-  readFileTool,
-  writeFileTool,
-  shellTool,
-  diffTool,
-  applyDiffTool,
-];
+export const BUILTIN_TOOLS: ToolDefinition[] = [readFileTool, writeFileTool, shellTool, diffTool, applyDiffTool];

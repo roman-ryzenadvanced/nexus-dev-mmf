@@ -10,15 +10,13 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(
-  await readFile(join(__dirname, '..', 'package.json'), 'utf8')
-);
+const pkg = JSON.parse(await readFile(join(__dirname, '..', 'package.json'), 'utf8'));
 
 const args = process.argv.slice(2);
 
 // --- Quick top-level flags ---
-const flag = (name) => args.find((a) => a === name || a.startsWith(`${name}=`));
-const flagVal = (name) => {
+const flag = name => args.find(a => a === name || a.startsWith(`${name}=`));
+const flagVal = name => {
   const f = flag(name);
   return f && f.includes('=') ? f.split('=')[1] : true;
 };
@@ -33,11 +31,11 @@ if (args[0] === 'init') {
   const nonInteractive = flag('--yes') !== undefined || flag('-y') !== undefined;
   import('../dist/wizard.js')
     .then(({ runWizard }) => runWizard({ nonInteractive }))
-    .then((summary) => {
+    .then(summary => {
       console.log(summary);
       process.exit(0);
     })
-    .catch((err) => {
+    .catch(err => {
       console.error('nexus init failed:');
       console.error(err.stack || err.message || err);
       process.exit(1);
@@ -54,7 +52,7 @@ if (flag('--web') !== undefined) {
   const port = typeof portArg === 'string' ? parseInt(portArg, 10) : 3000;
   import('../dist/web.js')
     .then(({ runWebServer }) => runWebServer({ port }))
-    .catch((err) => {
+    .catch(err => {
       console.error('nexus --web failed:');
       console.error(err.stack || err.message || err);
       process.exit(1);
@@ -135,8 +133,8 @@ if (flag('--help') || flag('-h')) {
 const pipeMode = !process.stdin.isTTY || flag('--pipe') !== undefined;
 
 if (pipeMode) {
-  const cleanedArgs = args.filter((a) => !a.startsWith('--pipe'));
-  const prompt = cleanedArgs.find((a) => !a.startsWith('-'));
+  const cleanedArgs = args.filter(a => !a.startsWith('--pipe'));
+  const prompt = cleanedArgs.find(a => !a.startsWith('-'));
 
   import('../dist/pipe.js')
     .then(({ runPipe }) =>
@@ -150,7 +148,7 @@ if (pipeMode) {
         stream: true,
       })
     )
-    .catch((err) => {
+    .catch(err => {
       console.error('Failed to boot nexus-code pipe mode:');
       console.error(err.stack || err.message || err);
       process.exit(1);
@@ -161,7 +159,7 @@ if (pipeMode) {
       const { runTUI } = await import('../dist/index.js');
       const continueVal = flagVal('--continue');
       return runTUI({
-        initialPrompt: args.find((a) => !a.startsWith('-')),
+        initialPrompt: args.find(a => !a.startsWith('-')),
         provider: typeof flagVal('--provider') === 'string' ? flagVal('--provider') : undefined,
         model: typeof flagVal('--model') === 'string' ? flagVal('--model') : undefined,
         mode: typeof flagVal('--mode') === 'string' ? flagVal('--mode') : undefined,
@@ -172,7 +170,7 @@ if (pipeMode) {
         noResume: flag('--new') !== undefined && typeof continueVal !== 'string',
       });
     })
-    .catch((err) => {
+    .catch(err => {
       console.error('Failed to boot nexus-code:');
       console.error(err.stack || err.message || err);
       process.exit(1);

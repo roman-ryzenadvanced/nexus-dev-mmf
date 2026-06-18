@@ -6,7 +6,9 @@ import { tmpdir } from 'node:os';
 
 // Override NEXUS_DIR before importing the module under test.
 // We do this by stubbing the constant via env var.
-const TMP_NEXUS = await mkdir(join(tmpdir(), `nexus-history-${Date.now()}`), { recursive: true })
+const TMP_NEXUS = await mkdir(join(tmpdir(), `nexus-history-${Date.now()}`), {
+  recursive: true,
+})
   .then(() => join(tmpdir(), `nexus-history-${Date.now()}`))
   .catch(() => join(tmpdir(), `nexus-history-${Date.now()}`));
 

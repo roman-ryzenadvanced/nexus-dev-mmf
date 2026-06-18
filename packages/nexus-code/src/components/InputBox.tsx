@@ -38,12 +38,7 @@ const MENU_MAX_VISIBLE = 6;
  * top or bottom edge, shift the window so it stays on screen (sticky scroll).
  * Pure + exported so the behaviour can be unit-tested.
  */
-export function clampWindowStart(
-  idx: number,
-  winStart: number,
-  visibleCount: number,
-  totalCount: number
-): number {
+export function clampWindowStart(idx: number, winStart: number, visibleCount: number, totalCount: number): number {
   if (totalCount <= visibleCount) return 0;
   let start = winStart;
   if (idx < start) start = idx;
@@ -97,15 +92,12 @@ export function InputBox({
     setMenuIdx(0);
     setMenuWinStart(0);
   }, [query]);
-  const filtered = useMemo(
-    () => (menuOpen ? filterEntries(PALETTE_ENTRIES, query) : []),
-    [menuOpen, query]
-  );
+  const filtered = useMemo(() => (menuOpen ? filterEntries(PALETTE_ENTRIES, query) : []), [menuOpen, query]);
   // Clamp the selection into range whenever the filtered set changes.
   const safeIdx = filtered.length ? Math.min(menuIdx, filtered.length - 1) : 0;
 
   function runSlash(cmd: string) {
-    onSlash(cmd).then((res) => {
+    onSlash(cmd).then(res => {
       if (res) setSlashResult(res);
       setValue('');
       setMenuActive(false);
@@ -124,13 +116,13 @@ export function InputBox({
       if (key.upArrow) {
         const newIdx = Math.max(0, safeIdx - 1);
         setMenuIdx(newIdx);
-        setMenuWinStart((w) => clampWindowStart(newIdx, w, MENU_MAX_VISIBLE, filtered.length));
+        setMenuWinStart(w => clampWindowStart(newIdx, w, MENU_MAX_VISIBLE, filtered.length));
         return;
       }
       if (key.downArrow) {
         const newIdx = Math.min(filtered.length - 1, safeIdx + 1);
         setMenuIdx(newIdx);
-        setMenuWinStart((w) => clampWindowStart(newIdx, w, MENU_MAX_VISIBLE, filtered.length));
+        setMenuWinStart(w => clampWindowStart(newIdx, w, MENU_MAX_VISIBLE, filtered.length));
         return;
       }
       if (key.return || key.tab) {
@@ -176,7 +168,7 @@ export function InputBox({
 
     // Shift+Enter → insert newline (multi-line input).
     if (key.return && key.shift) {
-      setValue((v) => v + '\n');
+      setValue(v => v + '\n');
       setSlashResult(null);
       setTabCandidates(null);
       setMenuActive(false);
@@ -194,7 +186,7 @@ export function InputBox({
       if (onHistoryAppend) {
         onHistoryAppend(entry);
       } else {
-        setLocalHistory((h) => [...h, entry].slice(-HISTORY_MAX));
+        setLocalHistory(h => [...h, entry].slice(-HISTORY_MAX));
         void appendHistory(entry);
       }
       setHistIdx(-1);
@@ -245,7 +237,7 @@ export function InputBox({
       return;
     }
     if (key.backspace || key.delete) {
-      setValue((v) => v.slice(0, -1));
+      setValue(v => v.slice(0, -1));
       setTabCandidates(null);
       // If backspace removes the leading `/`, dismiss the menu.
       const after = value.slice(0, -1);
@@ -286,32 +278,26 @@ export function InputBox({
       {menuOpen && filtered.length > 0 && (
         <Box flexDirection="column" marginBottom={1} flexShrink={0}>
           <Box>
-            <Text color={THEME.accent2} bold>⌘ commands{posLabel}</Text>
+            <Text color={THEME.accent2} bold>
+              ⌘ commands{posLabel}
+            </Text>
             <Text color={THEME.primaryMute}> · ↑↓ select · ↵ run · esc cancel</Text>
           </Box>
-          {hasUp && (
-            <Text color={THEME.accent}>  ↑ {winStart} more above</Text>
-          )}
+          {hasUp && <Text color={THEME.accent}> ↑ {winStart} more above</Text>}
           {visible.map((entry, i) => {
             const absIdx = winStart + i;
             const selected = absIdx === safeIdx;
             return (
               <Box key={entry.name} gap={1} flexShrink={0}>
-                <Text color={selected ? THEME.accent : THEME.primaryMute}>
-                  {selected ? '▸' : ' '}
-                </Text>
+                <Text color={selected ? THEME.accent : THEME.primaryMute}>{selected ? '▸' : ' '}</Text>
                 <Text color={selected ? THEME.primary : THEME.primaryDim} bold={selected}>
                   /{entry.name.padEnd(12)}
                 </Text>
-                <Text color={selected ? THEME.primaryDim : THEME.primaryMute}>
-                  {entry.description.slice(0, 48)}
-                </Text>
+                <Text color={selected ? THEME.primaryDim : THEME.primaryMute}>{entry.description.slice(0, 48)}</Text>
               </Box>
             );
           })}
-          {hasDown && (
-            <Text color={THEME.accent}>  ↓ {filtered.length - winStart - MENU_MAX_VISIBLE} more below</Text>
-          )}
+          {hasDown && <Text color={THEME.accent}> ↓ {filtered.length - winStart - MENU_MAX_VISIBLE} more below</Text>}
         </Box>
       )}
       <Box gap={1}>
@@ -322,19 +308,17 @@ export function InputBox({
           {value}
           <Text color={THEME.accent}>▋</Text>
         </Text>
-        {pendingCount > 0 && (
-          <Text color={THEME.accent2}> [{pendingCount} queued]</Text>
-        )}
+        {pendingCount > 0 && <Text color={THEME.accent2}> [{pendingCount} queued]</Text>}
       </Box>
       <Box>
         <Text color={THEME.primaryMute} dimColor>
           {menuOpen
             ? 'Slash menu — ↵ run highlighted · ↑↓ move · esc close'
             : busy
-            ? 'Streaming — type to queue follow-ups · Enter queues · Ctrl+C abort'
-            : isMultiLine
-            ? `${lineCount} lines · Shift+Enter for newline · Enter to submit · Ctrl+P palette · Ctrl+C quit`
-            : promptLabel || 'Enter a prompt, type / for commands · Ctrl+P palette · Ctrl+C quit'}
+              ? 'Streaming — type to queue follow-ups · Enter queues · Ctrl+C abort'
+              : isMultiLine
+                ? `${lineCount} lines · Shift+Enter for newline · Enter to submit · Ctrl+P palette · Ctrl+C quit`
+                : promptLabel || 'Enter a prompt, type / for commands · Ctrl+P palette · Ctrl+C quit'}
         </Text>
       </Box>
     </Box>

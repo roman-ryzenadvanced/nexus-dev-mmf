@@ -52,9 +52,9 @@ describe.skipIf(!hasNpx)('MCPClient — integration with filesystem MCP server',
     expect(status.tools.length).toBeGreaterThan(0);
 
     // Filesystem server exposes tools like read_file, write_file, list_directory
-    const toolNames = status.tools.map((t) => t.name);
-    expect(toolNames.some((n) => n.includes('read_file'))).toBe(true);
-    expect(toolNames.some((n) => n.includes('list_directory'))).toBe(true);
+    const toolNames = status.tools.map(t => t.name);
+    expect(toolNames.some(n => n.includes('read_file'))).toBe(true);
+    expect(toolNames.some(n => n.includes('list_directory'))).toBe(true);
   }, 30_000);
 
   it('can invoke a tool through the registered handler', async () => {
@@ -75,12 +75,14 @@ describe.skipIf(!hasNpx)('MCPClient — integration with filesystem MCP server',
     expect(status.connected).toBe(true);
 
     // Find the read_file tool
-    const readFileTool = status.tools.find((t) => t.name.includes('read_file'));
+    const readFileTool = status.tools.find(t => t.name.includes('read_file'));
     expect(readFileTool).toBeDefined();
 
     // Invoke it with an absolute path (filesystem MCP server requires paths
     // inside one of the allowed directories — passing the absolute tmpDir path)
-    const result = await readFileTool!.handler({ path: join(tmpDir, 'hello.txt') });
+    const result = await readFileTool!.handler({
+      path: join(tmpDir, 'hello.txt'),
+    });
     expect(result).toContain('Hello from MCP test!');
   }, 30_000);
 });
@@ -132,7 +134,7 @@ describe('MCPClient — handles connection failures gracefully', () => {
     await client.connectAll();
     const statuses = client.listStatuses();
     expect(statuses).toHaveLength(2);
-    const ids = statuses.map((s) => s.id).sort();
+    const ids = statuses.map(s => s.id).sort();
     expect(ids).toEqual(['a', 'b']);
   });
 });

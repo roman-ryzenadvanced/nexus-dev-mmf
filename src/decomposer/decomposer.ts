@@ -5,10 +5,10 @@
  * Updated for v4.0.0 with multi-provider support.
  */
 
-import { SubTask, OrchestrationRequest } from '../core/types.js';
+import type { NexusDevConfig } from '../core/config.js';
 import { MODEL_REGISTRY } from '../core/models.js';
-import { NexusDevConfig } from '../core/config.js';
-import { ProviderRouter } from '../providers/provider-router.js';
+import type { OrchestrationRequest, SubTask } from '../core/types.js';
+import type { ProviderRouter } from '../providers/provider-router.js';
 
 const DECOMPOSER_SYSTEM_PROMPT = `You are a task decomposition specialist. Your job is to break down complex requests into smaller, independent subtasks that can be processed in parallel by specialized AI models.
 
@@ -72,9 +72,9 @@ If the request involves UI/UX design, visual design, landing page creation, dash
 Return ONLY the JSON array. No markdown, no explanation.`;
 
 export class Decomposer {
-  private providerRouter: ProviderRouter;
-  private config: NexusDevConfig;
-  private decomposerModel: string;
+  private readonly providerRouter: ProviderRouter;
+  private readonly config: NexusDevConfig;
+  private readonly decomposerModel: string;
 
   constructor(config: NexusDevConfig, providerRouter: ProviderRouter, decomposerModel?: string) {
     this.config = config;
@@ -147,12 +147,8 @@ Produce the subtask decomposition now.`;
       index,
       description: task.description ?? `Subtask ${index}`,
       input: task.input ?? task.description ?? '',
-      requiredCapabilities: Array.isArray(task.requiredCapabilities)
-        ? task.requiredCapabilities
-        : ['reasoning'],
-      preferredModels: Array.isArray(task.preferredModels)
-        ? task.preferredModels
-        : [],
+      requiredCapabilities: Array.isArray(task.requiredCapabilities) ? task.requiredCapabilities : ['reasoning'],
+      preferredModels: Array.isArray(task.preferredModels) ? task.preferredModels : [],
       priority: task.priority ?? 'medium',
       dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
       estimatedComplexity: task.estimatedComplexity ?? 'moderate',

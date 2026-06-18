@@ -34,14 +34,14 @@ export interface PipeOptions {
 
 /** Read all of stdin as a string. Returns '' if stdin is a TTY (no piped input). */
 function readStdin(): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (process.stdin.isTTY) {
       resolve('');
       return;
     }
     let data = '';
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', (chunk) => {
+    process.stdin.on('data', chunk => {
       data += chunk;
     });
     process.stdin.on('end', () => {
@@ -85,7 +85,7 @@ export async function runPipe(opts: PipeOptions = {}): Promise<void> {
   const toolRegistry = new ToolRegistry();
   for (const tool of BUILTIN_TOOLS) toolRegistry.register(tool);
 
-  const tools = toolRegistry.list().map((t) => ({
+  const tools = toolRegistry.list().map(t => ({
     name: t.name,
     description: t.description,
     parameters: t.parameters as Record<string, unknown>,
@@ -102,7 +102,7 @@ export async function runPipe(opts: PipeOptions = {}): Promise<void> {
       tools,
       maxToolRounds: 5,
       toolRegistry,
-      onDelta: stream ? (delta) => process.stdout.write(delta) : undefined,
+      onDelta: stream ? delta => process.stdout.write(delta) : undefined,
       retry: { maxRetries: 2, baseDelayMs: 500, maxDelayMs: 8000 },
     });
 
@@ -121,7 +121,7 @@ export async function runPipe(opts: PipeOptions = {}): Promise<void> {
     process.stdout.write('\n');
 
     // Exit code reflects whether tool calls succeeded.
-    const failedTools = res.message.toolCalls?.filter((tc) => tc.status === 'error') ?? [];
+    const failedTools = res.message.toolCalls?.filter(tc => tc.status === 'error') ?? [];
     process.exit(failedTools.length > 0 ? 1 : 0);
   } catch (err) {
     console.error('nexus-code pipe mode failed:');

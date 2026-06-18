@@ -4,18 +4,18 @@
  * capabilities, speed/quality preferences, and current load.
  */
 
-import { SubTask, RoutingDecision, OrchestrationRequest } from '../core/types.js';
-import { MODEL_REGISTRY, ModelProfile, getModelsWithCapability } from '../core/models.js';
-import { NexusDevConfig } from '../core/config.js';
+import type { NexusDevConfig } from '../core/config.js';
+import { getModelsWithCapability, MODEL_REGISTRY, ModelProfile } from '../core/models.js';
+import type { OrchestrationRequest, RoutingDecision, SubTask } from '../core/types.js';
 
 export interface RoutingContext {
   mode: 'speed' | 'quality' | 'balanced' | 'creative';
-  usedModels: Map<string, number>;  // modelId -> count of assignments
+  usedModels: Map<string, number>; // modelId -> count of assignments
   maxParallel: number;
 }
 
 export class AdaptiveRouter {
-  private config: NexusDevConfig;
+  private readonly config: NexusDevConfig;
 
   constructor(config: NexusDevConfig) {
     this.config = config;
@@ -24,10 +24,7 @@ export class AdaptiveRouter {
   /**
    * Route all subtasks, returning a routing decision for each.
    */
-  route(
-    subtasks: SubTask[],
-    request: OrchestrationRequest
-  ): RoutingDecision[] {
+  route(subtasks: SubTask[], request: OrchestrationRequest): RoutingDecision[] {
     const ctx: RoutingContext = {
       mode: request.preferredMode ?? this.config.defaultMode,
       usedModels: new Map(),
@@ -92,20 +89,26 @@ export class AdaptiveRouter {
   private scoreCandidates(
     subtask: SubTask,
     ctx: RoutingContext
-  ): Array<{ modelId: string; score: number; confidence: number; reason: string }> {
-    const scores: Array<{ modelId: string; score: number; confidence: number; reason: string }> = [];
+  ): Array<{
+    modelId: string;
+    score: number;
+    confidence: number;
+    reason: string;
+  }> {
+    const scores: Array<{
+      modelId: string;
+      score: number;
+      confidence: number;
+      reason: string;
+    }> = [];
 
     for (const [modelId, profile] of Object.entries(MODEL_REGISTRY)) {
       let score = 0;
       const reasons: string[] = [];
 
       // Capability match (most important factor)
-      const capabilityMatch = subtask.requiredCapabilities.filter(c =>
-        profile.capabilities.includes(c)
-      ).length;
-      const capabilityRatio = subtask.requiredCapabilities.length > 0
-        ? capabilityMatch / subtask.requiredCapabilities.length
-        : 0.5;
+      const capabilityMatch = subtask.requiredCapabilities.filter(c => profile.capabilities.includes(c)).length;
+      const capabilityRatio = subtask.requiredCapabilities.length > 0 ? capabilityMatch / subtask.requiredCapabilities.length : 0.5;
 
       if (capabilityRatio >= 1.0) {
         score += 40;

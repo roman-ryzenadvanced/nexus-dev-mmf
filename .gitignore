@@ -28,3 +28,4 @@ upload/
 worklog.md
 package-lock.json
 !packages/*/package-lock.json
+.env

@@ -46,16 +46,7 @@ function clampStart(idx: number, start: number, vis: number, total: number): num
   return Math.max(0, Math.min(s, total - vis));
 }
 
-export function OptionPicker({
-  title,
-  options,
-  onPick,
-  onClose,
-  currentId,
-  maxVisible = DEFAULT_MAX,
-  filterable = true,
-  hint,
-}: Props) {
+export function OptionPicker({ title, options, onPick, onClose, currentId, maxVisible = DEFAULT_MAX, filterable = true, hint }: Props) {
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
   const [start, setStart] = useState(0);
@@ -63,12 +54,7 @@ export function OptionPicker({
   const filtered = useMemo(() => {
     if (!filterable || !query) return options;
     const q = query.toLowerCase();
-    return options.filter(
-      (o) =>
-        o.id.toLowerCase().includes(q) ||
-        o.label.toLowerCase().includes(q) ||
-        (o.detail || '').toLowerCase().includes(q)
-    );
+    return options.filter(o => o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q) || (o.detail || '').toLowerCase().includes(q));
   }, [options, query, filterable]);
 
   // Keep highlight in range when the filter changes.
@@ -80,7 +66,7 @@ export function OptionPicker({
   // Start on the currently-active option so the picker feels contextual.
   useEffect(() => {
     if (!currentId || query) return;
-    const i = filtered.findIndex((o) => o.id === currentId);
+    const i = filtered.findIndex(o => o.id === currentId);
     if (i >= 0) {
       setIdx(i);
       setStart(clampStart(i, 0, maxVisible, filtered.length));
@@ -103,13 +89,13 @@ export function OptionPicker({
     if (key.upArrow) {
       const n = (safeIdx - 1 + total) % total;
       setIdx(n);
-      setStart((s) => clampStart(n, s, vis, total));
+      setStart(s => clampStart(n, s, vis, total));
       return;
     }
     if (key.downArrow) {
       const n = total ? (safeIdx + 1) % total : 0;
       setIdx(n);
-      setStart((s) => clampStart(n, s, vis, total));
+      setStart(s => clampStart(n, s, vis, total));
       return;
     }
     if (key.return) {
@@ -118,36 +104,34 @@ export function OptionPicker({
       return;
     }
     if (key.backspace || key.delete) {
-      setQuery((q) => q.slice(0, -1));
+      setQuery(q => q.slice(0, -1));
       return;
     }
     if (input && !key.ctrl && !key.meta) {
-      setQuery((q) => q + input);
+      setQuery(q => q + input);
     }
   });
 
   return (
     <Box flexDirection="column" marginY={1} paddingX={1} flexShrink={0}>
       <Box marginBottom={0}>
-        <Text color="#8B5CF6" bold>✦ {title}</Text>
+        <Text color="#8B5CF6" bold>
+          ✦ {title}
+        </Text>
         {filterable && (
           <Text color="#475569">
             {' · '}
-            {query ? (
-              <Text color="#06B6D4">filter: {query}</Text>
-            ) : (
-              'type to filter'
-            )}
+            {query ? <Text color="#06B6D4">filter: {query}</Text> : 'type to filter'}
           </Text>
         )}
         <Text color="#475569"> · {total ? `${safeIdx + 1}/${total}` : '0'}</Text>
       </Box>
 
       {total === 0 ? (
-        <Text color="#94A3B8">  No options match “{query}”.</Text>
+        <Text color="#94A3B8"> No options match “{query}”.</Text>
       ) : (
         <>
-          {hasUp && <Text color="#06B6D4">  ↑ {winStart} more</Text>}
+          {hasUp && <Text color="#06B6D4"> ↑ {winStart} more</Text>}
           {window.map((o, i) => {
             const abs = winStart + i;
             const selected = abs === safeIdx;
@@ -159,16 +143,12 @@ export function OptionPicker({
                 <Text color={selected ? '#E2E8F0' : '#94A3B8'} bold={selected}>
                   {o.label}
                 </Text>
-                {o.detail && (
-                  <Text color={selected ? '#94A3B8' : '#475569'}>{o.detail}</Text>
-                )}
-                {o.meta && (
-                  <Text color="#475569"> {o.meta}</Text>
-                )}
+                {o.detail && <Text color={selected ? '#94A3B8' : '#475569'}>{o.detail}</Text>}
+                {o.meta && <Text color="#475569"> {o.meta}</Text>}
               </Box>
             );
           })}
-          {hasDown && <Text color="#06B6D4">  ↓ {total - winStart - vis} more</Text>}
+          {hasDown && <Text color="#06B6D4"> ↓ {total - winStart - vis} more</Text>}
         </>
       )}
 

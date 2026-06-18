@@ -57,13 +57,11 @@ function summarizeContext(ctx: ObserverContext): string {
     bits.push(`Routed to model(s): ${ctx.modelsUsed.join(', ')}.`);
   }
   if (ctx.routing?.length) {
-    const legs = ctx.routing
-      .map((r) => `"${r.subtaskLabel}" → ${r.selectedModel} (${Math.round(r.confidence * 100)}%)`)
-      .join('; ');
+    const legs = ctx.routing.map(r => `"${r.subtaskLabel}" → ${r.selectedModel} (${Math.round(r.confidence * 100)}%)`).join('; ');
     bits.push(`MMFE routing: ${legs}.`);
   }
   if (ctx.toolCalls?.length) {
-    const names = ctx.toolCalls.map((t) => `${t.name}(${Object.keys(t.args).join(',')})→${t.status}`);
+    const names = ctx.toolCalls.map(t => `${t.name}(${Object.keys(t.args).join(',')})→${t.status}`);
     bits.push(`Tool calls so far (${ctx.toolCalls.length}): ${names.join(', ')}.`);
   }
   if (ctx.streamTail) {
@@ -73,7 +71,10 @@ function summarizeContext(ctx: ObserverContext): string {
 }
 
 export class ObserverEngine {
-  constructor(private provider: Provider, private modelId: string) {}
+  constructor(
+    private provider: Provider,
+    private modelId: string
+  ) {}
 
   /**
    * Respond to the user's interjection right away, grounded in the live
@@ -96,7 +97,10 @@ export class ObserverEngine {
       },
     ];
 
-    const res = await this.provider.chat(messages, { model: this.modelId, noMMFE: true });
+    const res = await this.provider.chat(messages, {
+      model: this.modelId,
+      noMMFE: true,
+    });
     const msg = res.message;
     return {
       ...msg,

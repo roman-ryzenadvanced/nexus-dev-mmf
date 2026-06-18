@@ -13,11 +13,19 @@ describe('TUI themes', () => {
   });
 
   it('every theme has all required tokens', () => {
-    const required: Array<keyof typeof THEMES['tech-dark']> = [
-      'bg', 'bgSoft', 'bgElev', 'line',
-      'primary', 'primaryDim', 'primaryMute',
-      'accent', 'accent2',
-      'success', 'warn', 'danger',
+    const required: Array<keyof (typeof THEMES)['tech-dark']> = [
+      'bg',
+      'bgSoft',
+      'bgElev',
+      'line',
+      'primary',
+      'primaryDim',
+      'primaryMute',
+      'accent',
+      'accent2',
+      'success',
+      'warn',
+      'danger',
     ];
     for (const name of listThemes() as ThemeName[]) {
       const theme = THEMES[name];

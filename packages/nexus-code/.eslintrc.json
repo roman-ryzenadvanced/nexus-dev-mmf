@@ -7,10 +7,7 @@
     "ecmaFeatures": { "jsx": true }
   },
   "plugins": ["@typescript-eslint"],
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended"
-  ],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   "settings": {
     "react": { "version": "18" }
   },
@@ -47,11 +44,5 @@
       }
     ]
   },
-  "ignorePatterns": [
-    "dist/",
-    "node_modules/",
-    "coverage/",
-    "*.config.ts",
-    "src/__tests__/**"
-  ]
+  "ignorePatterns": ["dist/", "node_modules/", "coverage/", "*.config.ts", "src/__tests__/**"]
 }

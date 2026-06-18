@@ -159,15 +159,30 @@ async function runDesignCommand(args: string[]) {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--mode' && args[i + 1]) { mode = args[i + 1] as any; i++; }
-    else if (arg === '--no-slope') { enableSlope = false; }
-    else if (arg === '--no-design-system') { enableDesignSystem = false; }
-    else if (arg === '--product' && args[i + 1]) { productType = args[i + 1]; i++; }
-    else if (arg === '--brand' && args[i + 1]) { brandName = args[i + 1]; i++; }
-    else if (arg === '--industry' && args[i + 1]) { industry = args[i + 1]; i++; }
-    else if (arg === '--stack' && args[i + 1]) { techStack = args[i + 1]; i++; }
-    else if (arg === '--verbose') { verbose = true; }
-    else if (!arg.startsWith('--')) { query += (query ? ' ' : '') + arg; }
+    if (arg === '--mode' && args[i + 1]) {
+      mode = args[i + 1] as any;
+      i++;
+    } else if (arg === '--no-slope') {
+      enableSlope = false;
+    } else if (arg === '--no-design-system') {
+      enableDesignSystem = false;
+    } else if (arg === '--product' && args[i + 1]) {
+      productType = args[i + 1];
+      i++;
+    } else if (arg === '--brand' && args[i + 1]) {
+      brandName = args[i + 1];
+      i++;
+    } else if (arg === '--industry' && args[i + 1]) {
+      industry = args[i + 1];
+      i++;
+    } else if (arg === '--stack' && args[i + 1]) {
+      techStack = args[i + 1];
+      i++;
+    } else if (arg === '--verbose') {
+      verbose = true;
+    } else if (!arg.startsWith('--')) {
+      query += (query ? ' ' : '') + arg;
+    }
   }
 
   if (!query) {

@@ -26,7 +26,11 @@ async function ensureSessionsDir(): Promise<void> {
 /** Persist the live session to the auto-restore slot. Safe to call often. */
 export async function saveCurrentSession(session: Session): Promise<void> {
   await ensureSessionsDir();
-  const toWrite: Session = { ...session, name: session.name || CURRENT_SESSION_NAME, updatedAt: Date.now() };
+  const toWrite: Session = {
+    ...session,
+    name: session.name || CURRENT_SESSION_NAME,
+    updatedAt: Date.now(),
+  };
   try {
     await writeFile(currentSessionPath(), JSON.stringify(toWrite, null, 2), 'utf8');
   } catch {

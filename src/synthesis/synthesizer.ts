@@ -5,9 +5,9 @@
  * Updated for v4.0.0 with multi-provider support.
  */
 
-import { SubTaskResult, OrchestrationRequest, OrchestrationResult, RoutingDecision } from '../core/types.js';
-import { NexusDevConfig } from '../core/config.js';
-import { ProviderRouter } from '../providers/provider-router.js';
+import type { NexusDevConfig } from '../core/config.js';
+import type { OrchestrationRequest, OrchestrationResult, RoutingDecision, SubTaskResult } from '../core/types.js';
+import type { ProviderRouter } from '../providers/provider-router.js';
 
 const SYNTHESIZER_SYSTEM_PROMPT = `You are a master synthesis engine. Your role is to combine the outputs of multiple specialized AI subtask processors into a single, coherent, and comprehensive final answer.
 
@@ -31,8 +31,8 @@ const QUALITY_SCORER_PROMPT = `You are a quality assessment engine. Score the fo
 Return ONLY a number between 0 and 100.`;
 
 export class Synthesizer {
-  private providerRouter: ProviderRouter;
-  private config: NexusDevConfig;
+  private readonly providerRouter: ProviderRouter;
+  private readonly config: NexusDevConfig;
   private synthesisModel: string;
   private qualityModel: string;
   private refinementModel: string;
@@ -127,10 +127,7 @@ export class Synthesizer {
       subTaskResults: Array.from(subTaskResults.values()),
       routingDecisions,
       totalExecutionTimeMs: totalExecutionTimeMs + (Date.now() - startTime),
-      modelsUsed: [...new Set([
-        ...routingDecisions.map(r => r.selectedModel),
-        this.synthesisModel,
-      ])],
+      modelsUsed: [...new Set([...routingDecisions.map(r => r.selectedModel), this.synthesisModel])],
       decompositionStrategy: 'multi-model-parallel',
       synthesisStrategy: qualityScore < this.config.qualityThreshold ? 'refined' : 'primary',
       qualityScore,
@@ -205,11 +202,7 @@ export class Synthesizer {
   /**
    * Attempt to refine the synthesis if quality is below threshold.
    */
-  private async refineSynthesis(
-    query: string,
-    currentAnswer: string,
-    currentScore: number
-  ): Promise<string | null> {
+  private async refineSynthesis(query: string, currentAnswer: string, currentScore: number): Promise<string | null> {
     try {
       const result = await this.providerRouter.complete(
         this.refinementModel,

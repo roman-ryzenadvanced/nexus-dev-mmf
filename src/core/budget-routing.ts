@@ -4,7 +4,7 @@
  */
 
 import { MODEL_REGISTRY, ModelProfile } from './models.js';
-import { SubTask, RoutingDecision } from './types.js';
+import type { RoutingDecision, SubTask } from './types.js';
 
 export interface BudgetConstraint {
   /** Maximum total cost weight allowed for the entire request */
@@ -27,11 +27,7 @@ export const DEFAULT_BUDGET: BudgetConstraint = {
 /**
  * Check if a model selection fits within budget constraints.
  */
-export function isWithinBudget(
-  modelId: string,
-  currentTotalCost: number,
-  budget: BudgetConstraint
-): boolean {
+export function isWithinBudget(modelId: string, currentTotalCost: number, budget: BudgetConstraint): boolean {
   const model = MODEL_REGISTRY[modelId];
   if (!model) return false;
 
@@ -45,15 +41,11 @@ export function isWithinBudget(
 /**
  * Find the cheapest model that satisfies the required capabilities.
  */
-export function findCheapestModel(
-  requiredCapabilities: string[],
-  exclude: string[] = []
-): string | null {
+export function findCheapestModel(requiredCapabilities: string[], exclude: string[] = []): string | null {
   const candidates = Object.values(MODEL_REGISTRY)
     .filter(m => !exclude.includes(m.id))
     .filter(m => {
-      const matchRatio = requiredCapabilities.filter(c => m.capabilities.includes(c as any)).length /
-        Math.max(requiredCapabilities.length, 1);
+      const matchRatio = requiredCapabilities.filter(c => m.capabilities.includes(c as any)).length / Math.max(requiredCapabilities.length, 1);
       return matchRatio >= 0.5; // At least 50% capability match
     })
     .sort((a, b) => a.costWeight - b.costWeight);
@@ -75,11 +67,7 @@ export function calculateTotalCost(decisions: RoutingDecision[]): number {
  * Optimize routing decisions to fit within a budget constraint.
  * Replaces the most expensive decisions with cheaper alternatives.
  */
-export function optimizeForBudget(
-  decisions: RoutingDecision[],
-  subtasks: SubTask[],
-  budget: BudgetConstraint
-): RoutingDecision[] {
+export function optimizeForBudget(decisions: RoutingDecision[], subtasks: SubTask[], budget: BudgetConstraint): RoutingDecision[] {
   const currentCost = calculateTotalCost(decisions);
   if (currentCost <= budget.maxTotalCost) return decisions;
 
@@ -88,7 +76,11 @@ export function optimizeForBudget(
 
   // Sort decisions by cost (most expensive first) for replacement
   const sortedByCost = optimized
-    .map((d, i) => ({ decision: d, index: i, cost: MODEL_REGISTRY[d.selectedModel]?.costWeight ?? 1 }))
+    .map((d, i) => ({
+      decision: d,
+      index: i,
+      cost: MODEL_REGISTRY[d.selectedModel]?.costWeight ?? 1,
+    }))
     .sort((a, b) => b.cost - a.cost);
 
   let totalCost = currentCost;
@@ -100,9 +92,7 @@ export function optimizeForBudget(
     if (!subtask) continue;
 
     // Try alternatives (cheaper models)
-    const alternatives = item.decision.alternativeModels
-      .map(id => ({ id, cost: MODEL_REGISTRY[id]?.costWeight ?? 1 }))
-      .sort((a, b) => a.cost - b.cost);
+    const alternatives = item.decision.alternativeModels.map(id => ({ id, cost: MODEL_REGISTRY[id]?.costWeight ?? 1 })).sort((a, b) => a.cost - b.cost);
 
     for (const alt of alternatives) {
       if (alt.cost < item.cost && isWithinBudget(alt.id, totalCost - item.cost, budget)) {

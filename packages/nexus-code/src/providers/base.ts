@@ -40,10 +40,7 @@ export abstract class BaseProvider implements Provider {
 
   protected assertKey(): void {
     if (!this.apiKey) {
-      throw new Error(
-        `Provider "${this.id}" is missing an API key. ` +
-        `Set it in ~/.nexus/config.json or via the matching env var.`
-      );
+      throw new Error(`Provider "${this.id}" is missing an API key. ` + `Set it in ~/.nexus/config.json or via the matching env var.`);
     }
   }
 }

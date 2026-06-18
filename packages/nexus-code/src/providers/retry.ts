@@ -35,12 +35,7 @@ export async function chatWithRetry(
       lastError = err as Error;
       if (attempt === maxRetries) break;
 
-      const isRetryable =
-        err instanceof ProviderError
-          ? err.statusCode
-            ? retryableStatus.includes(err.statusCode)
-            : true
-          : true; // Non-provider errors (network) are retryable.
+      const isRetryable = err instanceof ProviderError ? (err.statusCode ? retryableStatus.includes(err.statusCode) : true) : true; // Non-provider errors (network) are retryable.
 
       if (!isRetryable) break;
 
@@ -48,7 +43,11 @@ export async function chatWithRetry(
       const exp = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);
       const jitter = Math.floor(Math.random() * 250);
       const delayMs = exp + jitter;
-      retryOpts.onRetry?.({ attempt: attempt + 1, error: lastError, nextDelayMs: delayMs });
+      retryOpts.onRetry?.({
+        attempt: attempt + 1,
+        error: lastError,
+        nextDelayMs: delayMs,
+      });
       await sleep(delayMs);
     }
   }
@@ -56,5 +55,5 @@ export async function chatWithRetry(
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms));
 }

@@ -13,12 +13,30 @@ const CONFIG: AppConfig = {
   mode: 'balanced',
   useMMFE: true,
   providers: [
-    { id: 'zai', kind: 'zai', name: 'Z.ai', mmfe: true, defaultModel: 'glm-5.2' },
-    { id: 'openai', kind: 'openai', name: 'OpenAI', baseURL: 'https://api.openai.com/v1', mmfe: false, defaultModel: 'gpt-4o' },
+    {
+      id: 'zai',
+      kind: 'zai',
+      name: 'Z.ai',
+      mmfe: true,
+      defaultModel: 'glm-5.2',
+    },
+    {
+      id: 'openai',
+      kind: 'openai',
+      name: 'OpenAI',
+      baseURL: 'https://api.openai.com/v1',
+      mmfe: false,
+      defaultModel: 'gpt-4o',
+    },
   ],
   manualModels: [],
   mcpServers: [],
-  ui: { theme: 'tech-dark', showRouting: true, showTokens: true, showTimestamps: false },
+  ui: {
+    theme: 'tech-dark',
+    showRouting: true,
+    showTokens: true,
+    showTimestamps: false,
+  },
 };
 
 describe('<StatusBar />', () => {
@@ -106,9 +124,7 @@ describe('<HelpOverlay />', () => {
 
 describe('<ChatView />', () => {
   it('renders empty state when no messages', () => {
-    const { lastFrame } = render(
-      <ChatView messages={[]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />);
     // Empty ChatView should render without crashing
     expect(lastFrame()).toBeDefined();
   });
@@ -120,9 +136,7 @@ describe('<ChatView />', () => {
       content: 'Hello, world!',
       ts: Date.now(),
     };
-    const { lastFrame } = render(
-      <ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('user');
     expect(frame).toContain('Hello, world!');
@@ -137,9 +151,7 @@ describe('<ChatView />', () => {
       elapsedMs: 432,
       ts: Date.now(),
     };
-    const { lastFrame } = render(
-      <ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('assistant');
     expect(frame).toContain('glm-5.2');
@@ -147,9 +159,7 @@ describe('<ChatView />', () => {
   });
 
   it('renders streaming buffer when streaming', () => {
-    const { lastFrame } = render(
-      <ChatView messages={[]} streaming={true} streamBuffer="partial response..." showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[]} streaming={true} streamBuffer="partial response..." showRouting={true} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('partial response');
     // ChatView renders "(streaming…)" with parens + ellipsis
@@ -163,9 +173,7 @@ describe('<ChatView />', () => {
       content: '{"result":"ok"}',
       ts: Date.now(),
     };
-    const { lastFrame } = render(
-      <ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('tool');
   });
@@ -189,9 +197,7 @@ describe('<ChatView />', () => {
       qualityScore: 92,
       ts: Date.now(),
     };
-    const { lastFrame } = render(
-      <ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('API contracts');
     expect(frame).toContain('glm-4.7');
@@ -217,9 +223,7 @@ describe('<ChatView />', () => {
       ],
       ts: Date.now(),
     };
-    const { lastFrame } = render(
-      <ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={false} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={[msg]} streaming={false} streamBuffer="" showRouting={false} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).not.toContain('subtask');
   });
@@ -227,12 +231,16 @@ describe('<ChatView />', () => {
   it('renders multiple messages in order', () => {
     const msgs: ChatMessage[] = [
       { id: 'u1', role: 'user', content: 'first', ts: 1 },
-      { id: 'a1', role: 'assistant', content: 'reply1', model: 'glm-5.2', ts: 2 },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: 'reply1',
+        model: 'glm-5.2',
+        ts: 2,
+      },
       { id: 'u2', role: 'user', content: 'second', ts: 3 },
     ];
-    const { lastFrame } = render(
-      <ChatView messages={msgs} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />
-    );
+    const { lastFrame } = render(<ChatView messages={msgs} streaming={false} streamBuffer="" showRouting={true} showTokens={true} />);
     const frame = lastFrame() ?? '';
     expect(frame).toContain('first');
     expect(frame).toContain('reply1');

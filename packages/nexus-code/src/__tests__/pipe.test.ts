@@ -25,9 +25,7 @@ describe('pipe mode interface', () => {
   });
 
   it('PipeOptions.mode accepts all 4 modes', () => {
-    const modes: Array<NonNullable<PipeOptions['mode']>> = [
-      'speed', 'balanced', 'quality', 'creative',
-    ];
+    const modes: Array<NonNullable<PipeOptions['mode']>> = ['speed', 'balanced', 'quality', 'creative'];
     for (const m of modes) {
       const opts: PipeOptions = { mode: m };
       expect(opts.mode).toBe(m);

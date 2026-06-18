@@ -14,7 +14,7 @@ describe('ToolRegistry', () => {
       name: 'echo',
       description: 'Echoes input',
       parameters: { type: 'object', properties: { msg: { type: 'string' } } },
-      handler: async (args) => args.msg,
+      handler: async args => args.msg,
     };
     reg.register(tool);
     expect(reg.get('echo')).toBe(tool);
@@ -52,7 +52,7 @@ describe('ToolRegistry', () => {
       name: 'add',
       description: 'Add two numbers',
       parameters: { type: 'object', properties: {} },
-      handler: async (args) => (Number(args.a) || 0) + (Number(args.b) || 0),
+      handler: async args => (Number(args.a) || 0) + (Number(args.b) || 0),
     });
     const call = await reg.execute('add', { a: 2, b: 3 });
     expect(call.status).toBe('ok');
@@ -88,7 +88,7 @@ describe('ToolRegistry', () => {
       name: 'echo',
       description: 'echo',
       parameters: { type: 'object', properties: {} },
-      handler: async (args) => args.msg,
+      handler: async args => args.msg,
     });
     const call = await reg.execute('echo', { msg: 'hi' });
     const msg = reg.toToolMessage(call);
@@ -127,7 +127,10 @@ describe('tool schema converters', () => {
   it('toOpenAITools wraps in function format', () => {
     const out = toOpenAITools(sampleTools);
     expect(out).toHaveLength(1);
-    const tool = out[0] as { type: string; function: { name: string; description: string; parameters: unknown } };
+    const tool = out[0] as {
+      type: string;
+      function: { name: string; description: string; parameters: unknown };
+    };
     expect(tool.type).toBe('function');
     expect(tool.function.name).toBe('read_file');
     expect(tool.function.description).toBe('Reads a file');
@@ -136,7 +139,11 @@ describe('tool schema converters', () => {
   it('toAnthropicTools uses input_schema format', () => {
     const out = toAnthropicTools(sampleTools);
     expect(out).toHaveLength(1);
-    const tool = out[0] as { name: string; description: string; input_schema: unknown };
+    const tool = out[0] as {
+      name: string;
+      description: string;
+      input_schema: unknown;
+    };
     expect(tool.name).toBe('read_file');
     expect(tool.description).toBe('Reads a file');
     expect(tool.input_schema).toBeDefined();
@@ -149,7 +156,7 @@ describe('BUILTIN_TOOLS', () => {
   });
 
   it('every builtin has a unique name', () => {
-    const names = BUILTIN_TOOLS.map((t) => t.name);
+    const names = BUILTIN_TOOLS.map(t => t.name);
     expect(new Set(names).size).toBe(names.length);
   });
 
@@ -160,7 +167,7 @@ describe('BUILTIN_TOOLS', () => {
   });
 
   it('includes read_file, write_file, shell, diff, apply_diff', () => {
-    const names = BUILTIN_TOOLS.map((t) => t.name).sort();
+    const names = BUILTIN_TOOLS.map(t => t.name).sort();
     expect(names).toEqual(['apply_diff', 'diff', 'read_file', 'shell', 'write_file']);
   });
 });

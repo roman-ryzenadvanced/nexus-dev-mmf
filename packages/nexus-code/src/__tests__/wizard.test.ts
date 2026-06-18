@@ -20,13 +20,16 @@ describe('config wizard', () => {
   });
 
   it('runWizard in non-interactive mode generates a valid config', async () => {
-    const summary = await runWizard({ nonInteractive: true, configPath: tmpConfigPath });
+    const summary = await runWizard({
+      nonInteractive: true,
+      configPath: tmpConfigPath,
+    });
     expect(summary).toContain('Config written');
     expect(summary).toContain(tmpConfigPath);
     expect(existsSync(tmpConfigPath)).toBe(true);
 
     // Verify the written config is valid JSON with expected fields
-    const raw = await import('node:fs/promises').then((m) => m.readFile(tmpConfigPath, 'utf8'));
+    const raw = await import('node:fs/promises').then(m => m.readFile(tmpConfigPath, 'utf8'));
     const cfg = JSON.parse(raw);
     expect(cfg.activeProviderId).toBe('zai');
     expect(cfg.activeModelId).toBe('glm-5.2');
@@ -41,7 +44,7 @@ describe('config wizard', () => {
     process.env.OPENAI_API_KEY = 'sk-test-secret-12345';
     try {
       await runWizard({ nonInteractive: true, configPath: tmpConfigPath });
-      const raw = await import('node:fs/promises').then((m) => m.readFile(tmpConfigPath, 'utf8'));
+      const raw = await import('node:fs/promises').then(m => m.readFile(tmpConfigPath, 'utf8'));
       expect(raw).not.toContain('sk-test-secret-12345');
       const cfg = JSON.parse(raw);
       for (const p of cfg.providers) {
@@ -54,11 +57,14 @@ describe('config wizard', () => {
 
   it('runWizard refuses to overwrite in non-interactive mode', async () => {
     // Create the file first
-    await import('node:fs/promises').then((m) => m.writeFile(tmpConfigPath, '{"existing":true}', 'utf8'));
-    const summary = await runWizard({ nonInteractive: true, configPath: tmpConfigPath });
+    await import('node:fs/promises').then(m => m.writeFile(tmpConfigPath, '{"existing":true}', 'utf8'));
+    const summary = await runWizard({
+      nonInteractive: true,
+      configPath: tmpConfigPath,
+    });
     expect(summary).toContain('already exists');
     // Verify the file wasn't overwritten
-    const raw = await import('node:fs/promises').then((m) => m.readFile(tmpConfigPath, 'utf8'));
+    const raw = await import('node:fs/promises').then(m => m.readFile(tmpConfigPath, 'utf8'));
     expect(raw).toBe('{"existing":true}');
   });
 

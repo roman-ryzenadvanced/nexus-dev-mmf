@@ -9,10 +9,23 @@ const BASE_CONFIG: AppConfig = {
   activeModelId: 'glm-5.2',
   mode: 'balanced',
   useMMFE: true,
-  providers: [{ id: 'zai', kind: 'zai', name: 'Z.ai', mmfe: true, defaultModel: 'glm-5.2' }],
+  providers: [
+    {
+      id: 'zai',
+      kind: 'zai',
+      name: 'Z.ai',
+      mmfe: true,
+      defaultModel: 'glm-5.2',
+    },
+  ],
   manualModels: [],
   mcpServers: [],
-  ui: { theme: 'tech-dark', showRouting: true, showTokens: true, showTimestamps: false },
+  ui: {
+    theme: 'tech-dark',
+    showRouting: true,
+    showTokens: true,
+    showTimestamps: false,
+  },
 };
 
 describe('model registry', () => {
@@ -28,11 +41,11 @@ describe('model registry', () => {
       { id: 'glm-5.2', providerId: 'zai', label: 'GLM 5.2', source: 'auto' },
     ];
     const reg = buildRegistry(BASE_CONFIG, autoFetched);
-    const ids = reg.flat.map((m) => m.id).sort();
+    const ids = reg.flat.map(m => m.id).sort();
     expect(ids).toContain('gpt-4o');
     expect(ids).toContain('glm-5.2');
     // glm-5.2 should appear once (auto wins over builtin, no dupes)
-    const glm52 = reg.flat.filter((m) => m.id === 'glm-5.2');
+    const glm52 = reg.flat.filter(m => m.id === 'glm-5.2');
     expect(glm52).toHaveLength(1);
     expect(glm52[0].source).toBe('auto');
   });

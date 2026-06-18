@@ -11,12 +11,30 @@ function makeCtx(overrides: Partial<SlashCommandContext> = {}): SlashCommandCont
     mode: 'balanced',
     useMMFE: true,
     providers: [
-      { id: 'zai', kind: 'zai', name: 'Z.ai', mmfe: true, defaultModel: 'glm-5.2' },
-      { id: 'openai', kind: 'openai', name: 'OpenAI', baseURL: 'https://api.openai.com/v1', mmfe: false, defaultModel: 'gpt-4o' },
+      {
+        id: 'zai',
+        kind: 'zai',
+        name: 'Z.ai',
+        mmfe: true,
+        defaultModel: 'glm-5.2',
+      },
+      {
+        id: 'openai',
+        kind: 'openai',
+        name: 'OpenAI',
+        baseURL: 'https://api.openai.com/v1',
+        mmfe: false,
+        defaultModel: 'gpt-4o',
+      },
     ],
     manualModels: [],
     mcpServers: [],
-    ui: { theme: 'tech-dark', showRouting: true, showTokens: true, showTimestamps: false },
+    ui: {
+      theme: 'tech-dark',
+      showRouting: true,
+      showTokens: true,
+      showTimestamps: false,
+    },
   };
   const session: Session = newSession({
     providerId: 'zai',
@@ -55,7 +73,7 @@ describe('slash command registry', () => {
   });
 
   it('command names are unique', () => {
-    const names = REGISTRY.map((c) => c.name);
+    const names = REGISTRY.map(c => c.name);
     expect(new Set(names).size).toBe(names.length);
   });
 });
@@ -118,7 +136,10 @@ describe('runSlash — provider command', () => {
     const ctx = makeCtx();
     const out = await runSlash('/provider openai', ctx);
     expect(out).toContain('openai');
-    expect(ctx.setConfig).toHaveBeenCalledWith({ activeProviderId: 'openai', activeModelId: 'gpt-4o' });
+    expect(ctx.setConfig).toHaveBeenCalledWith({
+      activeProviderId: 'openai',
+      activeModelId: 'gpt-4o',
+    });
   });
 
   it('rejects unknown provider', async () => {

@@ -26,8 +26,8 @@ export interface SimilarityResult {
 
 export class EmbeddingSimilarity {
   private records: EmbeddingRecord[] = [];
-  private maxRecords: number;
-  private similarityThreshold: number;
+  private readonly maxRecords: number;
+  private readonly similarityThreshold: number;
 
   constructor(maxRecords = 5000, similarityThreshold = 0.7) {
     this.maxRecords = maxRecords;
@@ -39,14 +39,7 @@ export class EmbeddingSimilarity {
    * If an embedding is not available, a simple hash-based pseudo-embedding
    * is generated from the task description.
    */
-  addRecord(
-    taskDescription: string,
-    modelId: string,
-    qualityScore: number,
-    capabilities: string[],
-    executionTimeMs: number,
-    embedding?: number[]
-  ): void {
+  addRecord(taskDescription: string, modelId: string, qualityScore: number, capabilities: string[], executionTimeMs: number, embedding?: number[]): void {
     const record: EmbeddingRecord = {
       id: `emb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       embedding: embedding ?? this.generatePseudoEmbedding(taskDescription),
@@ -70,11 +63,7 @@ export class EmbeddingSimilarity {
    * Find the most similar historical records for a new task description.
    * Returns results sorted by similarity (highest first).
    */
-  findSimilar(
-    taskDescription: string,
-    topK = 5,
-    embedding?: number[]
-  ): SimilarityResult[] {
+  findSimilar(taskDescription: string, topK = 5, embedding?: number[]): SimilarityResult[] {
     const queryEmbedding = embedding ?? this.generatePseudoEmbedding(taskDescription);
 
     const results: SimilarityResult[] = this.records
@@ -102,10 +91,7 @@ export class EmbeddingSimilarity {
    * Returns the model ID with the best combined similarity + quality score,
    * or null if no similar tasks found above threshold.
    */
-  getRecommendedModel(
-    taskDescription: string,
-    embedding?: number[]
-  ): string | null {
+  getRecommendedModel(taskDescription: string, embedding?: number[]): string | null {
     const similar = this.findSimilar(taskDescription, 10, embedding);
     if (similar.length === 0) return null;
 
@@ -183,7 +169,10 @@ export class EmbeddingSimilarity {
    */
   private generatePseudoEmbedding(text: string): number[] {
     const dimensions = 128;
-    const normalized = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    const normalized = text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .trim();
     const words = normalized.split(/\s+/).filter(w => w.length > 0);
 
     const embedding = new Array(dimensions).fill(0);

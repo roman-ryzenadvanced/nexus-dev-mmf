@@ -17,9 +17,12 @@ export interface DiffResult {
 export async function diffFile(path: string, newContent: string): Promise<DiffResult> {
   const abs = resolve(path);
   const oldContent = await readFile(abs, 'utf8').catch(() => '');
-  const patch = createPatch(abs, oldContent, newContent, '', '', { context: 3 });
+  const patch = createPatch(abs, oldContent, newContent, '', '', {
+    context: 3,
+  });
   const changes = diffLines(oldContent, newContent);
-  let added = 0, removed = 0;
+  let added = 0,
+    removed = 0;
   for (const c of changes) {
     if (c.added) added += c.count ?? 0;
     if (c.removed) removed += c.count ?? 0;
