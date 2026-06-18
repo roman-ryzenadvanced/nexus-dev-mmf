@@ -24,6 +24,7 @@ import {
   DEFAULT_MULTI_PROVIDER_CONFIG,
 } from './types.js';
 import { ZAIProvider } from './zai-provider.js';
+import { ZAIAnthropicProvider } from './zai-anthropic-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
 import { AnthropicProvider } from './anthropic-provider.js';
 import { GoogleProvider } from './google-provider.js';
@@ -35,6 +36,8 @@ function createProviderInstance(providerId: ProviderId): LLMProvider {
   switch (providerId) {
     case 'zai':
       return new ZAIProvider();
+    case 'zai-anthropic':
+      return new ZAIAnthropicProvider();
     case 'openai':
       return new OpenAIProvider();
     case 'anthropic':
@@ -59,7 +62,7 @@ function parseModelId(modelId: string): { provider?: ProviderId; model: string }
   const prefix = modelId.substring(0, slashIndex) as ProviderId;
   const model = modelId.substring(slashIndex + 1);
 
-  const validProviders: ProviderId[] = ['zai', 'openai', 'anthropic', 'google'];
+  const validProviders: ProviderId[] = ['zai', 'zai-anthropic', 'openai', 'anthropic', 'google'];
   if (validProviders.includes(prefix)) {
     return { provider: prefix, model };
   }

@@ -24,6 +24,7 @@ export {
 
 // Provider implementations
 export { ZAIProvider } from './zai-provider.js';
+export { ZAIAnthropicProvider } from './zai-anthropic-provider.js';
 export { OpenAIProvider } from './openai-provider.js';
 export { AnthropicProvider } from './anthropic-provider.js';
 export { GoogleProvider } from './google-provider.js';

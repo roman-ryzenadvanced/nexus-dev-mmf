@@ -33,6 +33,7 @@ export { fillTemplate } from './code-review/prompts.js';
 // v4.0 modules — Multi-Provider Support
 export { ProviderRouter, createProviderRouter } from './providers/provider-router.js';
 export { ZAIProvider } from './providers/zai-provider.js';
+export { ZAIAnthropicProvider } from './providers/zai-anthropic-provider.js';
 export { OpenAIProvider } from './providers/openai-provider.js';
 export { AnthropicProvider } from './providers/anthropic-provider.js';
 export { GoogleProvider } from './providers/google-provider.js';
