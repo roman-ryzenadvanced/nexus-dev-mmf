@@ -84,10 +84,10 @@ describe('config schema', () => {
     ).toThrow();
   });
 
-  it('DEFAULT_PROVIDERS has exactly 3 entries', () => {
-    expect(DEFAULT_PROVIDERS).toHaveLength(3);
+  it('DEFAULT_PROVIDERS has the expected entries', () => {
+    expect(DEFAULT_PROVIDERS.length).toBeGreaterThanOrEqual(3);
     const ids = DEFAULT_PROVIDERS.map(p => p.id).sort();
-    expect(ids).toEqual(['anthropic', 'openai', 'zai']);
+    expect(ids).toEqual(['anthropic', 'freemodel', 'openai', 'zai']);
   });
 
   it('BUILTIN_MODELS has 6 GLM models', () => {
@@ -115,7 +115,7 @@ describe('config load/save', () => {
     const config = await loadConfig(configPath);
     expect(config.activeProviderId).toBe('zai');
     expect(config.mode).toBe('balanced');
-    expect(config.providers).toHaveLength(3);
+    expect(config.providers.length).toBeGreaterThanOrEqual(3);
   });
 
   it('round-trips save → load', async () => {

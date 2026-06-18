@@ -109,6 +109,16 @@ export const DEFAULT_PROVIDERS = [
     mmfe: false,
     defaultModel: 'claude-3-5-sonnet-20241022',
   },
+  // FreeModel — OpenAI-compatible gateway (https://api.freemodel.dev).
+  // Key is read from FREEMODEL_API_KEY / the on-disk key store, never config.json.
+  {
+    id: 'freemodel',
+    kind: 'openai' as const,
+    name: 'FreeModel',
+    baseURL: 'https://api.freemodel.dev/v1',
+    mmfe: false,
+    defaultModel: 'gpt-5.4-mini',
+  },
 ];
 
 export const BUILTIN_MODELS = [

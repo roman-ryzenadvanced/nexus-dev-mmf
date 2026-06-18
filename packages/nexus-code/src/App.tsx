@@ -12,6 +12,7 @@ import { CommandPalette } from './components/CommandPalette.js';
 import { BootAnimation } from './components/BootAnimation.js';
 import { SessionPicker, type PickerSession, type PickerChoice } from './components/SessionPicker.js';
 import { OptionPicker, type PickerOption } from './components/OptionPicker.js';
+import { saveKey } from './config/keys.js';
 import { buildProviders } from './providers/index.js';
 import { sendChatStream } from './orchestrator/index.js';
 import { fetchAllModels } from './models/fetcher.js';
@@ -61,6 +62,15 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
   // Session picker: when non-null, the boot picker is shown so the user can
   // resume a saved conversation or start fresh. Cleared once a choice is made.
   const [bootChoice, setBootChoice] = useState<PickerSession[] | null>(null);
+  // API-key capture mode. When set, the InputBox switches to a masked "key
+  // entry" line: the next Enter saves the key for the named provider and
+  // (optionally) resumes the pending prompt. Triggered when the user selects
+  // a provider/model that has no key, or when they try to send with no key.
+  const [keyCapture, setKeyCapture] = useState<{
+    providerId: string;
+    providerName: string;
+    pendingPrompt?: string;
+  } | null>(null);
   // Reusable option picker (mimo-style) for /provider, /model, /mode, /theme.
   // When non-null, the OptionPicker overlay is shown and owns all keys.
   const [openPicker, setOpenPicker] = useState<{
@@ -431,11 +441,18 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
             })),
             onPick: id => {
               const p = config.providers.find(x => x.id === id);
-              if (p)
+              if (p) {
                 setConfig({
                   activeProviderId: p.id,
                   activeModelId: p.defaultModel || '',
                 });
+                // Switching to a provider that has no key yet prompts for it
+                // inline (masked entry) so the user can authenticate and start
+                // chatting immediately instead of hitting an auth error on send.
+                if (needsKey(p)) {
+                  setKeyCapture({ providerId: p.id, providerName: p.name });
+                }
+              }
               setOpenPicker(null);
             },
           });
@@ -470,7 +487,19 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
                 ],
             hint: '↑↓ move · ↵ select · /fetch to load more · esc cancel',
             onPick: id => {
-              if (id) setConfig({ activeModelId: id });
+              if (id) {
+                setConfig({ activeModelId: id });
+                // Selecting a model whose provider lacks a key prompts for the
+                // key inline, so the user can authenticate and use the model
+                // right away rather than discovering the gap on first send.
+                const active = config.providers.find(p => p.id === config.activeProviderId);
+                if (needsKey(active)) {
+                  setKeyCapture({
+                    providerId: config.activeProviderId,
+                    providerName: active?.name || config.activeProviderId,
+                  });
+                }
+              }
               setOpenPicker(null);
             },
           });
@@ -595,8 +624,32 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     [ctx, mcpStatuses, toolRegistry]
   );
 
+  // A provider needs an API key if it has none AND it isn't Z.ai (Z.ai
+  // resolves its key from ~/.z-ai-config via the loader, so it works without
+  // an apiKey field). All other kinds (openai / anthropic / freemodel / …)
+  // require one before they can chat.
+  const needsKey = useCallback((p: AppConfig['providers'][number] | undefined): boolean => {
+    if (!p) return false;
+    if (p.apiKey && p.apiKey.trim().length > 0) return false;
+    return p.kind !== 'zai';
+  }, []);
+
   const handleSubmit = useCallback(
     async (text: string) => {
+      // If the active provider needs a key the user hasn't entered yet, swap
+      // into key-capture mode instead of sending (which would just fail). The
+      // original prompt is preserved and re-sent once the key is saved.
+      if (!streaming && text.trim()) {
+        const active = config.providers.find(p => p.id === config.activeProviderId);
+        if (needsKey(active)) {
+          setKeyCapture({
+            providerId: config.activeProviderId,
+            providerName: active?.name || config.activeProviderId,
+            pendingPrompt: text,
+          });
+          return;
+        }
+      }
       // koda-style pending messages: if a response is already streaming,
       // we either queue the prompt for the main agent OR — if the Observer
       // is enabled — ask the user which they want. The Observer fires the
@@ -735,6 +788,32 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       }
     },
     [config, providers, messages, pushMessage, streaming]
+  );
+
+  // Save an entered key for a provider, inject it into the live config, exit
+  // capture mode, and — if the user was mid-send — resume their prompt. Lives
+  // after handleSubmit so it can legitimately depend on it.
+  const saveKeyAndResume = useCallback(
+    (providerId: string, key: string) => {
+      const trimmed = key.trim();
+      if (!trimmed) {
+        setKeyCapture(null);
+        return;
+      }
+      saveKey(providerId, trimmed);
+      // setConfig is a partial-merge setter (no function-updater form), so we
+      // build the next providers array from the current `config` closure.
+      setConfig({
+        providers: config.providers.map(p => (p.id === providerId ? { ...p, apiKey: trimmed } : p)),
+      });
+      const pending = keyCapture?.pendingPrompt;
+      setKeyCapture(null);
+      if (pending) {
+        // Resume the send that triggered the key prompt.
+        void handleSubmit(pending);
+      }
+    },
+    [config, keyCapture, handleSubmit]
   );
 
   const handleTab = useCallback(
@@ -926,17 +1005,33 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
             )}
           </Box>
           <StatusBar config={config} streaming={streaming} lastMessage={messages[messages.length - 1]} metrics={metrics} />
-          <InputBox
-            onSubmit={handleSubmit}
-            onSlash={handleSlash}
-            onAbort={handleAbort}
-            busy={streaming}
-            pendingCount={pendingCount}
-            providerId={config.activeProviderId}
-            onTab={handleTab}
-            history={historyState}
-            onHistoryAppend={appendHistoryState}
-          />
+          {keyCapture ? (
+            <Box flexDirection="column" paddingX={1} marginTop={1}>
+              <Text color="#F59E0B" bold>
+                🔑 Enter API key for {keyCapture.providerName}
+                {keyCapture.pendingPrompt ? ' (then your prompt continues)' : ''}
+              </Text>
+              <InputBox
+                secret
+                onSubmit={key => saveKeyAndResume(keyCapture.providerId, key)}
+                onSlash={handleSlash}
+                onAbort={() => setKeyCapture(null)}
+                busy={false}
+              />
+            </Box>
+          ) : (
+            <InputBox
+              onSubmit={handleSubmit}
+              onSlash={handleSlash}
+              onAbort={handleAbort}
+              busy={streaming}
+              pendingCount={pendingCount}
+              providerId={config.activeProviderId}
+              onTab={handleTab}
+              history={historyState}
+              onHistoryAppend={appendHistoryState}
+            />
+          )}
         </>
       )}
     </Box>

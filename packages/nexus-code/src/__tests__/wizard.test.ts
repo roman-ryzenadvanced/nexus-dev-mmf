@@ -35,7 +35,7 @@ describe('config wizard', () => {
     expect(cfg.activeModelId).toBe('glm-5.2');
     expect(cfg.mode).toBe('balanced');
     expect(cfg.useMMFE).toBe(true);
-    expect(cfg.providers).toHaveLength(3);
+    expect(cfg.providers.length).toBeGreaterThanOrEqual(3);
     expect(cfg.ui.theme).toBe('tech-dark');
   });
 

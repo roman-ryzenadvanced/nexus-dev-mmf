@@ -303,6 +303,7 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
     setRawMode(true);
     let buf = '';
     // SGR mouse: ESC [ <button ; col ; row M (M=press/down-scroll, m=release)
+    // eslint-disable-next-line no-control-regex -- the ESC (\x1b) is the literal ANSI CSI leader we must match
     const WHEEL_RE = /^\x1b\[(\d+);(\d+);(\d+)([Mm])$/;
     const onData = (chunk: Buffer | string) => {
       buf += typeof chunk === 'string' ? chunk : chunk.toString('binary');

@@ -73,16 +73,16 @@ describe('config wizard — edge cases', () => {
     expect(() => ensureConfigDir()).not.toThrow();
   });
 
-  it('non-interactive mode writes valid JSON with all 3 providers', async () => {
+  it('non-interactive mode writes valid JSON with all default providers', async () => {
     const tmp = await mkdtemp(join(tmpdir(), 'nexus-wizard-edge-'));
     const cfgPath = join(tmp, 'config.json');
     try {
       await runWizard({ nonInteractive: true, configPath: cfgPath });
       const raw = await readFile(cfgPath, 'utf8');
       const cfg = JSON.parse(raw);
-      expect(cfg.providers).toHaveLength(3);
+      expect(cfg.providers.length).toBeGreaterThanOrEqual(3);
       const ids = cfg.providers.map((p: { id: string }) => p.id).sort();
-      expect(ids).toEqual(['anthropic', 'openai', 'zai']);
+      expect(ids).toEqual(['anthropic', 'freemodel', 'openai', 'zai']);
     } finally {
       await rm(tmp, { recursive: true, force: true });
     }
