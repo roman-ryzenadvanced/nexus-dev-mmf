@@ -23,7 +23,7 @@
  * └──────────────────────────────────────────────────────────────────┘
  */
 
-import { loadZAIClient } from '../providers/zai-loader.js';
+import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
 import { uuidv4 } from './utils/uuid.js';
 import { SubTask, SubTaskResult, OrchestrationRequest, OrchestrationResult, RoutingDecision } from './types.js';
 import { MODEL_REGISTRY } from './models.js';

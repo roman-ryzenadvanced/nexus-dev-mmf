@@ -15,9 +15,10 @@
  * 8. SYNTHESIZE — Merge best elements from all model outputs
  */
 
-import { loadZAIClient } from '../providers/zai-loader.js';
+import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { uuidv4 } from '../core/utils/uuid.js';
 import { searchDomain, multiDomainSearch, searchStack, detectDomain } from './search-engine.js';
 import {
@@ -779,7 +780,7 @@ ${Object.entries(decisionRules).map(([k, v]) => `- **${k}**: ${v}`).join('\n')}
   }
 
   private loadReasoningRules(): Record<string, string>[] {
-    const filepath = path.join(__dirname, 'data', 'ui-reasoning.csv');
+    const filepath = path.join(import.meta.dirname || path.dirname(fileURLToPath(import.meta.url)), 'data', 'ui-reasoning.csv');
     if (!fs.existsSync(filepath)) return [];
 
     const content = fs.readFileSync(filepath, 'utf-8');

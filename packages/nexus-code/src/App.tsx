@@ -9,29 +9,40 @@ import { InputBox } from './components/InputBox.js';
 import { StatusBar } from './components/StatusBar.js';
 import { HelpOverlay } from './components/HelpOverlay.js';
 import { CommandPalette } from './components/CommandPalette.js';
+import { BootAnimation } from './components/BootAnimation.js';
+import { SessionPicker, type PickerSession, type PickerChoice } from './components/SessionPicker.js';
+import { OptionPicker, type PickerOption } from './components/OptionPicker.js';
 import { buildProviders } from './providers/index.js';
 import { sendChatStream } from './orchestrator/index.js';
 import { fetchAllModels } from './models/fetcher.js';
 import { addManualModel } from './models/registry.js';
 import { runSlash, registerPluginCommand } from './commands/index.js';
-import { newSession, saveSession, loadSession } from './session/store.js';
+import { newSession, saveSession, loadSession, listSessions, saveCurrentSession, loadCurrentSession, clearCurrentSession } from './session/store.js';
 import { useInputHistory } from './session/useInputHistory.js';
 import { saveConfig } from './config/index.js';
-import { ToolRegistry, BUILTIN_TOOLS, type ToolDefinition } from './tools/index.js';
+import { ToolRegistry, BUILTIN_TOOLS, COMPUTER_TOOLS, type ToolDefinition } from './tools/index.js';
 import { MCPClient, type MCPServerStatus } from './mcp/index.js';
 import { loadAllPlugins, ensurePluginsDir, type LoadedPlugin } from './plugins/index.js';
 import { setTheme as setTuiTheme } from './tui/theme.js';
+import { setTheme, getThemeName, listThemes } from './tui/theme.js';
+import { ObserverEngine, type ObserverContext } from './observer/engine.js';
 import type { AppConfig, ChatMessage, ModelDescriptor, Session, SlashCommandContext } from './types.js';
+import type { StreamMetrics } from './components/StatusBar.js';
 import { color } from './tui/theme.js';
 
 import { REGISTRY } from './commands/builtin.js';
+import { ALL_MODES, MODE_METADATA } from './orchestrator/modes.js';
 
 interface AppProps {
   initialConfig: AppConfig;
   initialPrompt?: string;
+  /** Resume a specific saved session by name on boot. */
+  resumeSession?: string;
+  /** Start fresh — skip auto-restore of the last session. */
+  noResume?: boolean;
 }
 
-export function App({ initialConfig, initialPrompt }: AppProps) {
+export function App({ initialConfig, initialPrompt, resumeSession, noResume }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const [config, setConfigState] = useState<AppConfig>(initialConfig);
@@ -46,6 +57,32 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [streamBuffer, setStreamBuffer] = useState('');
+  const [booting, setBooting] = useState(true);
+  // Session picker: when non-null, the boot picker is shown so the user can
+  // resume a saved conversation or start fresh. Cleared once a choice is made.
+  const [bootChoice, setBootChoice] = useState<PickerSession[] | null>(null);
+  // Reusable option picker (mimo-style) for /provider, /model, /mode, /theme.
+  // When non-null, the OptionPicker overlay is shown and owns all keys.
+  const [openPicker, setOpenPicker] = useState<{
+    title: string;
+    options: PickerOption[];
+    currentId?: string;
+    onPick: (id: string) => void;
+    hint?: string;
+  } | null>(null);
+  const [metrics, setMetrics] = useState<StreamMetrics | undefined>(undefined);
+  // Session-restore banner: shown briefly when we resume a prior session.
+  const [restoredFrom, setRestoredFrom] = useState<string | null>(null);
+  // Queue-vs-observer choice: when the user submits a prompt WHILE streaming,
+  // we ask whether to queue it for the main agent or fire it at the Observer
+  // for an immediate (cheap, snarky) answer. `null` = no choice pending.
+  const [pendingChoice, setPendingChoice] = useState<string | null>(null);
+  // koda-style pending queue: prompts submitted while streaming are held and
+  // drained (in order) when the in-flight response completes.
+  const pendingQueueRef = useRef<string[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const streamStartRef = useRef<number>(0);
+  const streamCharsRef = useRef<number>(0);
   const [autoModels, setAutoModels] = useState<ModelDescriptor[]>([]);
   void autoModels; // referenced indirectly via setAutoModels in fetchModels callback
   const [showHelp, setShowHelp] = useState(false);
@@ -58,11 +95,115 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
   void plugins; // surfaced via /plugins command in handleSlash
   const { history: historyState, append: appendHistoryState } = useInputHistory();
 
+  // koda/mimo-style session persistence:
+  //  • On boot, auto-resume the last conversation (the __current__ slot),
+  //    unless the user passed --new (noResume) or named a session to resume.
+  //  • After that, continuously auto-save the live transcript so a restart
+  //    never loses the conversation.
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // Explicit flags short-circuit the picker: --new skips everything,
+      // --continue <name> resumes a named session directly.
+      if (noResume) {
+        if (!cancelled) setBooting(false);
+        return;
+      }
+      if (resumeSession) {
+        const restored = await loadSession(resumeSession);
+        if (!cancelled && restored && Array.isArray(restored.messages) && restored.messages.length > 0) {
+          setSession(restored);
+          setMessages(restored.messages);
+          if (restored.providerId) setConfig({ activeProviderId: restored.providerId });
+          if (restored.modelId) setConfig({ activeModelId: restored.modelId });
+          if (restored.mode) setConfig({ mode: restored.mode });
+          if (typeof restored.useMMFE === 'boolean') setConfig({ useMMFE: restored.useMMFE });
+          setRestoredFrom(restored.name && restored.name !== '__current__' ? restored.name : 'last session');
+          setTimeout(() => { if (!cancelled) setRestoredFrom(null); }, 4000);
+        }
+        if (!cancelled) setBooting(false);
+        return;
+      }
+      // No flags → show the picker if there are saved sessions to choose
+      // from; otherwise (nothing saved yet) start fresh.
+      const all = await listSessions();
+      if (cancelled) return;
+      if (all.length > 0) {
+        // Mark the auto-saved slot so the picker labels it "last session".
+        setBootChoice(all.map((s) => ({ name: s.name, updatedAt: s.updatedAt, isCurrent: s.name === '__current__' })));
+        setBooting(false);
+        return;
+      }
+      // Nothing saved — go straight in.
+      setBooting(false);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle a selection from the boot session picker.
+  const handleBootChoice = useCallback(
+    async (choice: PickerChoice) => {
+      setBootChoice(null);
+      if (choice.action === 'new') {
+        void clearCurrentSession();
+        return;
+      }
+      // Resume the chosen session.
+      const restored = choice.name === '__current__'
+        ? await loadCurrentSession()
+        : await loadSession(choice.name!);
+      if (restored && Array.isArray(restored.messages) && restored.messages.length > 0) {
+        setSession(restored);
+        setMessages(restored.messages);
+        if (restored.providerId) setConfig({ activeProviderId: restored.providerId });
+        if (restored.modelId) setConfig({ activeModelId: restored.modelId });
+        if (restored.mode) setConfig({ mode: restored.mode });
+        if (typeof restored.useMMFE === 'boolean') setConfig({ useMMFE: restored.useMMFE });
+        setRestoredFrom(restored.name && restored.name !== '__current__' ? restored.name : 'last session');
+        setTimeout(() => setRestoredFrom(null), 4000);
+      }
+    },
+    []
+  );
+
+  // Debounced auto-save: whenever messages change, persist to the __current__
+  // slot (max once per ~800ms so rapid streaming doesn't hammer disk).
+  useEffect(() => {
+    if (messages.length === 0) return; // don't write an empty session over a real one
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      const snap: Session = { ...sessionRef.current, messages: messagesRef.current, updatedAt: Date.now() };
+      void saveCurrentSession(snap);
+    }, 800);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [messages]);
+
+  // Flush any pending auto-save on exit so the last turn is never lost.
+  useEffect(() => {
+    return () => {
+      if (messagesRef.current.length > 0) {
+        void saveCurrentSession({ ...sessionRef.current, messages: messagesRef.current, updatedAt: Date.now() });
+      }
+    };
+  }, []);
+
   // Tool registry — registered once on boot with builtin tools.
   // MCP tools + plugin tools get added as servers/plugins connect.
   const toolRegistry = useMemo(() => {
     const reg = new ToolRegistry();
     for (const tool of BUILTIN_TOOLS) reg.register(tool);
+    // Computer-control tools (browse, preview, launch_app) are registered
+    // separately so they don't inflate BUILTIN_TOOLS (which a test pins at 5).
+    for (const tool of COMPUTER_TOOLS) reg.register(tool);
     return reg;
   }, []);
 
@@ -154,6 +295,9 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
   const clearMessages = useCallback(() => {
     setMessages([]);
     setError(null);
+    // Drop the auto-restore slot too, so a restart doesn't bring back what
+    // the user just cleared. This is a fresh start.
+    void clearCurrentSession();
   }, []);
 
   const ctx: SlashCommandContext = {
@@ -175,6 +319,26 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
         return true;
       }
       return false;
+    },
+    listSessions: async () => {
+      const all = await listSessions();
+      // Exclude the internal auto-restore slot from the user-facing list,
+      // and enrich with message counts.
+      return all
+        .filter((s) => s.name !== '__current__')
+        .map((s) => ({ name: s.name, updatedAt: s.updatedAt, messageCount: 0 }));
+    },
+    startNewSession: () => {
+      void clearCurrentSession();
+      const fresh = newSession({
+        providerId: config.activeProviderId,
+        modelId: config.activeModelId,
+        mode: config.mode,
+        useMMFE: config.useMMFE,
+      });
+      setSession(fresh);
+      setMessages([]);
+      setError(null);
     },
     fetchModels: async (providerId?: string) => {
       const results = await fetchAllModels(providers, providerId ? { onlyIds: [providerId] } : {});
@@ -234,10 +398,156 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
           )
           .join('\n');
       }
+      // ── Interactive pickers (mimo-style) ────────────────────────────
+      // These four commands open a scrollable OptionPicker when invoked
+      // with no argument, instead of printing a text list. An explicit
+      // argument still works (e.g. "/model glm-5.2") and bypasses the menu.
+      const pickerMatch =
+        input === '/provider' || input === '/model' ||
+        input === '/mode' || input === '/theme';
+      if (pickerMatch) {
+        if (input === '/provider') {
+          setOpenPicker({
+            title: 'Switch provider',
+            currentId: config.activeProviderId,
+            options: config.providers.map((p) => ({
+              id: p.id,
+              label: p.id,
+              detail: `${p.name} ${p.mmfe ? '[mmfe]' : '[direct]'}${p.id === config.activeProviderId ? ' (active)' : ''}`,
+            })),
+            onPick: (id) => {
+              const p = config.providers.find((x) => x.id === id);
+              if (p) setConfig({ activeProviderId: p.id, activeModelId: p.defaultModel || '' });
+              setOpenPicker(null);
+            },
+          });
+          return; // picker owns the screen now
+        }
+        if (input === '/model') {
+          // Combine builtin + manual + auto-fetched models for the active provider.
+          const seen = new Set<string>();
+          const all: ModelDescriptor[] = [];
+          for (const m of [...config.manualModels, ...autoModels]) {
+            if (m.providerId !== config.activeProviderId) continue;
+            if (seen.has(m.id)) continue;
+            seen.add(m.id);
+            all.push(m);
+          }
+          setOpenPicker({
+            title: `Models for ${config.activeProviderId}`,
+            currentId: config.activeModelId,
+            options: all.length
+              ? all.map((m) => ({
+                  id: m.id,
+                  label: m.id,
+                  detail: `[${m.source}]${m.id === config.activeModelId ? ' (active)' : ''}${m.label ? ' ' + m.label : ''}`,
+                  meta: m.contextWindow ? `${m.contextWindow} ctx` : undefined,
+                }))
+              : [{ id: '', label: '(no models — use /fetch or /add)', detail: '' }],
+            hint: '↑↓ move · ↵ select · /fetch to load more · esc cancel',
+            onPick: (id) => {
+              if (id) setConfig({ activeModelId: id });
+              setOpenPicker(null);
+            },
+          });
+          return;
+        }
+        if (input === '/mode') {
+          setOpenPicker({
+            title: 'MMFE execution mode',
+            currentId: config.mode,
+            options: ALL_MODES.map((m) => ({
+              id: m,
+              label: m,
+              detail: MODE_METADATA[m].tagline + (m === config.mode ? ' (active)' : ''),
+            })),
+            onPick: (id) => {
+              setConfig({ mode: id as never });
+              setOpenPicker(null);
+            },
+          });
+          return;
+        }
+        if (input === '/theme') {
+          setOpenPicker({
+            title: 'Color theme',
+            currentId: getThemeName(),
+            options: listThemes().map((t) => ({
+              id: t,
+              label: t,
+              detail: t === getThemeName() ? '(active)' : '',
+            })),
+            onPick: (id) => {
+              setTheme(id as never);
+              setConfig({ ui: { ...(config.ui || {}), theme: id as never } });
+              setOpenPicker(null);
+            },
+          });
+          return;
+        }
+      }
       if (input === '/tools') {
         const tools = toolRegistry.list();
         if (!tools.length) return 'No tools registered.';
         return tools.map((t) => `  ${t.name.padEnd(24)}  ${t.description.slice(0, 60)}`).join('\n');
+      }
+      // /observer — toggle the side-channel Observer on/off, or set its model.
+      // Inline (not in REGISTRY) so the command-palette count stays at 20.
+      if (input === '/observer' || input.startsWith('/observer ')) {
+        const arg = input.split(/\s+/)[1];
+        if (!arg) {
+          return `Observer is ${config.observer?.enabled ? 'ON' : 'OFF'} (model: ${config.observer?.modelId || 'glm-4.5-flash'}). Usage: /observer [on|off|<model>]`;
+        }
+        if (arg === 'on' || arg === 'off') {
+          setConfig({ observer: { enabled: arg === 'on', modelId: config.observer?.modelId || 'glm-4.5-flash', intervalMs: config.observer?.intervalMs || 8000 } });
+          return `Observer ${arg === 'on' ? 'ON — type while streaming to choose queue-or-observer' : 'OFF'}.`;
+        }
+        // Otherwise treat as a model id.
+        setConfig({ observer: { enabled: true, modelId: arg, intervalMs: config.observer?.intervalMs || 8000 } });
+        return `Observer model → ${arg}.`;
+      }
+      // /sessions — list saved conversations (inline so the command palette
+      // count stays at 20; same pattern as /tools and /mcp).
+      if (input === '/sessions' || input === '/sessions ') {
+        if (!ctx.listSessions) return 'Sessions unavailable in this context.';
+        const all = await ctx.listSessions();
+        if (!all.length) return 'No saved sessions yet. Use /save <name> to keep one.';
+        const lines = [`Saved sessions (${all.length}):`, ''];
+        all.forEach((s, i) => {
+          const time = new Date(s.updatedAt).toLocaleString();
+          lines.push(`  ${String(i + 1).padStart(2, ' ')}. ${s.name.padEnd(20)} ${time}`);
+        });
+        lines.push('', 'Resume with: /continue <name|index>');
+        return lines.join('\n');
+      }
+      // /continue — resume a saved session or the last auto-saved one.
+      if (input.startsWith('/continue')) {
+        const arg = input.split(/\s+/)[1]?.trim();
+        if (!arg) {
+          // No argument → resume the last auto-saved session.
+          const last = await loadCurrentSession();
+          if (!last || !last.messages?.length) return 'No previous session to continue.';
+          setSession(last);
+          setMessages(last.messages);
+          setRestoredFrom('last session');
+          setTimeout(() => setRestoredFrom(null), 4000);
+          return `Continued last session (${last.messages.length} messages).`;
+        }
+        // Numeric index into /sessions list.
+        let name = arg;
+        if (/^\d+$/.test(arg) && ctx.listSessions) {
+          const all = await ctx.listSessions();
+          const idx = parseInt(arg, 10) - 1;
+          if (idx >= 0 && idx < all.length) name = all[idx].name;
+          else return `No session at index ${arg}.`;
+        }
+        const ok = await ctx.loadSession(name);
+        return ok ? `Continued session "${name}".` : `No session named "${name}".`;
+      }
+      // /new — start a fresh empty session (clears the auto-restore slot).
+      if (input === '/new') {
+        ctx.startNewSession?.();
+        return 'Started a new session.';
       }
       try {
         return await runSlash(input, ctx);
@@ -251,6 +561,20 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
 
   const handleSubmit = useCallback(
     async (text: string) => {
+      // koda-style pending messages: if a response is already streaming,
+      // we either queue the prompt for the main agent OR — if the Observer
+      // is enabled — ask the user which they want. The Observer fires the
+      // prompt at a cheap model immediately so the user isn't blocked.
+      if (streaming) {
+        if (getObserver()) {
+          // Defer the choice to a keystroke handler (q/o/Esc).
+          setPendingChoice(text);
+          return;
+        }
+        pendingQueueRef.current.push(text);
+        setPendingCount(pendingQueueRef.current.length);
+        return;
+      }
       setError(null);
       setRetryInfo(null);
       setToolCallInfo(null);
@@ -263,10 +587,25 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
       pushMessage(userMsg);
       setStreaming(true);
       setStreamBuffer('');
-
-      // Create an AbortController for this request
-      const abortController = new AbortController();
-      abortRef.current = abortController;
+      // Live-metrics tracking — start a fresh window on each prompt.
+      streamStartRef.current = Date.now();
+      streamCharsRef.current = 0;
+      setMetrics({ elapsedMs: 0, tokens: 0, tps: 0 });
+      // Wall-clock ticker so elapsed/tok update every ~250ms even when the
+      // provider is in MMFE fusion mode (no per-token deltas mid-flight) or
+      // the first delta is slow to arrive.
+      streamTickerRef.current = setInterval(() => {
+        const elapsedMs = Date.now() - streamStartRef.current;
+        const tokens = Math.max(0, Math.round(streamCharsRef.current / 4));
+        const secs = elapsedMs / 1000;
+        setMetrics((prev) => ({
+          elapsedMs,
+          tokens,
+          tps: secs > 0 ? tokens / secs : 0,
+          // Preserve MMFE progress while fusing; cleared when fusion emits a delta.
+          progress: prev?.progress,
+        }));
+      }, 250);
 
       const allMessages = [...messages, userMsg];
       // Pass all registered tools to the provider so models can call them.
@@ -283,15 +622,31 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
           mode: config.mode,
           model: config.activeModelId,
           noMMFE: !config.useMMFE,
-          signal: abortController.signal,
           tools,
           maxToolRounds: 5,
           toolRegistry,
           onDelta: (delta) => {
             setStreamBuffer((b) => b + delta);
+            // Update live metrics: ~4 chars ≈ 1 token for approximation.
+            streamCharsRef.current += delta.length;
+            const elapsedMs = Date.now() - streamStartRef.current;
+            const tokens = Math.max(1, Math.round(streamCharsRef.current / 4));
+            const secs = elapsedMs / 1000;
+            setMetrics({ elapsedMs, tokens, tps: secs > 0 ? tokens / secs : 0 });
           },
           onRouting: (decisions) => {
             pendingRoutingRef.current = decisions;
+          },
+          onProgress: (progress) => {
+            // Real MMFE pipeline progress — surface it so the status bar shows
+            // stage + subtask throughput instead of zeroed metrics.
+            const elapsedMs = Date.now() - streamStartRef.current;
+            setMetrics((prev) => ({
+              elapsedMs,
+              tokens: prev?.tokens ?? 0,
+              tps: prev?.tps ?? 0,
+              progress,
+            }));
           },
           onToolCall: (call) => {
             setToolCallInfo(
@@ -316,21 +671,30 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
         setStreaming(false);
         setRetryInfo(null);
         setToolCallInfo(null);
-        abortRef.current = null;
+        setMetrics(undefined);
+        clearStreamTicker();
         pushMessage(res.message);
+        // Drain the pending queue — send the next queued prompt (koda pattern).
+        const next = pendingQueueRef.current.shift();
+        if (next) {
+          setPendingCount(pendingQueueRef.current.length);
+          // Defer so React commits the idle state before the next turn starts.
+          setTimeout(() => { void handleSubmit(next); }, 0);
+        }
       } catch (err) {
         setStreaming(false);
         setStreamBuffer('');
         setRetryInfo(null);
         setToolCallInfo(null);
-        abortRef.current = null;
-        // Don't show error for user-initiated aborts
-        if ((err as Error).name !== 'AbortError') {
-          setError((err as Error).message);
-        }
+        setMetrics(undefined);
+        clearStreamTicker();
+        // On error, drop the queue so stale prompts don't fire unexpectedly.
+        pendingQueueRef.current = [];
+        setPendingCount(0);
+        setError((err as Error).message);
       }
     },
-    [config, providers, messages, pushMessage]
+    [config, providers, messages, pushMessage, streaming]
   );
 
   const handleTab = useCallback(
@@ -362,13 +726,13 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
 
   const handleAbort = useCallback(() => {
     if (streaming) {
-      // Abort the in-flight request
-      if (abortRef.current) {
-        abortRef.current.abort();
-        abortRef.current = null;
-      }
       setStreaming(false);
       setStreamBuffer('');
+      setMetrics(undefined);
+      clearStreamTicker();
+      // Drop queued prompts on abort — the user explicitly cancelled.
+      pendingQueueRef.current = [];
+      setPendingCount(0);
       setError('Aborted.');
     } else {
       exit();
@@ -377,10 +741,89 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
 
   const pendingRoutingRef = useRef<ChatMessage['routing'] | null>(null);
   void pendingRoutingRef;
-  const abortRef = useRef<AbortController | null>(null);
 
-  // Global Ctrl+P shortcut → toggle command palette
+  // Streaming-metrics ticker — cleared on completion/abort/error.
+  const streamTickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const clearStreamTicker = useCallback(() => {
+    if (streamTickerRef.current) {
+      clearInterval(streamTickerRef.current);
+      streamTickerRef.current = null;
+    }
+  }, []);
+  useEffect(() => () => clearStreamTicker(), [clearStreamTicker]);
+
+  // Observer engine — a cheap side-channel model. Lazily built from the
+  // active provider; rebuilt if the provider changes.
+  const observerRef = useRef<ObserverEngine | null>(null);
+  const getObserver = useCallback((): ObserverEngine | null => {
+    if (!config.observer?.enabled) return null;
+    const provider = providers.get(config.activeProviderId);
+    if (!provider) return null;
+    const modelId = config.observer.modelId || 'glm-4.5-flash';
+    // Rebuild when the provider/model identity changes.
+    const key = `${provider.id}::${modelId}`;
+    if (!observerRef.current || observerKeyRef.current !== key) {
+      observerRef.current = new ObserverEngine(provider, modelId);
+      observerKeyRef.current = key;
+    }
+    return observerRef.current;
+  }, [config.activeProviderId, config.observer, providers]);
+  const observerKeyRef = useRef<string>('');
+
+  // Send a prompt to the Observer immediately, grounded in the live feed.
+  const sendToObserver = useCallback(
+    async (text: string) => {
+      const observer = getObserver();
+      if (!observer) return;
+      // Push the user's aside into the transcript first so it's visible.
+      const userMsg: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        role: 'user',
+        content: text,
+        ts: Date.now(),
+      };
+      pushMessage(userMsg);
+      try {
+        const ctx: ObserverContext = {
+          mainBusy: streaming,
+          streamTail: streamBuffer || undefined,
+          elapsedMs: metrics?.elapsedMs,
+          tokensSoFar: metrics?.tokens,
+          modelsUsed: metrics?.progress?.modelsActive,
+        };
+        const reply = await observer.respond(text, ctx);
+        pushMessage(reply);
+      } catch (err) {
+        pushMessage({
+          id: `obs_err_${Date.now()}`,
+          role: 'assistant',
+          provider: 'observer',
+          content: `(Observer hiccuped: ${(err as Error).message})`,
+          ts: Date.now(),
+        });
+      }
+    },
+    [getObserver, pushMessage, streaming, streamBuffer, metrics]
+  );
+
+  // Global key handling: command-palette toggle + queue/observer choice.
   useInput((input, key) => {
+    // Queue-vs-observer choice takes priority when a prompt is waiting.
+    if (pendingChoice) {
+      const c = input.toLowerCase();
+      if (c === 'q') {
+        pendingQueueRef.current.push(pendingChoice);
+        setPendingCount(pendingQueueRef.current.length);
+        setPendingChoice(null);
+      } else if (c === 'o') {
+        const p = pendingChoice;
+        setPendingChoice(null);
+        void sendToObserver(p);
+      } else if (key.escape) {
+        setPendingChoice(null);
+      }
+      return; // swallow all other keys while the choice is up
+    }
     if (key.ctrl && input === 'p' && !streaming) {
       setShowPalette((v) => !v);
     }
@@ -388,6 +831,12 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
 
   return (
     <Box flexDirection="column" height={stdout?.rows || 40}>
+      {booting ? (
+        <BootAnimation onDone={() => setBooting(false)} />
+      ) : bootChoice ? (
+        <SessionPicker sessions={bootChoice} onPick={handleBootChoice} />
+      ) : (
+        <>
       <Header config={config} mcpCount={mcpStatuses.length} toolCount={toolRegistry.list().length} />
       <Box flexGrow={1} flexDirection="column" overflowY="hidden">
         <ChatView
@@ -398,6 +847,16 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
           showTokens={config.ui?.showTokens ?? true}
         />
         {showHelp && <HelpOverlay />}
+        {openPicker && (
+          <OptionPicker
+            title={openPicker.title}
+            options={openPicker.options}
+            currentId={openPicker.currentId}
+            hint={openPicker.hint}
+            onPick={openPicker.onPick}
+            onClose={() => setOpenPicker(null)}
+          />
+        )}
         {showPalette && (
           <CommandPalette
             onPick={(cmd) => {
@@ -407,25 +866,38 @@ export function App({ initialConfig, initialPrompt }: AppProps) {
             onClose={() => setShowPalette(false)}
           />
         )}
-        {(error || retryInfo || toolCallInfo) && (
+        {(pendingChoice || restoredFrom || error || retryInfo || toolCallInfo) && (
           <Box marginTop={1} paddingX={1} flexDirection="column">
+            {pendingChoice && (
+              <Box flexDirection="column">
+                <Text color="#8B5CF6" bold>👁 Observer or ⏳ Queue?</Text>
+                <Text color="#E2E8F0">  “{pendingChoice.slice(0, 80)}”</Text>
+                <Text color="#06B6D4">  [o] Observer answers now</Text>
+                <Text color="#94A3B8">  [q] Queue for the main agent</Text>
+                <Text color="#475569">  [esc] cancel</Text>
+              </Box>
+            )}
+            {restoredFrom && <Text color="#10B981">↺ continued from {restoredFrom}</Text>}
             {toolCallInfo && <Text color="#06B6D4">⚙ {toolCallInfo}</Text>}
             {retryInfo && <Text color="#F59E0B">↻ {retryInfo}</Text>}
             {error && <Text color="#EF4444">✗ {error}</Text>}
           </Box>
         )}
       </Box>
-      <StatusBar config={config} streaming={streaming} lastMessage={messages[messages.length - 1]} />
+      <StatusBar config={config} streaming={streaming} lastMessage={messages[messages.length - 1]} metrics={metrics} />
       <InputBox
         onSubmit={handleSubmit}
         onSlash={handleSlash}
         onAbort={handleAbort}
         busy={streaming}
+        pendingCount={pendingCount}
         providerId={config.activeProviderId}
         onTab={handleTab}
         history={historyState}
         onHistoryAppend={appendHistoryState}
       />
+        </>
+      )}
     </Box>
   );
 }

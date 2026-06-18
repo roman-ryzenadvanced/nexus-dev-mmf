@@ -22,7 +22,7 @@
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, Text, useInput, useStdout, useStdin } from 'ink';
 import { SIGILS, getTheme } from '../tui/theme.js';
 import { renderMarkdown } from '../tui/markdown.js';
 import type { ChatMessage } from '../types.js';
@@ -230,6 +230,10 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
   const [scrollTop, setScrollTop] = useState(0);
   const autoFollowRef = useRef(true);
   const maxTop = Math.max(0, allLines.length - viewport);
+  // Mirror maxTop into a ref so the wheel listener always sees the latest
+  // bound without re-subscribing (which would toggle mouse mode).
+  const maxTopRef = useRef(maxTop);
+  maxTopRef.current = maxTop;
 
   // Auto-follow the tail (koda "pinned to bottom") unless the user scrolled up.
   useEffect(() => {
@@ -262,6 +266,63 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
     }
   });
 
+  // ── Touchpad / mouse-wheel scroll ────────────────────────────────
+  // Terminals deliver wheel events as SGR mouse sequences:
+  //   ESC [ <button ; col ; row M   (button 64 = wheel up, 65 = wheel down)
+  // We enable mouse reporting on mount (DECSET 1000 + SGR 1006) and parse
+  // the incoming bytes ourselves, since Ink 5 has no built-in mouse hook.
+  // Wheel = line scroll; Shift+wheel (button 0/1 in some terms) jumps a page.
+  const { stdin, setRawMode, isRawModeSupported } = useStdin();
+  const wheelAccumRef = useRef<number>(0);
+  useEffect(() => {
+    if (!isRawModeSupported) return;
+    // Enable SGR mouse mode (1000 = report, 1006 = SGR pixel/coord format).
+    process.stdout.write('\x1b[?1000h\x1b[?1006h');
+    setRawMode(true);
+    let buf = '';
+    // SGR mouse: ESC [ <button ; col ; row M (M=press/down-scroll, m=release)
+    const WHEEL_RE = /^\x1b\[(\d+);(\d+);(\d+)([Mm])$/;
+    const onData = (chunk: Buffer | string) => {
+      buf += typeof chunk === 'string' ? chunk : chunk.toString('binary');
+      // Process complete ESC[ sequences only.
+      let nl = buf.indexOf('\x1b');
+      while (nl !== -1) {
+        const tail = buf.slice(nl);
+        // A wheel/mouse SGR sequence ends with 'M' or 'm' after the last ';'
+        const end = tail.search(/[Mm]/);
+        if (end === -1) break; // incomplete — wait for more
+        const seq = tail.slice(0, end + 1);
+        buf = buf.slice(nl + end + 1);
+        const m = seq.match(WHEEL_RE);
+        if (m) {
+          const button = parseInt(m[1], 10);
+          // 64 = wheel up, 65 = wheel down (SGR/1006). Some terminals also
+          // send 0/1 for shift+wheel — treat 0 as up, 1 as down.
+          const isUp = button === 64 || button === 0;
+          const isDown = button === 65 || button === 1;
+          if (isUp || isDown) {
+            wheelAccumRef.current += isUp ? -1 : 1;
+            // Accmulate so high-resolution touchpads scroll ~1 line per notch,
+            // and fast swipes still feel responsive.
+            if (Math.abs(wheelAccumRef.current) >= 1) {
+              const step = Math.trunc(wheelAccumRef.current);
+              wheelAccumRef.current -= step;
+              autoFollowRef.current = step > 0; // scrolling up unfollows
+              setScrollTop((s) => Math.max(0, Math.min(maxTopRef.current, s + step)));
+            }
+          }
+        }
+        nl = buf.indexOf('\x1b');
+      }
+    };
+    stdin.on('data', onData);
+    return () => {
+      process.stdout.write('\x1b[?1006l\x1b[?1000l');
+      stdin.off('data', onData);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRawModeSupported]);
+
   const above = top;
   const below = allLines.length - (top + viewport);
   const window = allLines.slice(top, top + viewport);
@@ -285,7 +346,7 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
             {'  ·  '}
             {below > 0 ? `↓ ${below} below` : '── bottom ──'}
             {'  '}
-            <Text color={t.primaryMute}>(PgUp/PgDn scroll)</Text>
+            <Text color={t.primaryMute}>(scroll: PgUp/PgDn · mouse wheel · Ctrl+↑↓)</Text>
           </Text>
         ) : (
           <Text> </Text>

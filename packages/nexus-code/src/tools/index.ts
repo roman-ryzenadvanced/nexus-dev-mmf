@@ -7,3 +7,4 @@ export {
   type ProviderToolSchema,
 } from './protocol/index.js';
 export { BUILTIN_TOOLS } from './builtin.js';
+export { COMPUTER_TOOLS } from './computer.js';

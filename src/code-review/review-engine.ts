@@ -17,7 +17,7 @@
  * - Filter runs concurrently with synthesis
  */
 
-import { loadZAIClient } from '../providers/zai-loader.js';
+import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
 import {
   CodeReviewRequest,
   CodeReviewResult,
