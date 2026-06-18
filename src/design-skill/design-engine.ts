@@ -15,8 +15,7 @@
  * 8. SYNTHESIZE — Merge best elements from all model outputs
  */
 
-import { loadZAIClient } from '../providers/zai-loader.js';
-import type { ZAIClient } from '../providers/zai-loader.js';
+import { loadZAIClient, type ZAIClient } from '../providers/zai-loader.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { uuidv4 } from '../core/utils/uuid.js';
