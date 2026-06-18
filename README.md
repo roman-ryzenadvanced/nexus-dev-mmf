@@ -111,14 +111,14 @@ Think of it as assembling a team of specialists: a reasoning expert, a speed dem
 
 ### Why Multi-Model?
 
-| Single Model | Multi-Model Fusion |
-|---|---|
-| One model's strengths & weaknesses applied to everything | Each subtask gets a model specialized for it |
-| Sequential processing of complex tasks | Parallel execution across independent subtasks |
-| Quality limited by the weakest capability of one model | Quality elevated by the strongest capability of each model |
-| Fixed speed/quality tradeoff | Dynamically adjustable via execution modes |
-| Generic AI design output | AI SLOPE elimination for design tasks |
-| Single-perspective code review | Multi-model review with independent fact-checking |
+| Single Model                                             | Multi-Model Fusion                                         |
+| -------------------------------------------------------- | ---------------------------------------------------------- |
+| One model's strengths & weaknesses applied to everything | Each subtask gets a model specialized for it               |
+| Sequential processing of complex tasks                   | Parallel execution across independent subtasks             |
+| Quality limited by the weakest capability of one model   | Quality elevated by the strongest capability of each model |
+| Fixed speed/quality tradeoff                             | Dynamically adjustable via execution modes                 |
+| Generic AI design output                                 | AI SLOPE elimination for design tasks                      |
+| Single-perspective code review                           | Multi-model review with independent fact-checking          |
 
 ---
 
@@ -216,12 +216,12 @@ Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables rou
 
 ### Supported Providers
 
-| Provider | Adapter | Auth | Models |
-|----------|---------|------|--------|
-| **ZAI** (default) | `ZAIProvider` | Auto-detected via `z-ai-web-dev-sdk` | glm-5.2-1m, glm-5.2, glm-5.1, glm-5, glm-5v-turbo, glm-4.7 |
-| **OpenAI** | `OpenAIProvider` | `OPENAI_API_KEY` env var or config | gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini |
-| **Anthropic** | `AnthropicProvider` | `ANTHROPIC_API_KEY` env var or config | claude-opus-4, claude-sonnet-4, claude-haiku-3.5 |
-| **Google** | `GoogleProvider` | `GOOGLE_API_KEY` / `GEMINI_API_KEY` env var or config | gemini-2.5-pro, gemini-2.5-flash, gemini-2-flash |
+| Provider          | Adapter             | Auth                                                  | Models                                                     |
+| ----------------- | ------------------- | ----------------------------------------------------- | ---------------------------------------------------------- |
+| **ZAI** (default) | `ZAIProvider`       | Auto-detected via `z-ai-web-dev-sdk`                  | glm-5.2-1m, glm-5.2, glm-5.1, glm-5, glm-5v-turbo, glm-4.7 |
+| **OpenAI**        | `OpenAIProvider`    | `OPENAI_API_KEY` env var or config                    | gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini                 |
+| **Anthropic**     | `AnthropicProvider` | `ANTHROPIC_API_KEY` env var or config                 | claude-opus-4, claude-sonnet-4, claude-haiku-3.5           |
+| **Google**        | `GoogleProvider`    | `GOOGLE_API_KEY` / `GEMINI_API_KEY` env var or config | gemini-2.5-pro, gemini-2.5-flash, gemini-2-flash           |
 
 ### Multi-Provider Configuration
 
@@ -233,15 +233,18 @@ const orch = createOrchestrator({
     defaultProvider: 'zai',
     enableFallback: true,
     providers: {
-      zai: { provider: 'zai' },                                          // Auto-detected
+      zai: { provider: 'zai' }, // Auto-detected
       openai: { provider: 'openai', apiKey: process.env.OPENAI_API_KEY },
-      anthropic: { provider: 'anthropic', apiKey: process.env.ANTHROPIC_API_KEY },
+      anthropic: {
+        provider: 'anthropic',
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      },
       google: { provider: 'google', apiKey: process.env.GOOGLE_API_KEY },
     },
   },
 });
 
-await orch.initialize();  // Initialize all configured providers
+await orch.initialize(); // Initialize all configured providers
 
 // Now the router can assign subtasks to any available model across providers
 const result = await orch.process('Explain quantum computing and write a Python simulation');
@@ -290,7 +293,7 @@ OPENAI_API_KEY=sk-...
 
 # Anthropic
 ANTHROPIC_API_KEY=sk-ant-...
-# ANTHROPIC_BASE_URL=https://api.anthropic.com/v1 # Optional override
+# ANTHROPIC_BASE_URL=https://api.anthropic.com # Optional override (no /v1 — appended automatically)
 
 # Google
 GOOGLE_API_KEY=AIza...     # or GEMINI_API_KEY
@@ -331,68 +334,68 @@ orch.getProviderRouter().registerProvider(new MyCustomProvider());
 
 #### ZAI (GLM Models) — Default Provider
 
-| Model | Tier | Cost Weight | Context | Key Strengths |
-|-------|------|-------------|---------|---------------|
-| `glm-5.2-1m` | Flagship | 3.0 | 1M tokens | Advanced reasoning, complex decomposition, SLOPE detection, long-context analysis |
-| `glm-5.2` | Flagship | 2.0 | 128K tokens | High-performance baseline, design generation, balanced quality-speed |
-| `glm-5.1` | Standard | 1.5 | 128K tokens | Nuanced language, context sensitivity, design copy, multi-turn |
-| `glm-5` | Fast | 0.5 | 32K tokens | Speed, efficiency, rapid drafts, high-throughput tasks |
-| `glm-5v-turbo` | Fast | 0.5 | 32K tokens | Accelerated feedback, vision support, quick iteration |
-| `glm-4.7` | Creative | 2.0 | 128K tokens | Creative generation, deep knowledge, design systems, synthesis |
+| Model          | Tier     | Cost Weight | Context     | Key Strengths                                                                     |
+| -------------- | -------- | ----------- | ----------- | --------------------------------------------------------------------------------- |
+| `glm-5.2-1m`   | Flagship | 3.0         | 1M tokens   | Advanced reasoning, complex decomposition, SLOPE detection, long-context analysis |
+| `glm-5.2`      | Flagship | 2.0         | 128K tokens | High-performance baseline, design generation, balanced quality-speed              |
+| `glm-5.1`      | Standard | 1.5         | 128K tokens | Nuanced language, context sensitivity, design copy, multi-turn                    |
+| `glm-5`        | Fast     | 0.5         | 32K tokens  | Speed, efficiency, rapid drafts, high-throughput tasks                            |
+| `glm-5v-turbo` | Fast     | 0.5         | 32K tokens  | Accelerated feedback, vision support, quick iteration                             |
+| `glm-4.7`      | Creative | 2.0         | 128K tokens | Creative generation, deep knowledge, design systems, synthesis                    |
 
 #### OpenAI Models
 
-| Model | Tier | Cost Weight | Context | Key Strengths |
-|-------|------|-------------|---------|---------------|
-| `gpt-4o` | Flagship | 2.5 | 128K tokens | Multimodal, strong reasoning + code + vision |
-| `gpt-4.1` | Flagship | 2.0 | 1M tokens | High intelligence, complex instruction following, long context |
-| `gpt-4.1-mini` | Standard | 1.0 | 1M tokens | Balanced intelligence and speed, 1M context |
-| `o3` | Flagship | 4.0 | 200K tokens | Deep chain-of-thought reasoning, math, science, complex logic |
-| `o4-mini` | Standard | 1.5 | 200K tokens | Fast reasoning, good balance of capability and cost |
+| Model          | Tier     | Cost Weight | Context     | Key Strengths                                                  |
+| -------------- | -------- | ----------- | ----------- | -------------------------------------------------------------- |
+| `gpt-4o`       | Flagship | 2.5         | 128K tokens | Multimodal, strong reasoning + code + vision                   |
+| `gpt-4.1`      | Flagship | 2.0         | 1M tokens   | High intelligence, complex instruction following, long context |
+| `gpt-4.1-mini` | Standard | 1.0         | 1M tokens   | Balanced intelligence and speed, 1M context                    |
+| `o3`           | Flagship | 4.0         | 200K tokens | Deep chain-of-thought reasoning, math, science, complex logic  |
+| `o4-mini`      | Standard | 1.5         | 200K tokens | Fast reasoning, good balance of capability and cost            |
 
 #### Anthropic Models (Claude)
 
-| Model | Tier | Cost Weight | Context | Key Strengths |
-|-------|------|-------------|---------|---------------|
-| `claude-opus-4` | Flagship | 5.0 | 200K tokens | Most capable, complex reasoning, creative writing, SLOPE detection |
-| `claude-sonnet-4` | Flagship | 3.0 | 200K tokens | Balanced performance, excellent code and reasoning, design |
-| `claude-haiku-3.5` | Fast | 0.8 | 200K tokens | Fast and affordable, high-throughput tasks |
+| Model              | Tier     | Cost Weight | Context     | Key Strengths                                                      |
+| ------------------ | -------- | ----------- | ----------- | ------------------------------------------------------------------ |
+| `claude-opus-4`    | Flagship | 5.0         | 200K tokens | Most capable, complex reasoning, creative writing, SLOPE detection |
+| `claude-sonnet-4`  | Flagship | 3.0         | 200K tokens | Balanced performance, excellent code and reasoning, design         |
+| `claude-haiku-3.5` | Fast     | 0.8         | 200K tokens | Fast and affordable, high-throughput tasks                         |
 
 #### Google Models (Gemini)
 
-| Model | Tier | Cost Weight | Context | Key Strengths |
-|-------|------|-------------|---------|---------------|
-| `gemini-2.5-pro` | Flagship | 3.0 | 1M tokens | 1M context + thinking, multimodal, complex reasoning |
-| `gemini-2.5-flash` | Fast | 0.5 | 1M tokens | Fast with 1M context + thinking, efficient |
-| `gemini-2-flash` | Fast | 0.3 | 1M tokens | Ultra-fast, simple tasks and vision at minimal cost |
+| Model              | Tier     | Cost Weight | Context   | Key Strengths                                        |
+| ------------------ | -------- | ----------- | --------- | ---------------------------------------------------- |
+| `gemini-2.5-pro`   | Flagship | 3.0         | 1M tokens | 1M context + thinking, multimodal, complex reasoning |
+| `gemini-2.5-flash` | Fast     | 0.5         | 1M tokens | Fast with 1M context + thinking, efficient           |
+| `gemini-2-flash`   | Fast     | 0.3         | 1M tokens | Ultra-fast, simple tasks and vision at minimal cost  |
 
 ### Capability Matrix
 
 Each model is rated across 16+ capabilities. The router uses these scores alongside mode weights to pick the best model for each subtask.
 
-| Capability | glm-5.2-1m | glm-5.2 | glm-5.1 | glm-5 | glm-5v-turbo | glm-4.7 |
-|------------|:-----------:|:-------:|:-------:|:-----:|:------------:|:-------:|
-| reasoning | 95 | 90 | 82 | 72 | 68 | 78 |
-| code | 90 | 88 | 80 | 75 | 65 | 72 |
-| creative-writing | 78 | 82 | 85 | 70 | 65 | 92 |
-| analysis | 93 | 88 | 80 | 72 | 68 | 75 |
-| summarization | 88 | 85 | 82 | 80 | 78 | 80 |
-| translation | 82 | 85 | 90 | 82 | 75 | 78 |
-| math | 92 | 85 | 75 | 68 | 62 | 70 |
-| science | 90 | 82 | 75 | 65 | 60 | 72 |
-| design | 70 | 82 | 80 | 68 | 65 | 90 |
-| code-review | 88 | 85 | 78 | 70 | 65 | 75 |
-| slope-detection | 85 | 80 | 72 | 60 | 58 | 70 |
-| design-system | 68 | 78 | 75 | 62 | 60 | 88 |
+| Capability       | glm-5.2-1m | glm-5.2 | glm-5.1 | glm-5 | glm-5v-turbo | glm-4.7 |
+| ---------------- | :--------: | :-----: | :-----: | :---: | :----------: | :-----: |
+| reasoning        |     95     |   90    |   82    |  72   |      68      |   78    |
+| code             |     90     |   88    |   80    |  75   |      65      |   72    |
+| creative-writing |     78     |   82    |   85    |  70   |      65      |   92    |
+| analysis         |     93     |   88    |   80    |  72   |      68      |   75    |
+| summarization    |     88     |   85    |   82    |  80   |      78      |   80    |
+| translation      |     82     |   85    |   90    |  82   |      75      |   78    |
+| math             |     92     |   85    |   75    |  68   |      62      |   70    |
+| science          |     90     |   82    |   75    |  65   |      60      |   72    |
+| design           |     70     |   82    |   80    |  68   |      65      |   90    |
+| code-review      |     88     |   85    |   78    |  70   |      65      |   75    |
+| slope-detection  |     85     |   80    |   72    |  60   |      58      |   70    |
+| design-system    |     68     |   78    |   75    |  62   |      60      |   88    |
 
 ### Execution Modes
 
-| Mode | Weight Profile | Best For |
-|------|---------------|----------|
-| `speed` | Prioritizes fast models (glm-5, glm-5v-turbo) | Drafts, rapid iteration, time-critical tasks |
-| `quality` | Prioritizes flagship models (glm-5.2, glm-5.2-1m) | Final deliverables, accuracy-critical work |
-| `balanced` | Balances speed and quality across all models | General-purpose (default) |
-| `creative` | Biases toward creative models (glm-4.7) | Writing, design, brainstorming |
+| Mode       | Weight Profile                                    | Best For                                     |
+| ---------- | ------------------------------------------------- | -------------------------------------------- |
+| `speed`    | Prioritizes fast models (glm-5, glm-5v-turbo)     | Drafts, rapid iteration, time-critical tasks |
+| `quality`  | Prioritizes flagship models (glm-5.2, glm-5.2-1m) | Final deliverables, accuracy-critical work   |
+| `balanced` | Balances speed and quality across all models      | General-purpose (default)                    |
+| `creative` | Biases toward creative models (glm-4.7)           | Writing, design, brainstorming               |
 
 ---
 
@@ -453,9 +456,7 @@ const orch = createOrchestrator({
   maxParallelSubTasks: 6,
 });
 
-const result = await orch.process(
-  'Explain the tradeoffs between microservices and monoliths, then write a TypeScript implementation of a service mesh'
-);
+const result = await orch.process('Explain the tradeoffs between microservices and monoliths, then write a TypeScript implementation of a service mesh');
 
 console.log(result.answer);
 console.log(`Quality: ${result.qualityScore}/100`);
@@ -522,11 +523,11 @@ node scripts/mtp-fusion.mjs "Complex multi-step task requiring multiple model ca
 
 > ### 🖥️ Is it a terminal app or a web app?
 >
-> **It is a terminal/TUI app first.** Nexus Code runs **inside your terminal** — it is *not* a hosted web product.
+> **It is a terminal/TUI app first.** Nexus Code runs **inside your terminal** — it is _not_ a hosted web product.
 >
-> | Mode | Command | What it is |
-> |---|---|---|
-> | **Terminal UI (primary)** | `nexus` | A full-screen, interactive **terminal UI** built with [Ink](https://github.com/vadimdemedes/ink) + React. Runs natively in your console — **no browser, no server, nothing hosted online.** This is what most people use. |
+> | Mode                        | Command       | What it is                                                                                                                                                                                                                                                  |
+> | --------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | **Terminal UI (primary)**   | `nexus`       | A full-screen, interactive **terminal UI** built with [Ink](https://github.com/vadimdemedes/ink) + React. Runs natively in your console — **no browser, no server, nothing hosted online.** This is what most people use.                                   |
 > | **Local web UI (optional)** | `nexus --web` | For convenience only. Boots a small HTTP server bound to **`127.0.0.1:3000` (your own machine)** and serves a browser chat page. The "web" UI runs **entirely on localhost** from the same CLI binary — it is never deployed or reachable over the network. |
 >
 > **There are no hosted/web screenshots in this repository.** Every visual you see is a **terminal/ANSI render** of the TUI, not a web page. If a screenshot looks like a polished app, that is the TUI rendering in a terminal — not a browser.
@@ -622,17 +623,17 @@ Edit `~/.nexus/config.json`:
 
 ### Nexus Code Documentation
 
-| Doc | Description |
-|-----|-------------|
-| [Features](./packages/nexus-code/docs/FEATURES.md) | Every feature, version added, how to use |
-| [Tests](./packages/nexus-code/docs/TESTS.md) | Every test suite, coverage, how to run |
-| [Root Cause Analysis](./packages/nexus-code/docs/ROOT-CAUSE-ANALYSIS.md) | Every bug, root cause, exact fix |
-| [Release Notes v1.1.7](./packages/nexus-code/docs/RELEASE-NOTES-v1.1.7.md) | Consolidated release notes |
-| [Providers](./packages/nexus-code/docs/providers.md) | Provider setup and configuration |
-| [Slash Commands](./packages/nexus-code/docs/commands.md) | Full command reference |
-| [MCP Integration](./packages/nexus-code/docs/mcp.md) | Model Context Protocol setup |
-| [Architecture](./packages/nexus-code/docs/architecture.md) | Internal architecture overview |
-| [Example Config](./packages/nexus-code/examples/config.json) | Full config example |
+| Doc                                                                        | Description                              |
+| -------------------------------------------------------------------------- | ---------------------------------------- |
+| [Features](./packages/nexus-code/docs/FEATURES.md)                         | Every feature, version added, how to use |
+| [Tests](./packages/nexus-code/docs/TESTS.md)                               | Every test suite, coverage, how to run   |
+| [Root Cause Analysis](./packages/nexus-code/docs/ROOT-CAUSE-ANALYSIS.md)   | Every bug, root cause, exact fix         |
+| [Release Notes v1.1.7](./packages/nexus-code/docs/RELEASE-NOTES-v1.1.7.md) | Consolidated release notes               |
+| [Providers](./packages/nexus-code/docs/providers.md)                       | Provider setup and configuration         |
+| [Slash Commands](./packages/nexus-code/docs/commands.md)                   | Full command reference                   |
+| [MCP Integration](./packages/nexus-code/docs/mcp.md)                       | Model Context Protocol setup             |
+| [Architecture](./packages/nexus-code/docs/architecture.md)                 | Internal architecture overview           |
+| [Example Config](./packages/nexus-code/examples/config.json)               | Full config example                      |
 
 ---
 
@@ -670,49 +671,49 @@ The design skill runs an 8-phase pipeline that detects and eliminates AI SLOPE:
 
 ### Design Sub-Domains
 
-| Sub-domain | Purpose | Example Use |
-|------------|---------|-------------|
-| `brand` | Brand identity, voice, assets | Brand guidelines, color palette, tone of voice |
-| `design-system` | Token architecture, specs | Design tokens, component specs, spacing scale |
-| `ui-styling` | Component implementation | shadcn/ui theming, Tailwind config, CSS variables |
-| `logo` | AI logo generation | SVG logo with brand personality |
-| `cip` | Corporate Identity Program | Letterheads, business cards, presentations |
-| `slides` | HTML presentations | Pitch decks with Chart.js visualizations |
-| `banner` | Banner design | Social media ads, web banners, print |
-| `icon` | SVG icon generation | Custom icon set with brand style |
-| `social-photos` | Social media images | OG images, profile graphics |
-| `ux-audit` | UX review | Accessibility audit, heuristic evaluation |
+| Sub-domain      | Purpose                       | Example Use                                       |
+| --------------- | ----------------------------- | ------------------------------------------------- |
+| `brand`         | Brand identity, voice, assets | Brand guidelines, color palette, tone of voice    |
+| `design-system` | Token architecture, specs     | Design tokens, component specs, spacing scale     |
+| `ui-styling`    | Component implementation      | shadcn/ui theming, Tailwind config, CSS variables |
+| `logo`          | AI logo generation            | SVG logo with brand personality                   |
+| `cip`           | Corporate Identity Program    | Letterheads, business cards, presentations        |
+| `slides`        | HTML presentations            | Pitch decks with Chart.js visualizations          |
+| `banner`        | Banner design                 | Social media ads, web banners, print              |
+| `icon`          | SVG icon generation           | Custom icon set with brand style                  |
+| `social-photos` | Social media images           | OG images, profile graphics                       |
+| `ux-audit`      | UX review                     | Accessibility audit, heuristic evaluation         |
 
 ### AI SLOPE Detection Categories
 
-| Category | Severity | Key Indicator | Anti-Pattern |
-|----------|----------|---------------|--------------|
-| `generic-colors` | 🔴 High | Default blue (#3B82F6), AI purple (#6366F1) | Product-specific palettes from knowledge base |
-| `template-layout` | 🔴 High | Centered hero + 3-column features + CTA | Asymmetric layouts, unique grid structures |
-| `missing-brand-identity` | 🔴 High | No signature visual element | Brand-specific color, shape, or pattern |
-| `stock-imagery` | 🟡 Medium | Generic hero images | Product-specific illustration style |
-| `flat-typography` | 🟡 Medium | No hierarchy, Inter-only | Varied weights, brand fonts, contrast |
-| `overused-effects` | 🟡 Medium | Backdrop-blur on everything | Purposeful effects, selective application |
-| `cliche-microcopy` | 🟢 Low | "Empower your workflow" | Product-specific language, personality |
-| `uniform-spacing` | 🟢 Low | Same padding everywhere | Rhythm variation, intentional density |
-| `default-icon-sets` | 🟢 Low | Lucide without customization | Branded icons, custom illustrations |
-| `predictable-animations` | 🟢 Low | Fade-in-up on everything | Varied timing, unexpected motion |
+| Category                 | Severity  | Key Indicator                               | Anti-Pattern                                  |
+| ------------------------ | --------- | ------------------------------------------- | --------------------------------------------- |
+| `generic-colors`         | 🔴 High   | Default blue (#3B82F6), AI purple (#6366F1) | Product-specific palettes from knowledge base |
+| `template-layout`        | 🔴 High   | Centered hero + 3-column features + CTA     | Asymmetric layouts, unique grid structures    |
+| `missing-brand-identity` | 🔴 High   | No signature visual element                 | Brand-specific color, shape, or pattern       |
+| `stock-imagery`          | 🟡 Medium | Generic hero images                         | Product-specific illustration style           |
+| `flat-typography`        | 🟡 Medium | No hierarchy, Inter-only                    | Varied weights, brand fonts, contrast         |
+| `overused-effects`       | 🟡 Medium | Backdrop-blur on everything                 | Purposeful effects, selective application     |
+| `cliche-microcopy`       | 🟢 Low    | "Empower your workflow"                     | Product-specific language, personality        |
+| `uniform-spacing`        | 🟢 Low    | Same padding everywhere                     | Rhythm variation, intentional density         |
+| `default-icon-sets`      | 🟢 Low    | Lucide without customization                | Branded icons, custom illustrations           |
+| `predictable-animations` | 🟢 Low    | Fade-in-up on everything                    | Varied timing, unexpected motion              |
 
 ### Design Knowledge Base
 
 The design skill includes a comprehensive BM25-searchable knowledge base:
 
-| Domain | Rows | Content |
-|--------|------|---------|
-| Products | 161 | Product-specific style recommendations |
-| Styles | 84 | UI styles with colors, effects, accessibility |
-| Colors | 161 | Product-specific color palettes (17 tokens each) |
-| Typography | 73 | Font pairings with Google Fonts URLs |
-| Landing | 34 | Landing page patterns and CTA strategies |
-| Charts | 25 | Chart type recommendations by data type |
-| UX Guidelines | 99 | UX best practices with Do/Don't examples |
-| UI Reasoning | 161 | Decision rules and anti-patterns per product |
-| Stacks | 14 | React, Next.js, Vue, Svelte, Flutter, etc. |
+| Domain        | Rows | Content                                          |
+| ------------- | ---- | ------------------------------------------------ |
+| Products      | 161  | Product-specific style recommendations           |
+| Styles        | 84   | UI styles with colors, effects, accessibility    |
+| Colors        | 161  | Product-specific color palettes (17 tokens each) |
+| Typography    | 73   | Font pairings with Google Fonts URLs             |
+| Landing       | 34   | Landing page patterns and CTA strategies         |
+| Charts        | 25   | Chart type recommendations by data type          |
+| UX Guidelines | 99   | UX best practices with Do/Don't examples         |
+| UI Reasoning  | 161  | Decision rules and anti-patterns per product     |
+| Stacks        | 14   | React, Next.js, Vue, Svelte, Flutter, etc.       |
 
 ### Design Skill SDK
 
@@ -722,8 +723,8 @@ import { createDesignSkillEngine } from 'nexus-dev-mmf';
 const engine = createDesignSkillEngine({
   enableSlopeDetection: true,
   enableDesignSystem: true,
-  slopeThreshold: 40,        // Re-generate if SLOPE score >= 40
-  maxSlopeRetries: 2,        // Max elimination attempts
+  slopeThreshold: 40, // Re-generate if SLOPE score >= 40
+  maxSlopeRetries: 2, // Max elimination attempts
   defaultMode: 'balanced',
 });
 
@@ -764,22 +765,22 @@ Adapted from [Alibaba Open Code Review](https://github.com/alibaba/open-code-rev
 
 14 language-specific rule sets with tailored review prompts:
 
-| Language | Rules Focus |
-|----------|-------------|
-| TypeScript | Type safety, null handling, async patterns |
-| JavaScript | Scope, coercion, prototype pitfalls |
-| Python | Type hints, resource management, concurrency |
-| Java | Null safety, streams, exceptions |
-| Rust | Ownership, lifetimes, unsafe blocks |
-| Go | Error handling, goroutines, channels |
-| C++ | Memory management, RAII, UB prevention |
-| C# | LINQ, async/await, disposables |
-| Ruby | Duck typing, blocks, metaprogramming |
-| PHP | Type safety, SQL injection, XSS |
-| Swift | Optionals, value types, concurrency |
-| Kotlin | Null safety, coroutines, extensions |
-| Scala | Pattern matching, implicits, collections |
-| Shell/Bash | Quoting, error handling, portability |
+| Language   | Rules Focus                                  |
+| ---------- | -------------------------------------------- |
+| TypeScript | Type safety, null handling, async patterns   |
+| JavaScript | Scope, coercion, prototype pitfalls          |
+| Python     | Type hints, resource management, concurrency |
+| Java       | Null safety, streams, exceptions             |
+| Rust       | Ownership, lifetimes, unsafe blocks          |
+| Go         | Error handling, goroutines, channels         |
+| C++        | Memory management, RAII, UB prevention       |
+| C#         | LINQ, async/await, disposables               |
+| Ruby       | Duck typing, blocks, metaprogramming         |
+| PHP        | Type safety, SQL injection, XSS              |
+| Swift      | Optionals, value types, concurrency          |
+| Kotlin     | Null safety, coroutines, extensions          |
+| Scala      | Pattern matching, implicits, collections     |
+| Shell/Bash | Quoting, error handling, portability         |
 
 ### Code Review SDK
 
@@ -811,25 +812,25 @@ MTP brings CPU-like hyperthreading to LLM orchestration by overlapping pipeline 
 
 ### Thread Types
 
-| Thread | Phase | Purpose |
-|--------|-------|---------|
-| `decompose-flagship` | Decompose | Flagship model performs thorough decomposition |
-| `decompose-fast` | Decompose | Fast model pre-decomposes for speculative execution |
-| `route` | Route | Adaptive router scores and assigns models |
-| `execute-primary` | Execute | Primary model execution for each subtask |
-| `execute-speculative` | Execute | Fast models draft answers before routing completes |
-| `synthesize-partial` | Synthesize | Incremental synthesis as results arrive |
-| `synthesize-final` | Synthesize | Final merge of all subtask results |
-| `quality-score` | Quality | Concurrent quality assessment |
-| `quality-refine` | Quality | Re-synthesis if quality is below threshold |
+| Thread                | Phase      | Purpose                                             |
+| --------------------- | ---------- | --------------------------------------------------- |
+| `decompose-flagship`  | Decompose  | Flagship model performs thorough decomposition      |
+| `decompose-fast`      | Decompose  | Fast model pre-decomposes for speculative execution |
+| `route`               | Route      | Adaptive router scores and assigns models           |
+| `execute-primary`     | Execute    | Primary model execution for each subtask            |
+| `execute-speculative` | Execute    | Fast models draft answers before routing completes  |
+| `synthesize-partial`  | Synthesize | Incremental synthesis as results arrive             |
+| `synthesize-final`    | Synthesize | Final merge of all subtask results                  |
+| `quality-score`       | Quality    | Concurrent quality assessment                       |
+| `quality-refine`      | Quality    | Re-synthesis if quality is below threshold          |
 
 ### MTP Performance
 
-| Pipeline | Avg Time | Speedup vs Sequential |
-|----------|----------|-----------------------|
-| Sequential (1 model) | ~45s | 1.0x |
-| Nexus Parallel (6 models) | ~19s | ~2.4x |
-| Nexus MTP (hyperthreaded) | ~16s | ~2.8x |
+| Pipeline                  | Avg Time | Speedup vs Sequential |
+| ------------------------- | -------- | --------------------- |
+| Sequential (1 model)      | ~45s     | 1.0x                  |
+| Nexus Parallel (6 models) | ~19s     | ~2.4x                 |
+| Nexus MTP (hyperthreaded) | ~16s     | ~2.8x                 |
 
 ---
 
@@ -862,7 +863,7 @@ cd ~/nexus-dev-mmf && npm install && npm run build
 
 **Create custom command:**
 
-```bash
+````bash
 mkdir -p .claude/commands
 cat > .claude/commands/nexus.md << 'EOF'
 Execute the Nexus-Dev MMFE multi-model fusion pipeline.
@@ -872,32 +873,39 @@ Arguments: $ARGUMENTS
 Run the following command and return the synthesized result:
 ```bash
 node ~/nexus-dev-mmf/scripts/direct-fusion.mjs "$ARGUMENTS"
-```
+````
 
 If the task is a design task, use:
+
 ```bash
 node ~/nexus-dev-mmf/scripts/design-fusion.mjs "$ARGUMENTS" --mode creative
 ```
 
 If the task is a code review, use:
+
 ```bash
 node ~/nexus-dev-mmf/scripts/code-review.mjs "$ARGUMENTS"
 ```
 
 For maximum speed with MTP hyperthreading:
+
 ```bash
 node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs "$ARGUMENTS"
 ```
+
 EOF
+
 ```
 
 **Usage in Claude Code:**
 
 ```
+
 /nexus Explain the tradeoffs between REST and GraphQL
 /nexus design Create a fintech landing page --brand PayFlow
 /nexus review <paste diff>
-```
+
+````
 
 ---
 
@@ -910,7 +918,7 @@ Codex supports custom agents via `codex.yaml` or the Codex agent configuration.
 ```bash
 git clone https://github.com/roman-ryzenadvanced/nexus-dev-mmf.git ~/nexus-dev-mmf
 cd ~/nexus-dev-mmf && npm install && npm run build
-```
+````
 
 **Add to `codex.yaml`:**
 
@@ -921,20 +929,20 @@ agents:
     description: Routes tasks across 6 GLM models for parallel execution and synthesis
     command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
     args:
-      - "{{input}}"
+      - '{{input}}'
     tools:
       - name: nexus-design
         description: Design with AI SLOPE elimination
         command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
-        args: ["{{input}}", "--mode", "creative"]
+        args: ['{{input}}', '--mode', 'creative']
       - name: nexus-review
         description: Multi-model code review
         command: node ~/nexus-dev-mmf/scripts/code-review.mjs
-        args: ["{{input}}"]
+        args: ['{{input}}']
       - name: nexus-mtp
         description: MTP hyperthreaded execution
         command: node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs
-        args: ["{{input}}"]
+        args: ['{{input}}']
 ```
 
 ---
@@ -960,13 +968,13 @@ skills:
   - name: nexus-dev-mmf
     path: ~/.open-code/skills/nexus-dev-mmf
     triggers:
-      - pattern: "/nexus"
+      - pattern: '/nexus'
         script: scripts/direct-fusion.mjs
-      - pattern: "/nexus design"
+      - pattern: '/nexus design'
         script: scripts/design-fusion.mjs
-      - pattern: "/nexus review"
+      - pattern: '/nexus review'
         script: scripts/code-review.mjs
-      - pattern: "/nexus mtp"
+      - pattern: '/nexus mtp'
         script: scripts/mtp-fusion.mjs
 ```
 
@@ -1030,28 +1038,28 @@ cd ~/nexus-dev-mmf && npm install && npm run build
 tools:
   - name: nexus_fusion
     type: shell
-    description: "Nexus-Dev MMFE: Decompose, route, execute in parallel, and synthesize across 6 GLM models"
+    description: 'Nexus-Dev MMFE: Decompose, route, execute in parallel, and synthesize across 6 GLM models'
     command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
-    input_arg: "{{prompt}}"
+    input_arg: '{{prompt}}'
 
   - name: nexus_design
     type: shell
-    description: "Design skill with AI SLOPE elimination — eliminates generic AI patterns in design output"
+    description: 'Design skill with AI SLOPE elimination — eliminates generic AI patterns in design output'
     command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
-    input_arg: "{{prompt}}"
-    default_args: ["--mode", "creative"]
+    input_arg: '{{prompt}}'
+    default_args: ['--mode', 'creative']
 
   - name: nexus_review
     type: shell
-    description: "Multi-model code review adapted from Alibaba Open Code Review"
+    description: 'Multi-model code review adapted from Alibaba Open Code Review'
     command: node ~/nexus-dev-mmf/scripts/code-review.mjs
-    input_arg: "{{diff}}"
+    input_arg: '{{diff}}'
 
   - name: nexus_mtp
     type: shell
-    description: "MTP hyperthreaded execution — speculative decomposition and parallel execution"
+    description: 'MTP hyperthreaded execution — speculative decomposition and parallel execution'
     command: node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs
-    input_arg: "{{prompt}}"
+    input_arg: '{{prompt}}'
 ```
 
 ---
@@ -1120,8 +1128,14 @@ cd ~/nexus-dev-mmf && npm install && npm run build
       "parameters": {
         "type": "object",
         "properties": {
-          "query": { "type": "string", "description": "The task or query to process" },
-          "mode": { "type": "string", "enum": ["speed", "quality", "balanced", "creative"] }
+          "query": {
+            "type": "string",
+            "description": "The task or query to process"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["speed", "quality", "balanced", "creative"]
+          }
         },
         "required": ["query"]
       }
@@ -1231,24 +1245,24 @@ cd ~/nexus-dev-mmf && npm install && npm run build
 tools:
   - name: nexus-fusion
     type: shell-command
-    description: "Nexus-Dev MMFE: Multi-model fusion with adaptive routing"
+    description: 'Nexus-Dev MMFE: Multi-model fusion with adaptive routing'
     command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
-    input: "{{prompt}}"
-    aliases: ["/nexus"]
+    input: '{{prompt}}'
+    aliases: ['/nexus']
 
   - name: nexus-design
     type: shell-command
-    description: "Design skill with AI SLOPE elimination"
+    description: 'Design skill with AI SLOPE elimination'
     command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
-    input: "{{prompt}} --mode creative"
-    aliases: ["/nexus-design"]
+    input: '{{prompt}} --mode creative'
+    aliases: ['/nexus-design']
 
   - name: nexus-review
     type: shell-command
-    description: "Multi-model code review (Alibaba OCR adapted)"
+    description: 'Multi-model code review (Alibaba OCR adapted)'
     command: node ~/nexus-dev-mmf/scripts/code-review.mjs
-    input: "{{diff}}"
-    aliases: ["/nexus-review"]
+    input: '{{diff}}'
+    aliases: ['/nexus-review']
 ```
 
 ---
@@ -1438,10 +1452,10 @@ cd ~/nexus-dev-mmf && npm install && npm run build
 ```yaml
 # Custom commands map
 custom-commands:
-  nexus: "node ~/nexus-dev-mmf/scripts/direct-fusion.mjs"
-  nexus-design: "node ~/nexus-dev-mmf/scripts/design-fusion.mjs"
-  nexus-review: "node ~/nexus-dev-mmf/scripts/code-review.mjs"
-  nexus-mtp: "node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs"
+  nexus: 'node ~/nexus-dev-mmf/scripts/direct-fusion.mjs'
+  nexus-design: 'node ~/nexus-dev-mmf/scripts/design-fusion.mjs'
+  nexus-review: 'node ~/nexus-dev-mmf/scripts/code-review.mjs'
+  nexus-mtp: 'node ~/nexus-dev-mmf/scripts/mtp-fusion.mjs'
 ```
 
 **Usage in Aider chat:**
@@ -1470,22 +1484,22 @@ cd ~/nexus-dev-mmf && npm install && npm run build
 ```yaml
 tools:
   - name: nexus_fusion
-    description: "Multi-model fusion pipeline across 6 GLM models"
+    description: 'Multi-model fusion pipeline across 6 GLM models'
     type: shell
     command: node ~/nexus-dev-mmf/scripts/direct-fusion.mjs
-    args: "{{input}}"
+    args: '{{input}}'
 
   - name: nexus_design
-    description: "Design with AI SLOPE elimination"
+    description: 'Design with AI SLOPE elimination'
     type: shell
     command: node ~/nexus-dev-mmf/scripts/design-fusion.mjs
-    args: "{{input}} --mode creative"
+    args: '{{input}} --mode creative'
 
   - name: nexus_review
-    description: "Multi-model code review"
+    description: 'Multi-model code review'
     type: shell
     command: node ~/nexus-dev-mmf/scripts/code-review.mjs
-    args: "{{input}}"
+    args: '{{input}}'
 ```
 
 ---
@@ -1547,22 +1561,22 @@ cd ~/nexus-dev-mmf && npm install && npm run build
 
 Most agentic tools support one of these integration methods:
 
-| Method | How It Works | Best For |
-|--------|-------------|----------|
-| **Custom Commands** | Define `/nexus` as a shell command | CLI-based tools (Claude Code, Aider) |
-| **Tool/Function Registry** | Register Nexus as a callable tool | Agent frameworks (Hermes, Pi) |
-| **Config File** | Add to YAML/JSON config | Config-driven tools (Open Code, Zcode) |
-| **MCP Server** | Run Nexus as an MCP server | MCP-compatible tools (Gemini CLI, Cline) |
-| **Rules File** | Add instructions to `.cursorrules`, `.clinerules`, etc. | IDE-based tools (Cursor, Windsurf) |
+| Method                     | How It Works                                            | Best For                                 |
+| -------------------------- | ------------------------------------------------------- | ---------------------------------------- |
+| **Custom Commands**        | Define `/nexus` as a shell command                      | CLI-based tools (Claude Code, Aider)     |
+| **Tool/Function Registry** | Register Nexus as a callable tool                       | Agent frameworks (Hermes, Pi)            |
+| **Config File**            | Add to YAML/JSON config                                 | Config-driven tools (Open Code, Zcode)   |
+| **MCP Server**             | Run Nexus as an MCP server                              | MCP-compatible tools (Gemini CLI, Cline) |
+| **Rules File**             | Add instructions to `.cursorrules`, `.clinerules`, etc. | IDE-based tools (Cursor, Windsurf)       |
 
 **Step 3: Map Commands**
 
-| Command | Script | Use Case |
-|---------|--------|----------|
-| General fusion | `scripts/direct-fusion.mjs` | Any complex multi-domain query |
-| Design | `scripts/design-fusion.mjs` | UI/UX design with AI SLOPE elimination |
-| Code review | `scripts/code-review.mjs` | Multi-model code review |
-| MTP hyperthreading | `scripts/mtp-fusion.mjs` | Speed-critical complex tasks |
+| Command            | Script                      | Use Case                               |
+| ------------------ | --------------------------- | -------------------------------------- |
+| General fusion     | `scripts/direct-fusion.mjs` | Any complex multi-domain query         |
+| Design             | `scripts/design-fusion.mjs` | UI/UX design with AI SLOPE elimination |
+| Code review        | `scripts/code-review.mjs`   | Multi-model code review                |
+| MTP hyperthreading | `scripts/mtp-fusion.mjs`    | Speed-critical complex tasks           |
 
 **Step 4: Set Credentials**
 
@@ -1601,14 +1615,14 @@ const result2 = await orch.process('Another query', {
 
 #### Orchestrator API
 
-| Method | Description |
-|--------|-------------|
+| Method                      | Description                                 |
+| --------------------------- | ------------------------------------------- |
 | `process(prompt, options?)` | Process a request through the full pipeline |
-| `getPerformanceTracker()` | Get the `PerformanceTracker` instance |
-| `getEventEmitter()` | Get the `NexusEventEmitter` instance |
-| `getModelRegistry()` | Get the `ModelRegistry` instance |
-| `getConversationManager()` | Get the `ConversationManager` instance |
-| `getState()` | Get current pipeline state |
+| `getPerformanceTracker()`   | Get the `PerformanceTracker` instance       |
+| `getEventEmitter()`         | Get the `NexusEventEmitter` instance        |
+| `getModelRegistry()`        | Get the `ModelRegistry` instance            |
+| `getConversationManager()`  | Get the `ConversationManager` instance      |
+| `getState()`                | Get current pipeline state                  |
 
 ### Types
 
@@ -1689,32 +1703,32 @@ import { createOrchestrator } from 'nexus-dev-mmf';
 
 const orch = createOrchestrator({
   // Pipeline settings
-  defaultMode: 'balanced',           // speed | quality | balanced | creative
-  maxParallelSubTasks: 6,            // Max concurrent model calls
-  qualityThreshold: 70,              // Score threshold for re-synthesis
-  subTaskTimeout: 120000,            // Timeout per subtask (ms)
-  enableThinking: true,              // Chain-of-thought reasoning
+  defaultMode: 'balanced', // speed | quality | balanced | creative
+  maxParallelSubTasks: 6, // Max concurrent model calls
+  qualityThreshold: 70, // Score threshold for re-synthesis
+  subTaskTimeout: 120000, // Timeout per subtask (ms)
+  enableThinking: true, // Chain-of-thought reasoning
 
   // MTP (Multi-Threaded Pipeline)
-  enableMTP: false,                  // Enable hyperthreading
+  enableMTP: false, // Enable hyperthreading
   mtpConfig: {
-    maxThreads: 8,                   // Maximum concurrent threads
-    speculativeDecomposition: true,  // Fast model pre-decomposes
-    speculativeExecution: true,      // Fast models draft early
-    incrementalSynthesis: true,      // Progressive result building
+    maxThreads: 8, // Maximum concurrent threads
+    speculativeDecomposition: true, // Fast model pre-decomposes
+    speculativeExecution: true, // Fast models draft early
+    incrementalSynthesis: true, // Progressive result building
   },
 
   // Design Skill
-  enableSlopeDetection: true,        // AI SLOPE detection
-  slopeThreshold: 40,                // Re-generate if score >= 40
-  maxSlopeRetries: 2,                // Max elimination attempts
+  enableSlopeDetection: true, // AI SLOPE detection
+  slopeThreshold: 40, // Re-generate if score >= 40
+  maxSlopeRetries: 2, // Max elimination attempts
 
   // Budget
-  maxTotalCostWeight: Infinity,      // Cap total cost per run
+  maxTotalCostWeight: Infinity, // Cap total cost per run
 
   // Tracking
-  enablePerformanceTracking: true,   // Model reliability tracking
-  enableEvents: true,                // Pipeline event streaming
+  enablePerformanceTracking: true, // Model reliability tracking
+  enableEvents: true, // Pipeline event streaming
 });
 ```
 
@@ -1730,21 +1744,21 @@ Each subtask is scored against each available model using a weighted multi-facto
 Score = (capability_score × 40) + (mode_alignment × 30) + (complexity_fit × 20) - (load_penalty × 3)
 ```
 
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| Capability Score | 40 pts | How well the model's rated capability matches the subtask requirement |
-| Mode Alignment | 30 pts | How well the model's tier aligns with the execution mode preference |
-| Complexity Fit | 20 pts | Whether the model's processing depth matches the subtask complexity |
-| Load Balance | -3 pts/assignment | Penalty for each existing assignment to prevent overloading one model |
+| Factor           | Weight            | Description                                                           |
+| ---------------- | ----------------- | --------------------------------------------------------------------- |
+| Capability Score | 40 pts            | How well the model's rated capability matches the subtask requirement |
+| Mode Alignment   | 30 pts            | How well the model's tier aligns with the execution mode preference   |
+| Complexity Fit   | 20 pts            | Whether the model's processing depth matches the subtask complexity   |
+| Load Balance     | -3 pts/assignment | Penalty for each existing assignment to prevent overloading one model |
 
 ### Mode Influence
 
-| Mode | Preferred Tiers | Effect on Scoring |
-|------|----------------|-------------------|
-| `speed` | Fast (1.0×) | Boosts fast model scores by 30% |
-| `quality` | Flagship (2.0-3.0×) | Boosts flagship model scores by 30% |
-| `balanced` | All tiers equally | No tier bias |
-| `creative` | Creative (1.2×) | Boosts creative model scores by 30% |
+| Mode       | Preferred Tiers     | Effect on Scoring                   |
+| ---------- | ------------------- | ----------------------------------- |
+| `speed`    | Fast (1.0×)         | Boosts fast model scores by 30%     |
+| `quality`  | Flagship (2.0-3.0×) | Boosts flagship model scores by 30% |
+| `balanced` | All tiers equally   | No tier bias                        |
+| `creative` | Creative (1.2×)     | Boosts creative model scores by 30% |
 
 ### Load Balancing
 
@@ -1792,8 +1806,8 @@ const result2 = await orch.process('Add authentication to it', {
 
 ```javascript
 const orch = createOrchestrator({
-  qualityThreshold: 80,    // Require higher quality
-  subTaskTimeout: 180000,  // Allow more time
+  qualityThreshold: 80, // Require higher quality
+  subTaskTimeout: 180000, // Allow more time
 });
 
 const result = await orch.process('Write a production-ready authentication module');
@@ -1820,10 +1834,10 @@ const qualityResult = await orch.process('Critical: Design our API schema', {
 const orch = createOrchestrator({ enableEvents: true });
 const emitter = orch.getEventEmitter();
 
-emitter.on('pipeline:start', (e) => console.log('Pipeline started'));
-emitter.on('subtask:complete', (e) => console.log(`Subtask ${e.subTaskId} done`));
-emitter.on('pipeline:complete', (e) => console.log(`Pipeline complete: ${e.qualityScore}/100`));
-emitter.on('quality:refine', (e) => console.log('Re-synthesizing...'));
+emitter.on('pipeline:start', e => console.log('Pipeline started'));
+emitter.on('subtask:complete', e => console.log(`Subtask ${e.subTaskId} done`));
+emitter.on('pipeline:complete', e => console.log(`Pipeline complete: ${e.qualityScore}/100`));
+emitter.on('quality:refine', e => console.log('Re-synthesizing...'));
 ```
 
 ---
@@ -1850,17 +1864,17 @@ nexus-dev "Explain microservices" --verbose
 nexus-dev --help
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--mode <mode>` | Execution mode: speed, quality, balanced, creative |
-| `--verbose` | Show detailed pipeline output |
-| `--brand <name>` | Brand name for design tasks |
-| `--industry <type>` | Industry for design context |
-| `--stack <stack>` | Tech stack for stack-specific guidelines |
-| `--no-slope` | Disable AI SLOPE detection |
-| `--no-design-system` | Skip design system generation |
-| `--mtp` | Enable MTP hyperthreading |
-| `--product <type>` | Product type for design context |
+| Flag                 | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| `--mode <mode>`      | Execution mode: speed, quality, balanced, creative |
+| `--verbose`          | Show detailed pipeline output                      |
+| `--brand <name>`     | Brand name for design tasks                        |
+| `--industry <type>`  | Industry for design context                        |
+| `--stack <stack>`    | Tech stack for stack-specific guidelines           |
+| `--no-slope`         | Disable AI SLOPE detection                         |
+| `--no-design-system` | Skip design system generation                      |
+| `--mtp`              | Enable MTP hyperthreading                          |
+| `--product <type>`   | Product type for design context                    |
 
 ---
 
@@ -1868,20 +1882,20 @@ nexus-dev --help
 
 ### Full Options Table
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `defaultMode` | `string` | `'balanced'` | Default execution mode |
-| `maxParallelSubTasks` | `number` | `6` | Maximum concurrent model calls |
-| `enableThinking` | `boolean` | `true` | Enable chain-of-thought reasoning |
-| `subTaskTimeout` | `number` | `120000` | Timeout per subtask (ms) |
-| `qualityThreshold` | `number` | `70` | Score threshold for re-synthesis |
-| `enableMTP` | `boolean` | `false` | Enable MTP hyperthreading |
-| `maxTotalCostWeight` | `number` | `Infinity` | Maximum cost weight per run |
-| `enablePerformanceTracking` | `boolean` | `true` | Track model performance |
-| `enableEvents` | `boolean` | `true` | Enable event streaming |
-| `enableSlopeDetection` | `boolean` | `true` | AI SLOPE detection in design |
-| `slopeThreshold` | `number` | `40` | SLOPE score for re-generation |
-| `maxSlopeRetries` | `number` | `2` | Max SLOPE elimination attempts |
+| Option                      | Type      | Default      | Description                       |
+| --------------------------- | --------- | ------------ | --------------------------------- |
+| `defaultMode`               | `string`  | `'balanced'` | Default execution mode            |
+| `maxParallelSubTasks`       | `number`  | `6`          | Maximum concurrent model calls    |
+| `enableThinking`            | `boolean` | `true`       | Enable chain-of-thought reasoning |
+| `subTaskTimeout`            | `number`  | `120000`     | Timeout per subtask (ms)          |
+| `qualityThreshold`          | `number`  | `70`         | Score threshold for re-synthesis  |
+| `enableMTP`                 | `boolean` | `false`      | Enable MTP hyperthreading         |
+| `maxTotalCostWeight`        | `number`  | `Infinity`   | Maximum cost weight per run       |
+| `enablePerformanceTracking` | `boolean` | `true`       | Track model performance           |
+| `enableEvents`              | `boolean` | `true`       | Enable event streaming            |
+| `enableSlopeDetection`      | `boolean` | `true`       | AI SLOPE detection in design      |
+| `slopeThreshold`            | `number`  | `40`         | SLOPE score for re-generation     |
+| `maxSlopeRetries`           | `number`  | `2`          | Max SLOPE elimination attempts    |
 
 ### Preset Configurations
 
@@ -2026,16 +2040,16 @@ node --test tests/runner.mjs --section synthesis
 
 ### Test Sections
 
-| Section | Tests | Description |
-|---------|-------|-------------|
-| Decomposition | 20 | Task splitting, dependency detection |
-| Routing | 25 | ARL scoring, mode influence, load balance |
-| Execution | 20 | Parallel execution, retry, timeout |
-| Synthesis | 20 | Quality scoring, refinement |
-| Code Review | 15 | Diff parsing, review pipeline |
-| Design Skill | 15 | SLOPE detection, knowledge base search |
-| MTP | 10 | Hyperthreaded pipeline |
-| **Total** | **125** | |
+| Section       | Tests   | Description                               |
+| ------------- | ------- | ----------------------------------------- |
+| Decomposition | 20      | Task splitting, dependency detection      |
+| Routing       | 25      | ARL scoring, mode influence, load balance |
+| Execution     | 20      | Parallel execution, retry, timeout        |
+| Synthesis     | 20      | Quality scoring, refinement               |
+| Code Review   | 15      | Diff parsing, review pipeline             |
+| Design Skill  | 15      | SLOPE detection, knowledge base search    |
+| MTP           | 10      | Hyperthreaded pipeline                    |
+| **Total**     | **125** |                                           |
 
 ---
 
@@ -2051,15 +2065,18 @@ const result = await orch.process('Explain quantum entanglement and its applicat
 import { createDesignSkillEngine } from 'nexus-dev-mmf';
 const engine = createDesignSkillEngine({ enableSlopeDetection: true });
 const design = await engine.process({
-  id: '1', query: 'Design a SaaS pricing page',
-  brandName: 'CloudPay', industry: 'fintech',
+  id: '1',
+  query: 'Design a SaaS pricing page',
+  brandName: 'CloudPay',
+  industry: 'fintech',
 });
 
 // Example 3: Code review
 import { createCodeReviewEngine } from 'nexus-dev-mmf';
 const reviewer = createCodeReviewEngine();
 const review = await reviewer.review({
-  diff: myDiff, language: 'typescript',
+  diff: myDiff,
+  language: 'typescript',
 });
 
 // Example 4: Budget-constrained execution

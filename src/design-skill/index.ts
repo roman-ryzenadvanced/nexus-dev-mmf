@@ -9,35 +9,19 @@
  * AI SLOPE = AI-generated Sameness, Lack of Originality, Over-reliance on Patterns, Emptiness
  */
 
+export { createDesignSkillEngine, DesignSkillEngine } from './design-engine.js';
+export { detectDomain, getAvailableDomains, getAvailableStacks, multiDomainSearch, searchDomain, searchStack } from './search-engine.js';
 export type {
+  AISlopeCategory,
+  AISlopeIssue,
+  AISlopeReport,
+  DesignRoutingDecision,
+  DesignSkillConfig,
   DesignSkillRequest,
   DesignSkillResult,
-  DesignSystemRecommendation,
-  DesignSystemColors,
-  DesignSystemTypography,
-  DesignRoutingDecision,
   DesignSubDomain,
-  AISlopeReport,
-  AISlopeIssue,
-  AISlopeCategory,
-  DesignSkillConfig,
+  DesignSystemColors,
+  DesignSystemRecommendation,
+  DesignSystemTypography,
 } from './types.js';
-
-export {
-  AI_SLOPE_PATTERNS,
-  DEFAULT_DESIGN_SKILL_CONFIG,
-} from './types.js';
-
-export {
-  DesignSkillEngine,
-  createDesignSkillEngine,
-} from './design-engine.js';
-
-export {
-  searchDomain,
-  searchStack,
-  multiDomainSearch,
-  detectDomain,
-  getAvailableDomains,
-  getAvailableStacks,
-} from './search-engine.js';
+export { AI_SLOPE_PATTERNS, DEFAULT_DESIGN_SKILL_CONFIG } from './types.js';

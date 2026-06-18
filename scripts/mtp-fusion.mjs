@@ -27,16 +27,26 @@ let overlapDelay = 200;
 const queryParts = [];
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
-  if (arg === '--mode' && args[i + 1]) { mode = args[++i]; }
-  else if (arg === '--no-spec') { enableSpecDecomp = false; enableSpecExec = false; }
-  else if (arg === '--no-spec-decomp') { enableSpecDecomp = false; }
-  else if (arg === '--no-spec-exec') { enableSpecExec = false; }
-  else if (arg === '--no-inc-synth') { enableIncSynth = false; }
-  else if (arg === '--no-conc-quality') { enableConcQuality = false; }
-  else if (arg === '--threads' && args[i + 1]) { maxThreads = parseInt(args[++i]); }
-  else if (arg === '--max-spec' && args[i + 1]) { maxSpec = parseInt(args[++i]); }
-  else if (arg === '--overlap' && args[i + 1]) { overlapDelay = parseInt(args[++i]); }
-  else if (arg === '--help' || arg === '-h') {
+  if (arg === '--mode' && args[i + 1]) {
+    mode = args[++i];
+  } else if (arg === '--no-spec') {
+    enableSpecDecomp = false;
+    enableSpecExec = false;
+  } else if (arg === '--no-spec-decomp') {
+    enableSpecDecomp = false;
+  } else if (arg === '--no-spec-exec') {
+    enableSpecExec = false;
+  } else if (arg === '--no-inc-synth') {
+    enableIncSynth = false;
+  } else if (arg === '--no-conc-quality') {
+    enableConcQuality = false;
+  } else if (arg === '--threads' && args[i + 1]) {
+    maxThreads = parseInt(args[++i]);
+  } else if (arg === '--max-spec' && args[i + 1]) {
+    maxSpec = parseInt(args[++i]);
+  } else if (arg === '--overlap' && args[i + 1]) {
+    overlapDelay = parseInt(args[++i]);
+  } else if (arg === '--help' || arg === '-h') {
     console.log(`
 MTP Fusion Runner — Multi-Threaded Pipeline for Nexus-Dev MMFE
 
@@ -62,8 +72,9 @@ the next stage is already being prepared. This overlaps:
   - Quality Scoring (concurrent)
 `);
     process.exit(0);
+  } else {
+    queryParts.push(arg);
   }
-  else { queryParts.push(arg); }
 }
 
 const query = queryParts.join(' ').trim();
@@ -113,19 +124,34 @@ async function runMTPFusion() {
 
   // Flagship decomposition
   const flagshipStart = Date.now();
-  const flagshipPromise = callModel(zai, 'glm-5.2', [
-    { role: 'system', content: DECOMPOSER_PROMPT },
-    { role: 'user', content: `DECOMPOSE: ${query}\nMODE: ${mode}\nMAX PARALLEL: 6` },
-  ], 0.3, true);
+  const flagshipPromise = callModel(
+    zai,
+    'glm-5.2',
+    [
+      { role: 'system', content: DECOMPOSER_PROMPT },
+      {
+        role: 'user',
+        content: `DECOMPOSE: ${query}\nMODE: ${mode}\nMAX PARALLEL: 6`,
+      },
+    ],
+    0.3,
+    true
+  );
   trackActive(1);
 
   // Speculative fast decomposition
   let specDecompPromise = null;
   if (enableSpecDecomp) {
-    specDecompPromise = callModel(zai, 'glm-5', [
-      { role: 'system', content: FAST_DECOMP_PROMPT },
-      { role: 'user', content: `Quick decompose: ${query}` },
-    ], 0.5, false);
+    specDecompPromise = callModel(
+      zai,
+      'glm-5',
+      [
+        { role: 'system', content: FAST_DECOMP_PROMPT },
+        { role: 'user', content: `Quick decompose: ${query}` },
+      ],
+      0.5,
+      false
+    );
     trackActive(1);
     console.log('  │ 🔮 Speculative decomposition started (glm-5)');
   }
@@ -135,11 +161,10 @@ async function runMTPFusion() {
   let decompSource = 'flagship';
 
   try {
-    decomposedRaw = await Promise.race([
-      flagshipPromise,
-      new Promise(resolve => setTimeout(() => resolve(null), 8000)),
-    ]);
-  } catch (e) { decomposedRaw = null; }
+    decomposedRaw = await Promise.race([flagshipPromise, new Promise(resolve => setTimeout(() => resolve(null), 8000))]);
+  } catch (e) {
+    decomposedRaw = null;
+  }
   trackActive(-1);
 
   if (!decomposedRaw && specDecompPromise) {
@@ -187,12 +212,27 @@ async function runMTPFusion() {
     // Primary execution
     const pStart = Date.now();
     primaryPromises.push(
-      callModel(zai, model, [
-        { role: 'system', content: `You are a specialized assistant for: "${task.description}". Produce a precise result.` },
-        { role: 'user', content: task.input },
-      ], 0.4, model === 'glm-5.2' || model === 'glm-5.2-1m' || model === 'glm-4.7').then(r => {
+      callModel(
+        zai,
+        model,
+        [
+          {
+            role: 'system',
+            content: `You are a specialized assistant for: "${task.description}". Produce a precise result.`,
+          },
+          { role: 'user', content: task.input },
+        ],
+        0.4,
+        model === 'glm-5.2' || model === 'glm-5.2-1m' || model === 'glm-4.7'
+      ).then(r => {
         trackActive(-1);
-        return { id: i, model, result: r, time: Date.now() - pStart, type: 'primary' };
+        return {
+          id: i,
+          model,
+          result: r,
+          time: Date.now() - pStart,
+          type: 'primary',
+        };
       })
     );
     trackActive(1);
@@ -202,16 +242,39 @@ async function runMTPFusion() {
       const specModel = 'glm-5v-turbo';
       const sStart = Date.now();
       specPromises.push(
-        callModel(zai, specModel, [
-          { role: 'system', content: 'Quick draft response. Be direct and factual.' },
-          { role: 'user', content: task.input },
-        ], 0.3, false).then(r => {
-          trackActive(-1);
-          return { id: i, model: specModel, result: r, time: Date.now() - sStart, type: 'speculative' };
-        }).catch(() => {
-          trackActive(-1);
-          return { id: i, model: specModel, result: '', time: Date.now() - sStart, type: 'speculative-failed' };
-        })
+        callModel(
+          zai,
+          specModel,
+          [
+            {
+              role: 'system',
+              content: 'Quick draft response. Be direct and factual.',
+            },
+            { role: 'user', content: task.input },
+          ],
+          0.3,
+          false
+        )
+          .then(r => {
+            trackActive(-1);
+            return {
+              id: i,
+              model: specModel,
+              result: r,
+              time: Date.now() - sStart,
+              type: 'speculative',
+            };
+          })
+          .catch(() => {
+            trackActive(-1);
+            return {
+              id: i,
+              model: specModel,
+              result: '',
+              time: Date.now() - sStart,
+              type: 'speculative-failed',
+            };
+          })
       );
       trackActive(1);
       console.log(`  │ 🔮 Speculative draft started for subtask ${i + 1}`);
@@ -219,10 +282,7 @@ async function runMTPFusion() {
   }
 
   // Wait for all results
-  const [primaryResults, specResults] = await Promise.all([
-    Promise.allSettled(primaryPromises),
-    Promise.allSettled(specPromises),
-  ]);
+  const [primaryResults, specResults] = await Promise.all([Promise.allSettled(primaryPromises), Promise.allSettled(specPromises)]);
 
   // Collect results
   const subtaskOutputs = [];
@@ -261,10 +321,19 @@ async function runMTPFusion() {
     const incStart = Date.now();
     trackActive(1);
     try {
-      incrementalAnswer = await callModel(zai, 'glm-5.1', [
-        { role: 'system', content: INC_SYNTH_PROMPT },
-        { role: 'user', content: buildSynthInput(query, subtaskOutputs, true) },
-      ], 0.4, false);
+      incrementalAnswer = await callModel(
+        zai,
+        'glm-5.1',
+        [
+          { role: 'system', content: INC_SYNTH_PROMPT },
+          {
+            role: 'user',
+            content: buildSynthInput(query, subtaskOutputs, true),
+          },
+        ],
+        0.4,
+        false
+      );
       console.log(`  │ 📝 Incremental synthesis completed (${Date.now() - incStart}ms)`);
     } catch (e) {
       console.log('  │ ⚠️  Incremental synthesis failed, continuing');
@@ -275,10 +344,19 @@ async function runMTPFusion() {
   // Final synthesis
   const synthStart = Date.now();
   trackActive(1);
-  const finalAnswer = await callModel(zai, 'glm-5.2', [
-    { role: 'system', content: MTP_SYNTH_PROMPT },
-    { role: 'user', content: buildSynthInput(query, subtaskOutputs, false, incrementalAnswer) },
-  ], 0.5, true);
+  const finalAnswer = await callModel(
+    zai,
+    'glm-5.2',
+    [
+      { role: 'system', content: MTP_SYNTH_PROMPT },
+      {
+        role: 'user',
+        content: buildSynthInput(query, subtaskOutputs, false, incrementalAnswer),
+      },
+    ],
+    0.5,
+    true
+  );
   trackActive(-1);
   console.log(`  │ ✅ Final synthesis completed (${Date.now() - synthStart}ms)`);
   console.log('  └─────────────────────────────────────────────────────');
@@ -289,10 +367,22 @@ async function runMTPFusion() {
   trackActive(1);
   let qualityScore = 50;
   try {
-    const scoreRaw = await callModel(zai, 'glm-5', [
-      { role: 'system', content: 'Score this response 0-100 on completeness, accuracy, coherence, depth, clarity. Return ONLY a number.' },
-      { role: 'user', content: `QUERY: ${query}\n\nRESPONSE:\n${finalAnswer}\n\nScore:` },
-    ], 0.1, false);
+    const scoreRaw = await callModel(
+      zai,
+      'glm-5',
+      [
+        {
+          role: 'system',
+          content: 'Score this response 0-100 on completeness, accuracy, coherence, depth, clarity. Return ONLY a number.',
+        },
+        {
+          role: 'user',
+          content: `QUERY: ${query}\n\nRESPONSE:\n${finalAnswer}\n\nScore:`,
+        },
+      ],
+      0.1,
+      false
+    );
     qualityScore = parseInt(scoreRaw.replace(/[^0-9]/g, '')) || 50;
     qualityScore = Math.max(0, Math.min(100, qualityScore));
   } catch (e) {}
@@ -305,10 +395,22 @@ async function runMTPFusion() {
     console.log('  │ 🔄 Refining with GLM 4.7...');
     trackActive(1);
     try {
-      const refined = await callModel(zai, 'glm-4.7', [
-        { role: 'system', content: `Improve this answer (scored ${qualityScore}/100). Add depth, fix gaps, enhance clarity.` },
-        { role: 'user', content: `QUERY: ${query}\n\nANSWER:\n${finalAnswer}\n\nImproved version:` },
-      ], 0.6, true);
+      const refined = await callModel(
+        zai,
+        'glm-4.7',
+        [
+          {
+            role: 'system',
+            content: `Improve this answer (scored ${qualityScore}/100). Add depth, fix gaps, enhance clarity.`,
+          },
+          {
+            role: 'user',
+            content: `QUERY: ${query}\n\nANSWER:\n${finalAnswer}\n\nImproved version:`,
+          },
+        ],
+        0.6,
+        true
+      );
       if (refined) {
         answer = refined;
         console.log('  │ ✅ Refinement completed');
@@ -332,7 +434,7 @@ async function runMTPFusion() {
   console.log(`  🤖 Models: ${modelsUsed.join(', ')}`);
   console.log(`  🔮 Speculative hits: ${specUsed}`);
   console.log(`  📈 Peak concurrency: ${metrics.peakConcurrency}`);
-  console.log(`  ⚡ MTP Speedup: ~${Math.max(1, Math.round(subtaskOutputs.reduce((s, r) => s + (r?.time || 0), 0) / totalTime * 10) / 10)}x vs sequential`);
+  console.log(`  ⚡ MTP Speedup: ~${Math.max(1, Math.round((subtaskOutputs.reduce((s, r) => s + (r?.time || 0), 0) / totalTime) * 10) / 10)}x vs sequential`);
   console.log('═'.repeat(60) + '\n');
 }
 
@@ -346,28 +448,80 @@ async function callModel(zai, model, messages, temp, thinking) {
   return response.choices?.[0]?.message?.content ?? '';
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
 
 function parseSubtasks(raw) {
-  if (!raw) return [{ description: 'Complete task', input: query, requiredCapabilities: ['reasoning'] }];
+  if (!raw)
+    return [
+      {
+        description: 'Complete task',
+        input: query,
+        requiredCapabilities: ['reasoning'],
+      },
+    ];
   try {
     const arrMatch = raw.match(/\[[\s\S]*\]/);
-    if (!arrMatch) return [{ description: 'Complete task', input: query, requiredCapabilities: ['reasoning'] }];
+    if (!arrMatch)
+      return [
+        {
+          description: 'Complete task',
+          input: query,
+          requiredCapabilities: ['reasoning'],
+        },
+      ];
     const parsed = JSON.parse(arrMatch[0]);
     return Array.isArray(parsed) ? parsed : [{ description: 'Complete task', input: query }];
   } catch {
-    return [{ description: 'Complete task', input: query, requiredCapabilities: ['reasoning'] }];
+    return [
+      {
+        description: 'Complete task',
+        input: query,
+        requiredCapabilities: ['reasoning'],
+      },
+    ];
   }
 }
 
 function routeSubtasks(subtasks, mode) {
   const modelProfiles = {
-    'glm-5.2-1m': { caps: ['reasoning','math','code','analysis','long-context','planning'], speed: 5, quality: 1, tier: 'flagship' },
-    'glm-5.2': { caps: ['reasoning','math','code','analysis','planning','debugging'], speed: 3, quality: 1, tier: 'flagship' },
-    'glm-5.1': { caps: ['conversation','translation','summarization','extraction','creative-writing'], speed: 3, quality: 2, tier: 'standard' },
-    'glm-5': { caps: ['code','debugging','rapid-iteration','summarization','extraction'], speed: 1, quality: 3, tier: 'fast' },
-    'glm-5v-turbo': { caps: ['rapid-iteration','code','debugging','vision'], speed: 1, quality: 3, tier: 'fast' },
-    'glm-4.7': { caps: ['creative-writing','code','documentation','refactoring','analysis'], speed: 4, quality: 2, tier: 'creative' },
+    'glm-5.2-1m': {
+      caps: ['reasoning', 'math', 'code', 'analysis', 'long-context', 'planning'],
+      speed: 5,
+      quality: 1,
+      tier: 'flagship',
+    },
+    'glm-5.2': {
+      caps: ['reasoning', 'math', 'code', 'analysis', 'planning', 'debugging'],
+      speed: 3,
+      quality: 1,
+      tier: 'flagship',
+    },
+    'glm-5.1': {
+      caps: ['conversation', 'translation', 'summarization', 'extraction', 'creative-writing'],
+      speed: 3,
+      quality: 2,
+      tier: 'standard',
+    },
+    'glm-5': {
+      caps: ['code', 'debugging', 'rapid-iteration', 'summarization', 'extraction'],
+      speed: 1,
+      quality: 3,
+      tier: 'fast',
+    },
+    'glm-5v-turbo': {
+      caps: ['rapid-iteration', 'code', 'debugging', 'vision'],
+      speed: 1,
+      quality: 3,
+      tier: 'fast',
+    },
+    'glm-4.7': {
+      caps: ['creative-writing', 'code', 'documentation', 'refactoring', 'analysis'],
+      speed: 4,
+      quality: 2,
+      tier: 'creative',
+    },
   };
 
   return subtasks.map(task => {
@@ -379,16 +533,30 @@ function routeSubtasks(subtasks, mode) {
       let score = 0;
       const capMatch = reqCaps.filter(c => profile.caps.includes(c)).length;
       const capRatio = reqCaps.length > 0 ? capMatch / reqCaps.length : 0.5;
-      if (capRatio >= 1) score += 40; else if (capRatio >= 0.5) score += 20; else score -= 10;
+      if (capRatio >= 1) score += 40;
+      else if (capRatio >= 0.5) score += 20;
+      else score -= 10;
 
       switch (mode) {
-        case 'speed': score += (6 - profile.speed) * 10; break;
-        case 'quality': score += (6 - profile.quality) * 10; break;
-        case 'balanced': score += (6 - profile.speed) * 5 + (6 - profile.quality) * 5; break;
-        case 'creative': if (profile.tier === 'creative') score += 30; score += (6 - profile.quality) * 8; break;
+        case 'speed':
+          score += (6 - profile.speed) * 10;
+          break;
+        case 'quality':
+          score += (6 - profile.quality) * 10;
+          break;
+        case 'balanced':
+          score += (6 - profile.speed) * 5 + (6 - profile.quality) * 5;
+          break;
+        case 'creative':
+          if (profile.tier === 'creative') score += 30;
+          score += (6 - profile.quality) * 8;
+          break;
       }
 
-      if (score > bestScore) { bestScore = score; bestModel = modelId; }
+      if (score > bestScore) {
+        bestScore = score;
+        bestModel = modelId;
+      }
     }
 
     return { description: task.description || task.input, model: bestModel };

@@ -40,8 +40,15 @@ interface Props {
 // A Line is one terminal row. Segments allow per-token color (so a header
 // row can mix role color + dim meta + accent), exactly like koda's Text
 // component composing colored runs on a single physical line.
-interface Seg { text: string; color?: string; bold?: boolean; dim?: boolean; }
-interface Line { segs: Seg[]; }
+interface Seg {
+  text: string;
+  color?: string;
+  bold?: boolean;
+  dim?: boolean;
+}
+interface Line {
+  segs: Seg[];
+}
 const blank: Line = { segs: [{ text: ' ' }] };
 
 function seg(text: string, color?: string, opts?: { bold?: boolean; dim?: boolean }): Seg {
@@ -69,7 +76,10 @@ function wrapLine(text: string, width: number): string[] {
   if (!text) return [' '];
   const out: string[] = [];
   for (const piece of text.split('\n')) {
-    if (piece.length <= width) { out.push(piece.length ? piece : ' '); continue; }
+    if (piece.length <= width) {
+      out.push(piece.length ? piece : ' ');
+      continue;
+    }
     const words = piece.split(' ');
     let cur = '';
     for (const w of words) {
@@ -79,7 +89,10 @@ function wrapLine(text: string, width: number): string[] {
         if (cur) out.push(cur);
         // Hard-break a single word longer than the width.
         let rest = w;
-        while (rest.length > width) { out.push(rest.slice(0, width)); rest = rest.slice(width); }
+        while (rest.length > width) {
+          out.push(rest.slice(0, width));
+          rest = rest.slice(width);
+        }
         cur = rest;
       }
     }
@@ -93,12 +106,21 @@ function wrapLine(text: string, width: number): string[] {
 function involvedModels(m: ChatMessage, showRouting: boolean): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
-  for (const name of (m.model || '').split(',').map((s) => s.trim()).filter(Boolean)) {
-    if (!seen.has(name)) { seen.add(name); out.push(name); }
+  for (const name of (m.model || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)) {
+    if (!seen.has(name)) {
+      seen.add(name);
+      out.push(name);
+    }
   }
   if (showRouting && m.routing) {
     for (const r of m.routing) {
-      if (r.selectedModel && !seen.has(r.selectedModel)) { seen.add(r.selectedModel); out.push(r.selectedModel); }
+      if (r.selectedModel && !seen.has(r.selectedModel)) {
+        seen.add(r.selectedModel);
+        out.push(r.selectedModel);
+      }
     }
   }
   return out;
@@ -109,28 +131,29 @@ function involvedModels(m: ChatMessage, showRouting: boolean): string[] {
 function messageToLines(m: ChatMessage, showRouting: boolean, showTokens: boolean, width: number, t: ReturnType<typeof getTheme>): Line[] {
   const contentWidth = Math.max(8, width - 2);
   const isObserver = m.provider === 'observer';
-  const roleColor =
-    isObserver ? t.accent2
-    : m.role === 'user' ? t.accent
-    : m.role === 'assistant' ? t.primary
-    : m.role === 'system' ? t.primaryDim
-    : t.warn;
-  const sigil =
-    isObserver ? '👁'
-    : m.role === 'user' ? SIGILS.user
-    : m.role === 'assistant' ? SIGILS.assistant
-    : m.role === 'system' ? SIGILS.system
-    : SIGILS.tool;
+  const roleColor = isObserver ? t.accent2 : m.role === 'user' ? t.accent : m.role === 'assistant' ? t.primary : m.role === 'system' ? t.primaryDim : t.warn;
+  const sigil = isObserver
+    ? '👁'
+    : m.role === 'user'
+      ? SIGILS.user
+      : m.role === 'assistant'
+        ? SIGILS.assistant
+        : m.role === 'system'
+          ? SIGILS.system
+          : SIGILS.tool;
   const roleLabel = isObserver ? 'observer' : m.role;
 
   const lines: Line[] = [];
 
   // Header line: sigil + role (colored) + dim meta segments.
-  const header: Seg[] = [
-    seg(`${sigil} ${roleLabel}`, roleColor, { bold: true }),
-  ];
+  const header: Seg[] = [seg(`${sigil} ${roleLabel}`, roleColor, { bold: true })];
   if (m.elapsedMs != null) header.push(seg(` · ${fmtTime(m.elapsedMs)}`, t.primaryMute, { dim: true }));
-  if (showTokens && m.tokens) header.push(seg(` · ${m.tokens.input}↑ ${m.tokens.output}↓`, t.primaryMute, { dim: true }));
+  if (showTokens && m.tokens)
+    header.push(
+      seg(` · ${m.tokens.input}↑ ${m.tokens.output}↓`, t.primaryMute, {
+        dim: true,
+      })
+    );
   if (m.tokens?.output && m.elapsedMs) {
     const tps = fmtTps(m.tokens.output, m.elapsedMs);
     if (tps) header.push(seg(` · ${tps}`, t.accent, { dim: true }));
@@ -161,16 +184,15 @@ function messageToLines(m: ChatMessage, showRouting: boolean, showTokens: boolea
           seg(`${SIGILS.routing} `, t.primaryMute, { dim: true }),
           seg(`${r.subtaskLabel} `, t.primaryDim),
           seg(`→ ${r.selectedModel} `, t.accent2),
-          seg(`${Math.round(r.confidence * 100)}%`, t.primaryMute, { dim: true }),
+          seg(`${Math.round(r.confidence * 100)}%`, t.primaryMute, {
+            dim: true,
+          }),
         ],
       });
     }
     if (m.qualityScore != null) {
       lines.push({
-        segs: [
-          seg(`${SIGILS.routing} `, t.primaryMute, { dim: true }),
-          seg(`quality ${m.qualityScore}/100`, t.success),
-        ],
+        segs: [seg(`${SIGILS.routing} `, t.primaryMute, { dim: true }), seg(`quality ${m.qualityScore}/100`, t.success)],
       });
     }
   }
@@ -215,7 +237,7 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!streaming) return;
-    const id = setInterval(() => setTick((n) => (n + 1) % 1000000), FRAME_MS);
+    const id = setInterval(() => setTick(n => (n + 1) % 1000000), FRAME_MS);
     return () => clearInterval(id);
   }, [streaming]);
 
@@ -253,10 +275,10 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
     const page = Math.max(1, viewport - 2);
     if (key.pageDown || (key.ctrl && key.downArrow)) {
       autoFollowRef.current = false;
-      setScrollTop((s) => Math.min(maxTop, s + page));
+      setScrollTop(s => Math.min(maxTop, s + page));
     } else if (key.pageUp || (key.ctrl && key.upArrow)) {
       autoFollowRef.current = false;
-      setScrollTop((s) => Math.max(0, s - page));
+      setScrollTop(s => Math.max(0, s - page));
     } else if (key.ctrl && _input === 'end') {
       autoFollowRef.current = true;
       setScrollTop(maxTop);
@@ -308,7 +330,7 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
               const step = Math.trunc(wheelAccumRef.current);
               wheelAccumRef.current -= step;
               autoFollowRef.current = step > 0; // scrolling up unfollows
-              setScrollTop((s) => Math.max(0, Math.min(maxTopRef.current, s + step)));
+              setScrollTop(s => Math.max(0, Math.min(maxTopRef.current, s + step)));
             }
           }
         }
@@ -333,7 +355,9 @@ export function ChatView({ messages, streaming, streamBuffer, showRouting, showT
         {window.map((l, i) => (
           <Text key={top + i} wrap="truncate">
             {l.segs.map((s, j) => (
-              <Text key={j} color={s.color} bold={s.bold} dimColor={s.dim}>{s.text}</Text>
+              <Text key={j} color={s.color} bold={s.bold} dimColor={s.dim}>
+                {s.text}
+              </Text>
             ))}
           </Text>
         ))}

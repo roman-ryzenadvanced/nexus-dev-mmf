@@ -13,21 +13,21 @@
  * @version 4.0.0
  */
 
-import {
-  LLMProvider,
-  ProviderId,
-  ProviderConfig,
-  MultiProviderConfig,
-  ProviderMessage,
-  ProviderCompletionOptions,
-  ProviderCompletionResult,
-  DEFAULT_MULTI_PROVIDER_CONFIG,
-} from './types.js';
-import { ZAIProvider } from './zai-provider.js';
-import { ZAIAnthropicProvider } from './zai-anthropic-provider.js';
-import { OpenAIProvider } from './openai-provider.js';
 import { AnthropicProvider } from './anthropic-provider.js';
 import { GoogleProvider } from './google-provider.js';
+import { OpenAIProvider } from './openai-provider.js';
+import type {
+  LLMProvider,
+  MultiProviderConfig,
+  ProviderCompletionOptions,
+  ProviderCompletionResult,
+  ProviderConfig,
+  ProviderId,
+  ProviderMessage,
+} from './types.js';
+import { DEFAULT_MULTI_PROVIDER_CONFIG } from './types.js';
+import { ZAIAnthropicProvider } from './zai-anthropic-provider.js';
+import { ZAIProvider } from './zai-provider.js';
 
 /**
  * Factory function to create a provider instance by ID.
@@ -53,7 +53,10 @@ function createProviderInstance(providerId: ProviderId): LLMProvider {
  * Parse a model ID that may include a provider prefix.
  * E.g., "openai/gpt-4o" → { provider: 'openai', model: 'gpt-4o' }
  */
-function parseModelId(modelId: string): { provider?: ProviderId; model: string } {
+function parseModelId(modelId: string): {
+  provider?: ProviderId;
+  model: string;
+} {
   const slashIndex = modelId.indexOf('/');
   if (slashIndex === -1) {
     return { model: modelId };
@@ -72,9 +75,9 @@ function parseModelId(modelId: string): { provider?: ProviderId; model: string }
 }
 
 export class ProviderRouter {
-  private providers: Map<ProviderId, LLMProvider> = new Map();
-  private config: MultiProviderConfig;
-  private initializing: Set<ProviderId> = new Set();
+  private readonly providers: Map<ProviderId, LLMProvider> = new Map();
+  private readonly config: MultiProviderConfig;
+  private readonly initializing: Set<ProviderId> = new Set();
 
   constructor(config?: Partial<MultiProviderConfig>) {
     this.config = { ...DEFAULT_MULTI_PROVIDER_CONFIG, ...config };
@@ -92,16 +95,12 @@ export class ProviderRouter {
       provider: this.config.defaultProvider,
     };
 
-    initPromises.push(
-      this.initProvider(this.config.defaultProvider, defaultConfig)
-    );
+    initPromises.push(this.initProvider(this.config.defaultProvider, defaultConfig));
 
     // Initialize other configured providers
     for (const [providerId, providerConfig] of Object.entries(this.config.providers)) {
       if (providerId === this.config.defaultProvider) continue;
-      initPromises.push(
-        this.initProvider(providerId as ProviderId, providerConfig!)
-      );
+      initPromises.push(this.initProvider(providerId as ProviderId, providerConfig));
     }
 
     await Promise.allSettled(initPromises);
@@ -130,9 +129,7 @@ export class ProviderRouter {
       const provider = createProviderInstance(providerId);
       await Promise.race([
         provider.initialize(config),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Initialization timeout')), this.config.initTimeout)
-        ),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Initialization timeout')), this.config.initTimeout)),
       ]);
       this.providers.set(providerId, provider);
     } catch (error: any) {
@@ -157,11 +154,7 @@ export class ProviderRouter {
    * 2. Known model → provider mapping (from registry)
    * 3. Default provider
    */
-  async complete(
-    modelId: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult> {
+  async complete(modelId: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult> {
     const parsed = parseModelId(modelId);
     const provider = this.resolveProvider(parsed.provider, parsed.model);
     return provider.complete(parsed.model, messages, options);
@@ -234,8 +227,8 @@ export class ProviderRouter {
 
     throw new Error(
       `No provider available for model '${model ?? 'unknown'}'. ` +
-      `Configured providers: [${Array.from(this.providers.keys()).join(', ')}]. ` +
-      `Ensure at least one provider is initialized.`
+        `Configured providers: [${Array.from(this.providers.keys()).join(', ')}]. ` +
+        `Ensure at least one provider is initialized.`
     );
   }
 
@@ -293,7 +286,7 @@ export class ProviderRouter {
       }
     });
     await Promise.allSettled(checks);
-    return results as Record<ProviderId, boolean>;
+    return results;
   }
 
   /**

@@ -47,17 +47,14 @@ export function StatusBar({ config, streaming, lastMessage, metrics }: Props) {
   const liveTps = streaming && metrics && !hasProgress ? `${metrics.tps.toFixed(1)} tok/s` : '';
   const liveTokens = streaming && metrics && !hasProgress ? `${metrics.tokens} tok` : '';
   const liveElapsed = streaming && metrics ? fmtElapsed(metrics.elapsedMs) : '';
-  const progressLabel = hasProgress && metrics?.progress
-    ? `${metrics.progress.stage} ${metrics.progress.subtasksDone}/${metrics.progress.subtasksTotal || '?'}`
-    : '';
+  const progressLabel =
+    hasProgress && metrics?.progress ? `${metrics.progress.stage} ${metrics.progress.subtasksDone}/${metrics.progress.subtasksTotal || '?'}` : '';
 
   // Final metrics from the last completed message.
   const latency = !streaming && lastMessage?.elapsedMs != null ? `${Math.round(lastMessage.elapsedMs)}ms` : '';
   const quality = lastMessage?.qualityScore ? `Q:${lastMessage.qualityScore}/100` : '';
   const models = lastMessage?.model ? `via ${lastMessage.model}` : '';
-  const tokens = !streaming && lastMessage?.tokens
-    ? `${lastMessage.tokens.input}↑ ${lastMessage.tokens.output}↓`
-    : '';
+  const tokens = !streaming && lastMessage?.tokens ? `${lastMessage.tokens.input}↑ ${lastMessage.tokens.output}↓` : '';
 
   return (
     <Box flexDirection="row" justifyContent="space-between" paddingX={1}>

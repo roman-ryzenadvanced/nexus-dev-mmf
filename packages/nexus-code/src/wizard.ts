@@ -28,9 +28,12 @@ export async function runWizard(opts: WizardOptions = {}): Promise<string> {
 
   // Already exists? Confirm overwrite (in interactive mode).
   if (existsSync(configPath) && !opts.nonInteractive) {
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const overwrite = await new Promise<boolean>((resolve) => {
-      rl.question(`Config already exists at ${configPath}. Overwrite? [y/N] `, (answer) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    const overwrite = await new Promise<boolean>(resolve => {
+      rl.question(`Config already exists at ${configPath}. Overwrite? [y/N] `, answer => {
         rl.close();
         resolve(answer.trim().toLowerCase().startsWith('y'));
       });
@@ -44,9 +47,7 @@ export async function runWizard(opts: WizardOptions = {}): Promise<string> {
   }
 
   // Build the config.
-  const config = opts.nonInteractive
-    ? buildDefaultConfig()
-    : await promptForConfig();
+  const config = opts.nonInteractive ? buildDefaultConfig() : await promptForConfig();
 
   await saveConfig(config, configPath);
 
@@ -90,8 +91,7 @@ function buildDefaultConfig(): AppConfig {
 
 async function promptForConfig(): Promise<AppConfig> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const ask = (q: string): Promise<string> =>
-    new Promise((resolve) => rl.question(q, (a) => resolve(a.trim())));
+  const ask = (q: string): Promise<string> => new Promise(resolve => rl.question(q, a => resolve(a.trim())));
 
   try {
     console.log('\n=== nexus-code config wizard ===\n');
@@ -99,27 +99,24 @@ async function promptForConfig(): Promise<AppConfig> {
     const validProviders = ['zai', 'openai', 'anthropic'];
     const finalProviderId = validProviders.includes(providerId) ? providerId : 'zai';
 
-    const defaultModel =
-      finalProviderId === 'zai' ? 'glm-5.2' :
-      finalProviderId === 'openai' ? 'gpt-4o' :
-      'claude-3-5-sonnet-20241022';
+    const defaultModel = finalProviderId === 'zai' ? 'glm-5.2' : finalProviderId === 'openai' ? 'gpt-4o' : 'claude-3-5-sonnet-20241022';
     const modelId = (await ask(`Default model [${defaultModel}]: `)) || defaultModel;
 
     const modeInput = (await ask('MMFE mode (speed|balanced|quality|creative) [balanced]: ')) || 'balanced';
     const validModes: MMFEMode[] = ['speed', 'balanced', 'quality', 'creative'];
-    const mode = validModes.includes(modeInput as MMFEMode) ? modeInput as MMFEMode : 'balanced';
+    const mode = validModes.includes(modeInput as MMFEMode) ? (modeInput as MMFEMode) : 'balanced';
 
     const mmfeInput = (await ask('Enable MMFE orchestrator? [Y/n]: ')) || 'y';
     const useMMFE = !mmfeInput.toLowerCase().startsWith('n');
 
     const themeInput = (await ask('Theme (tech-dark|editorial-light|hacker-terminal) [tech-dark]: ')) || 'tech-dark';
     const validThemes: Array<'tech-dark' | 'editorial-light' | 'hacker-terminal'> = ['tech-dark', 'editorial-light', 'hacker-terminal'];
-    const theme = validThemes.includes(themeInput as typeof validThemes[number])
-      ? themeInput as 'tech-dark' | 'editorial-light' | 'hacker-terminal'
+    const theme = validThemes.includes(themeInput as (typeof validThemes)[number])
+      ? (themeInput as 'tech-dark' | 'editorial-light' | 'hacker-terminal')
       : 'tech-dark';
 
     // Always include all 3 default providers so switching is easy later.
-    const providers: ProviderConfig[] = DEFAULT_PROVIDERS.map((p) => {
+    const providers: ProviderConfig[] = DEFAULT_PROVIDERS.map(p => {
       if (p.id === finalProviderId) {
         return { ...p, defaultModel: modelId };
       }

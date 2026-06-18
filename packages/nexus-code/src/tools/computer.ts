@@ -52,11 +52,15 @@ function normalizeUrl(target: string): string {
  * Preference: an explicit binary > xdg-open > generic launchers.
  * Returns the command + whether to pass the URL through a shell.
  */
-function resolveBrowserLauncher(explicit?: string): { cmd: string; args: string[]; needsShell: boolean } {
+function resolveBrowserLauncher(explicit?: string): {
+  cmd: string;
+  args: string[];
+  needsShell: boolean;
+} {
   const candidates = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'firefox', 'brave-browser', 'microsoft-edge'];
   // Explicit browser wins if it's installed.
   if (explicit && explicit !== 'default') {
-    const bin = candidates.find((c) => c === explicit || c.startsWith(explicit));
+    const bin = candidates.find(c => c === explicit || c.startsWith(explicit));
     if (bin) return { cmd: bin, args: [], needsShell: false };
     // Allow a raw binary name too.
     return { cmd: explicit, args: [], needsShell: false };
@@ -69,7 +73,7 @@ function resolveBrowserLauncher(explicit?: string): { cmd: string; args: string[
 export const browseTool: ToolDefinition = {
   name: 'browse',
   description:
-    'Open a URL (or search the web) in the default web browser on the user\'s machine. ' +
+    "Open a URL (or search the web) in the default web browser on the user's machine. " +
     'Use this when the user asks to launch/open/preview a website, URL, or search the web. ' +
     'The browser opens immediately and this returns right away — it never blocks.',
   parameters: {
@@ -111,7 +115,10 @@ export const previewTool: ToolDefinition = {
   parameters: {
     type: 'object',
     properties: {
-      path: { type: 'string', description: 'Absolute or relative path to the file/folder to preview.' },
+      path: {
+        type: 'string',
+        description: 'Absolute or relative path to the file/folder to preview.',
+      },
     },
     required: ['path'],
   },
@@ -145,7 +152,10 @@ export const launchAppTool: ToolDefinition = {
   parameters: {
     type: 'object',
     properties: {
-      application: { type: 'string', description: 'Executable name or path, e.g. "code", "gnome-terminal", "gimp".' },
+      application: {
+        type: 'string',
+        description: 'Executable name or path, e.g. "code", "gnome-terminal", "gimp".',
+      },
       args: {
         type: 'array',
         items: { type: 'string' },

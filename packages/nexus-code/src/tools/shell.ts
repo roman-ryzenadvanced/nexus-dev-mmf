@@ -12,10 +12,7 @@ export interface ShellResult {
   durationMs: number;
 }
 
-export async function execShell(
-  command: string,
-  opts: { cwd?: string; timeoutMs?: number; signal?: AbortSignal } = {}
-): Promise<ShellResult> {
+export async function execShell(command: string, opts: { cwd?: string; timeoutMs?: number; signal?: AbortSignal } = {}): Promise<ShellResult> {
   const start = Date.now();
   return new Promise((resolve, reject) => {
     const child = spawn(command, {
@@ -26,8 +23,8 @@ export async function execShell(
     });
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d) => (stdout += d.toString()));
-    child.stderr.on('data', (d) => (stderr += d.toString()));
+    child.stdout.on('data', d => (stdout += d.toString()));
+    child.stderr.on('data', d => (stderr += d.toString()));
     child.on('error', reject);
     child.on('close', (exitCode, signal) => {
       resolve({

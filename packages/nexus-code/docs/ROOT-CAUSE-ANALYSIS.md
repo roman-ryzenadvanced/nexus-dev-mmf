@@ -13,6 +13,7 @@ This document catalogs every bug, defect, or issue found and fixed in the nexus-
 **Root cause:** The v1.1.0 scaffold assumed `z-ai-web-dev-sdk` exposed a `createOrchestrator()` function. Inspecting the actual `z-ai-web-dev-sdk@0.0.18` package on npm revealed the SDK only exports a `ZAI` class with a static `create()` async factory and a `chat.completions.create()` method — no orchestrator function exists in the SDK itself. The orchestrator lives in the root `nexus-dev-mmf` package (this monorepo).
 
 **Exact fix:** Rewrote `src/providers/zai.ts` from scratch. The new implementation:
+
 1. Lazily imports `z-ai-web-dev-sdk` via `await import(...)` so the TUI boots even if the SDK isn't installed
 2. Calls `ZAI.create()` (async factory) to get a client instance
 3. Calls `client.chat.completions.create({ model, messages, stream })` for direct provider calls
@@ -28,6 +29,7 @@ This document catalogs every bug, defect, or issue found and fixed in the nexus-
 **Root cause:** The v1.1.0 scaffold assumed `@anthropic-ai/sdk` exposed a `.models.list()` method like the OpenAI SDK. The Anthropic SDK doesn't expose this — the `/v1/models` endpoint exists in the API (added 2024-10) but isn't wrapped by the SDK's TypeScript client.
 
 **Exact fix:** Replaced `this.client.models.list()` with a raw `fetch()` call in `src/providers/anthropic.ts`:
+
 1. Builds URL: `${baseURL}/v1/models?limit=100`
 2. Sends `GET` with headers `x-api-key: <key>` and `anthropic-version: 2023-06-01`
 3. Parses `json.data[].id` and `json.data[].display_name` (Anthropic's response shape)
@@ -43,6 +45,7 @@ This document catalogs every bug, defect, or issue found and fixed in the nexus-
 **Root cause:** The v1.1.0 scaffold built the messages array as `{ role: string; content: string }[]` — but the OpenAI SDK's strict TypeScript types require the `role` field to be a union of literal strings (`'system' | 'user' | 'assistant' | 'tool'`), not a generic `string`. TypeScript can't narrow `string` to the literal union automatically.
 
 **Exact fix:** In `src/providers/openai.ts`:
+
 1. Added explicit type alias: `type OpenAIMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam`
 2. Cast the payload: `const payload: OpenAIMessage[] = messages.map((m) => ({ role: m.role as 'system' | 'user' | 'assistant', content: m.content }))`
 3. The cast tells TypeScript "I know the role string is one of the valid literals" — which it is, because the internal `ChatMessage.role` type is already the correct union
@@ -56,10 +59,13 @@ This document catalogs every bug, defect, or issue found and fixed in the nexus-
 **Root cause:** The v1.1.0 scaffold used `<Text dim>` based on a wrong assumption about Ink's API. Ink's `<Text>` component exposes `dimColor` (camelCase), not `dim`. This is a documentation-drift bug — older Ink versions may have used `dim`, but Ink 5.x uses `dimColor`.
 
 **Exact fix:** In `src/components/InputBox.tsx`, replaced:
+
 ```tsx
 <Text color={THEME.primaryMute} dim>
 ```
+
 with:
+
 ```tsx
 <Text color={THEME.primaryMute} dimColor>
 ```
@@ -73,6 +79,7 @@ with:
 **Root cause:** The `diff` package's `Change` type marks `count` as `number | undefined` (because some diff operations don't produce a count). The scaffold used `c.count` directly without checking.
 
 **Exact fix:** Used nullish coalescing:
+
 ```ts
 if (c.added) added += c.count ?? 0;
 if (c.removed) removed += c.count ?? 0;
@@ -87,6 +94,7 @@ if (c.removed) removed += c.count ?? 0;
 **Root cause:** `App.tsx` lives at `src/App.tsx`. It imported modules using `../models/...`, `../commands/...`, `../config/...` — but `../` from `src/App.tsx` goes UP to `src/`'s parent (the package root), not into `src/models/`. The correct relative path is `./models/...`.
 
 **Exact fix:** Changed all 7 imports from `../` to `./`:
+
 - `../models/fetcher.js` → `./models/fetcher.js`
 - `../models/registry.js` → `./models/registry.js`
 - `../commands/index.js` → `./commands/index.js`
@@ -104,6 +112,7 @@ if (c.removed) removed += c.count ?? 0;
 **Root cause:** The `SlashCommandContext` type's method signatures use parameter names without explicit types, and when App.tsx destructured them into callbacks, TypeScript lost the type information.
 
 **Exact fix:** Added explicit types to every parameter in the `ctx` object:
+
 - `(patch)` → `(patch: Partial<AppConfig>)`
 - `(prev)` → `(prev: AppConfig)`
 - `(s)` → `(s: Session)`
@@ -123,6 +132,7 @@ if (c.removed) removed += c.count ?? 0;
 **Root cause:** TypeScript ESM convention requires imports to use `.js` extensions (even when the source file is `.ts`). Node.js's native ESM loader resolves these correctly. But Vite (which vitest uses under the hood) doesn't strip the `.js` extension — it tries to find a literal `.js` file on disk, which doesn't exist (only `.ts` does).
 
 **Exact fix:** Wrote a custom Vite plugin `stripJsExtPlugin` in `vitest.config.ts`:
+
 1. Implements `resolveId(source, importer)` with `enforce: 'pre'`
 2. When it sees an import ending in `.js`, strips the extension
 3. Computes the absolute path of the importer's directory
@@ -141,6 +151,7 @@ if (c.removed) removed += c.count ?? 0;
 **Root cause:** The v1.1.1 OpenAI provider only extracted `choice.message.content` from the response — it never looked at `choice.message.tool_calls`.
 
 **Exact fix:** Added a `parseToolCalls()` private method to `OpenAIProvider`:
+
 1. Takes the raw `tool_calls` array from the OpenAI response
 2. For each call, parses `function.arguments` (which arrives as a JSON string) into a JS object via `JSON.parse()`
 3. On parse failure (malformed JSON), falls back to `{ _raw: arguments }` instead of crashing
@@ -156,6 +167,7 @@ if (c.removed) removed += c.count ?? 0;
 **Root cause:** Anthropic returns tool calls as `tool_use` content blocks (not as a top-level `tool_calls` array like OpenAI). The v1.1.1 provider only filtered for `text` blocks.
 
 **Exact fix:** In `src/providers/anthropic.ts`, added:
+
 1. Filter `res.content` for blocks where `c.type === 'tool_use'`
 2. Map each to `{ id: tu.id, name: tu.name, args: tu.input, status: 'pending' }`
 3. Attach to `assistantMsg.toolCalls` when present
@@ -169,12 +181,14 @@ if (c.removed) removed += c.count ?? 0;
 **Root cause:** The Anthropic SDK's `Tool.InputSchema` type requires `type: 'object'` as a literal. The v1.1.2 provider passed `parameters` directly without ensuring the `type` field was set.
 
 **Exact fix:** In `src/providers/anthropic.ts`, wrapped the parameters:
+
 ```ts
 input_schema: {
   type: 'object' as const,
   ...(t.parameters as Record<string, unknown>),
 }
 ```
+
 This guarantees `type: 'object'` is always present, even if the caller's parameters object doesn't include it.
 
 ---
@@ -186,13 +200,17 @@ This guarantees `type: 'object'` is always present, even if the caller's paramet
 **Root cause:** The `Provider` interface was updated in v1.1.2 to return the full `ChatResponse` from the generator's return value, but the ZAI provider's `streamChat` was still declared with `void` as the return type.
 
 **Exact fix:** Updated `ZAIProvider.streamChat()` signature from:
+
 ```ts
 async *streamChat(...): AsyncGenerator<string, void, unknown>
 ```
+
 to:
+
 ```ts
 async *streamChat(...): AsyncGenerator<string, ChatResponse, unknown>
 ```
+
 and added a `return { message: assistantMsg }` at the end of the generator.
 
 ---
@@ -206,6 +224,7 @@ and added a `return { message: assistantMsg }` at the end of the generator.
 **Root cause:** When `MCPClient.connectStdio()` spawned a child process that immediately exited (e.g., command not found), the `child.stdin.write(req)` call in `sendStdio()` would emit an `EPIPE` error event on stdin. Since no error listener was attached to `stdin`, Node.js treated it as an unhandled exception and vitest surfaced it as a test crash.
 
 **Exact fix:** In `src/mcp/client.ts`:
+
 1. Attached an empty error handler to the child process: `child.on('error', () => {})` — suppresses the `ENOENT` event from non-existent commands
 2. Wrapped the `stdin.write()` call in try/catch — catches synchronous `EPIPE` errors
 3. Attached an error handler to stdin: `child.stdin?.on?.('error', () => {})` — catches async `EPIPE` errors
@@ -229,6 +248,7 @@ The actual error surfaces via the timeout in `sendStdio()` (which rejects after 
 ### 15. `bin/nexus.js` crashed with `SyntaxError: Unexpected token ':'`
 
 **Symptom:** Running `node bin/nexus.js --version` failed with:
+
 ```
 SyntaxError: Unexpected token ':'
     at const flag = (name: string) =>
@@ -237,6 +257,7 @@ SyntaxError: Unexpected token ':'
 **Root cause:** The v1.1.3 bin entry was written with TypeScript type annotations (`name: string`) but saved as `.js`. Node.js doesn't parse TypeScript syntax in `.js` files — it expects plain JavaScript. The `tsx` loader wasn't being used for the bin entry, only for `npm run dev`.
 
 **Exact fix:** Rewrote `bin/nexus.js` as plain JavaScript with no type annotations:
+
 1. Removed all `: string`, `: boolean`, etc. from function parameters
 2. Removed all `as const` and `as never` casts
 3. Kept the same logic, just plain JS
@@ -249,12 +270,15 @@ SyntaxError: Unexpected token ':'
 **Symptom:** Pipe mode failed immediately with `Error: The OPENAI_API_KEY environment variable is missing` — even when the user intended to use a different provider.
 
 **Root cause:** The v1.1.3 providers constructed the SDK client in the constructor:
+
 ```ts
 this.client = new OpenAI({ apiKey: opts.apiKey || process.env.OPENAI_API_KEY });
 ```
+
 The OpenAI SDK's constructor throws if no API key is provided. Since `buildProviders()` constructs ALL providers on boot, a missing key for ANY provider crashed the entire registry.
 
 **Exact fix:** Made client construction lazy in both `OpenAIProvider` and `AnthropicProvider`:
+
 1. Stored the options in a private `_clientOpts` field instead of constructing the client
 2. Added a private `get client()` accessor that constructs the client on first access
 3. Cached the constructed client in `_client`
@@ -271,12 +295,13 @@ The OpenAI SDK's constructor throws if no API key is provided. Since `buildProvi
 **Root cause:** The v1.1.4 theme refactor changed `color` from a plain object with `chalk` instances to a `Proxy` with getters that return `chalk.hex(...)` instances. `color.dim` now returns a `ChalkInstance` (a function), but `ChatView` was calling it as `color.dim('(streaming…)')` — which works because `ChalkInstance` is callable. However, the Proxy getter was returning a fresh `chalk.hex(...)` call each time, and under Vite's SSR transform, the re-export wasn't being recognized as callable.
 
 **Exact fix:** Replaced the `color.dim()` call with a nested `<Text>` component:
+
 ```tsx
 <Text color={THEME.accent}>
-  {SIGILS.assistant} assistant{' '}
-  <Text color={THEME.primaryDim}>(streaming…)</Text>
+  {SIGILS.assistant} assistant <Text color={THEME.primaryDim}>(streaming…)</Text>
 </Text>
 ```
+
 This avoids the `color` helper entirely for JSX rendering — Ink's `<Text color>` prop handles the coloring directly.
 
 ---
@@ -290,6 +315,7 @@ This avoids the `color` helper entirely for JSX rendering — Ink's `<Text color
 **Root cause:** The v1.1.5 plugin loader in `App.tsx` only registered plugin TOOLS with the `ToolRegistry` — it never registered plugin COMMANDS. The `REGISTRY` constant in `commands/builtin.ts` was a `const` array with no mechanism for runtime additions. `findCommand()` only searched `REGISTRY`, so plugin commands were invisible to the dispatcher.
 
 **Exact fix:** Added a runtime command registration system in `src/commands/builtin.ts`:
+
 1. New `PLUGIN_COMMANDS: SlashCommand[]` mutable array (forward-declared at top of file so the `help` command can use `allCommands()` before `REGISTRY` is defined)
 2. `registerPluginCommand(cmd)` — idempotent, refuses duplicates + collisions with builtin names
 3. `unregisterPluginCommand(name)` — removes by name
@@ -306,20 +332,24 @@ This avoids the `color` helper entirely for JSX rendering — Ink's `<Text color
 **Symptom:** `web.test.ts` failed in `beforeAll` with `ENOENT: no such file or directory, open '/tmp/nexus-web-test-1781689156971/config.json'`.
 
 **Root cause:** The original setup computed the temp directory name twice with `Date.now()`:
+
 ```ts
 testConfigDir = await mkdir(join(tmpdir(), `nexus-web-test-${Date.now()}`), ...)
   .then(() => join(tmpdir(), `nexus-web-test-${Date.now()}`))
   .catch(() => join(tmpdir(), `nexus-web-test-${Date.now()}`));
 ```
+
 Three separate `Date.now()` calls could return different values (especially under load), so `mkdir` created one directory and `writeFile` tried to write to a different one.
 
 **Exact fix:** Computed the directory name ONCE before passing it to `mkdir`:
+
 ```ts
 testConfigDir = join(tmpdir(), `nexus-web-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 await mkdir(testConfigDir, { recursive: true });
 testConfigPath = join(testConfigDir, 'config.json');
 await writeFile(testConfigPath, ...);
 ```
+
 The `Math.random()` suffix also prevents collisions between parallel test runs.
 
 ---
@@ -331,9 +361,11 @@ The `Math.random()` suffix also prevents collisions between parallel test runs.
 **Root cause:** The test used `expect(html).toContain('EventSource') === false` to assert that `EventSource` should NOT be in the HTML. But `expect().toContain()` returns a Chai assertion object (which is truthy), not a boolean. The `=== false` comparison was always `false`, so the assertion always "passed" — except vitest was actually evaluating the inner `toContain` which DID fail because `EventSource` was in the HTML.
 
 **Exact fix:** Replaced with proper negation:
+
 ```ts
 expect(html).not.toContain('new EventSource');
 ```
+
 Vitest's `.not` modifier properly negates the assertion.
 
 ---
@@ -347,22 +379,24 @@ Vitest's `.not` modifier properly negates the assertion.
 **Root cause:** The MCP client has TWO connection paths — `connectStdio()` and `connectHttp()` — each with its own `clientInfo` object. The initial rebrand pass only updated the stdio path (line 81) and missed the HTTP path (line 129).
 
 **Exact fix:** Updated the second `clientInfo` in `connectHttp()` to match:
+
 ```ts
 clientInfo: { name: 'nexus-code', version: '1.1.7' },
 ```
+
 Found via `grep -rn "nexus-tui" src/` after the initial rebrand pass.
 
 ---
 
 ## Summary
 
-| Version | Bugs fixed | Root causes |
-|---|---|---|
-| v1.1.1 | 8 | Wrong SDK API assumptions, type mismatches, Ink API drift, import path errors, Vite resolver gap |
-| v1.1.2 | 4 | Missing tool-call parsing, strict schema requirements, type signature drift |
-| v1.1.3 | 2 | Unhandled process errors, unused state |
-| v1.1.4 | 2 | TypeScript in .js files, eager SDK construction |
-| v1.1.5 | 1 | Proxy + JSX interaction |
-| v1.1.6 | 3 | Incomplete wiring, race condition, test assertion misuse |
-| v1.1.7 | 1 | Missed second code path during rebrand |
-| **Total** | **21** | |
+| Version   | Bugs fixed | Root causes                                                                                      |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------ |
+| v1.1.1    | 8          | Wrong SDK API assumptions, type mismatches, Ink API drift, import path errors, Vite resolver gap |
+| v1.1.2    | 4          | Missing tool-call parsing, strict schema requirements, type signature drift                      |
+| v1.1.3    | 2          | Unhandled process errors, unused state                                                           |
+| v1.1.4    | 2          | TypeScript in .js files, eager SDK construction                                                  |
+| v1.1.5    | 1          | Proxy + JSX interaction                                                                          |
+| v1.1.6    | 3          | Incomplete wiring, race condition, test assertion misuse                                         |
+| v1.1.7    | 1          | Missed second code path during rebrand                                                           |
+| **Total** | **21**     |                                                                                                  |

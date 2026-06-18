@@ -3,7 +3,7 @@
  * Defines the core data structures for task decomposition and orchestration.
  */
 
-import { ModelCapability } from './models.js';
+import type { ModelCapability } from './models.js';
 
 /**
  * A subtask produced by the Decomposition Phase.
@@ -17,9 +17,9 @@ export interface SubTask {
   requiredCapabilities: ModelCapability[];
   preferredModels: string[];
   priority: 'critical' | 'high' | 'medium' | 'low';
-  dependencies: string[];        // IDs of subtasks that must complete first
+  dependencies: string[]; // IDs of subtasks that must complete first
   estimatedComplexity: 'trivial' | 'simple' | 'moderate' | 'complex' | 'expert';
-  timeout: number;               // ms
+  timeout: number; // ms
   metadata: Record<string, unknown>;
 }
 
@@ -52,8 +52,8 @@ export interface OrchestrationRequest {
   maxParallelSubTasks?: number;
   enableThinking?: boolean;
   customSystemPrompt?: string;
-  conversationId?: string;           // For multi-turn conversations
-  maxCostWeight?: number;            // Budget constraint per request
+  conversationId?: string; // For multi-turn conversations
+  maxCostWeight?: number; // Budget constraint per request
   metadata: Record<string, unknown>;
 }
 
@@ -69,9 +69,9 @@ export interface OrchestrationResult {
   modelsUsed: string[];
   decompositionStrategy: string;
   synthesisStrategy: string;
-  qualityScore: number;          // 0-100 self-assessed quality
-  totalCostWeight: number;       // Sum of costWeight for all models used
-  conversationId?: string;       // If part of a multi-turn conversation
+  qualityScore: number; // 0-100 self-assessed quality
+  totalCostWeight: number; // Sum of costWeight for all models used
+  conversationId?: string; // If part of a multi-turn conversation
   metadata: Record<string, unknown>;
 }
 
@@ -83,20 +83,13 @@ export interface RoutingDecision {
   selectedModel: string;
   reason: string;
   alternativeModels: string[];
-  confidence: number;            // 0-1
+  confidence: number; // 0-1
 }
 
 /**
  * Pipeline stage tracking.
  */
-export type PipelineStage =
-  | 'received'
-  | 'decomposing'
-  | 'routing'
-  | 'executing'
-  | 'synthesizing'
-  | 'completed'
-  | 'failed';
+export type PipelineStage = 'received' | 'decomposing' | 'routing' | 'executing' | 'synthesizing' | 'completed' | 'failed';
 
 /**
  * Pipeline state for monitoring.

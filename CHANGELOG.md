@@ -24,7 +24,7 @@ This release transforms the Nexus Code TUI from a functional prototype into a po
 #### Live Metrics (the big one)
 
 - **Real-time token speed & counter** during direct streams — tokens, tok/s, and elapsed time update on every delta.
-- **Live progress during MMFE fusion** — because fusion is non-streaming, the UI now forwards *real* orchestrator events (`pipeline:stage`, `subtask:routed/completed`, `synthesis:started`) as `{stage, subtasksDone, subtasksTotal, modelsActive}`. The status bar shows `executing 2/4 8.4s` while models fan out, then the fused answer.
+- **Live progress during MMFE fusion** — because fusion is non-streaming, the UI now forwards _real_ orchestrator events (`pipeline:stage`, `subtask:routed/completed`, `synthesis:started`) as `{stage, subtasksDone, subtasksTotal, modelsActive}`. The status bar shows `executing 2/4 8.4s` while models fan out, then the fused answer.
 - A 250 ms wall-clock ticker keeps elapsed time live even before the first delta arrives.
 
 #### UI / UX Polish
@@ -41,7 +41,7 @@ This release transforms the Nexus Code TUI from a functional prototype into a po
 - **Session picker on boot** — launching `nexus` shows a picker: start a fresh session or resume any saved one (`↑↓` move, `↵` select, `n`/`esc` for new). Use `--new` to skip straight to a blank session or `--continue [name]` to resume a specific one.
 - **Type while streaming (pending queue)** — follow-ups typed mid-stream are queued and sent when the current response finishes, with a `[N queued]` hint. Ctrl+C aborts and clears the queue.
 - **Session persistence** — auto-save after every message (debounced), plus `/sessions`, `/continue [name|index]`, `/new`, and `--continue` / `--new` CLI flags. A `↺ continued from` banner confirms restores.
-- **Observer — side-channel model** 👁 — when you send a prompt *while* the main agent is streaming, you're asked whether to **queue** it for the main agent or fire it at the **Observer**, a cheap model (`glm-4.5-flash` by default) that answers immediately, grounded in the live behind-the-scenes feed. Observer messages render with a distinct `👁` sigil. Toggle with `/observer [on|off|<model>]`.
+- **Observer — side-channel model** 👁 — when you send a prompt _while_ the main agent is streaming, you're asked whether to **queue** it for the main agent or fire it at the **Observer**, a cheap model (`glm-4.5-flash` by default) that answers immediately, grounded in the live behind-the-scenes feed. Observer messages render with a distinct `👁` sigil. Toggle with `/observer [on|off|<model>]`.
 
 #### Docs
 
@@ -128,6 +128,7 @@ Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables rou
 #### Provider Abstraction Layer (`src/providers/`)
 
 **Core Interface (`src/providers/types.ts`)**
+
 - **`LLMProvider`** — The unified interface all providers must implement
   - `initialize(config)` — Authenticate and prepare the provider
   - `complete(model, messages, options)` — Execute a chat completion
@@ -142,12 +143,14 @@ Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables rou
 - **`MultiProviderConfig`** — Full multi-provider configuration with `DEFAULT_MULTI_PROVIDER_CONFIG`
 
 **ZAI Provider (`src/providers/zai-provider.ts`)**
+
 - Wraps `z-ai-web-dev-sdk` as an `LLMProvider`
 - Supports: `glm-5.2-1m`, `glm-5.2`, `glm-5.1`, `glm-5`, `glm-5v-turbo`, `glm-4.7`
 - Full backward compatibility — existing code using ZAI works unchanged
 - Auto-initializes via `ZAI.create()`, no API key required
 
 **OpenAI Provider (`src/providers/openai-provider.ts`)**
+
 - Direct HTTP adapter for the OpenAI Chat Completions API
 - Supports: `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini`, `o3`, `o3-mini`, `o4-mini`
 - Handles reasoning models (o3, o4-mini) with `max_completion_tokens` and `reasoning_effort`
@@ -155,6 +158,7 @@ Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables rou
 - Supports custom base URL (for proxies, Azure OpenAI, etc.) and organization ID
 
 **Anthropic Provider (`src/providers/anthropic-provider.ts`)**
+
 - Direct HTTP adapter for the Anthropic Messages API
 - Supports: `claude-opus-4`, `claude-sonnet-4`, `claude-haiku-3.5` (+ older 3.5 models)
 - Model aliases: `'claude-opus-4'` → `'claude-opus-4-20250514'`, etc.
@@ -163,6 +167,7 @@ Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables rou
 - Requires `ANTHROPIC_API_KEY` env var or `apiKey` in config
 
 **Google Provider (`src/providers/google-provider.ts`)**
+
 - Direct HTTP adapter for the Google AI (Gemini) API
 - Supports: `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2-flash`, `gemini-2-flash-lite`
 - Converts messages to Gemini's `contents` format with `systemInstruction`
@@ -170,6 +175,7 @@ Nexus-Dev MMFE v4.0 introduces a **Provider Abstraction Layer** that enables rou
 - Requires `GOOGLE_API_KEY` or `GEMINI_API_KEY` env var or `apiKey` in config
 
 **Provider Router (`src/providers/provider-router.ts`)**
+
 - Central registry and router for all LLM providers
 - Model ID resolution order:
   1. **Provider prefix**: `"openai/gpt-4o"` → OpenAI provider
@@ -213,12 +219,12 @@ const result4 = await router.completeWithFallback('gpt-4o', messages, {}, ['gemi
 
 The model registry now includes **16 models across 4 providers**:
 
-| Provider | Models | Tiers |
-|----------|--------|-------|
+| Provider  | Models                                                     | Tiers                                      |
+| --------- | ---------------------------------------------------------- | ------------------------------------------ |
 | ZAI (GLM) | glm-5.2-1m, glm-5.2, glm-5.1, glm-5, glm-5v-turbo, glm-4.7 | flagship, standard, fast, creative, vision |
-| OpenAI | gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini | flagship, standard |
-| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-3.5 | flagship, fast |
-| Google | gemini-2.5-pro, gemini-2.5-flash, gemini-2-flash | flagship, fast |
+| OpenAI    | gpt-4o, gpt-4.1, gpt-4.1-mini, o3, o4-mini                 | flagship, standard                         |
+| Anthropic | claude-opus-4, claude-sonnet-4, claude-haiku-3.5           | flagship, fast                             |
+| Google    | gemini-2.5-pro, gemini-2.5-flash, gemini-2-flash           | flagship, fast                             |
 
 - **`ModelProfile.provider`** — New required field (`ProviderId`) that maps each model to its provider
 - **`getModelsByProvider(provider)`** — Get all models from a specific provider
@@ -285,22 +291,26 @@ OUTPUT:    Final design specification with quality report
 ```
 
 #### Design Engine (`src/design-skill/design-engine.ts`)
+
 - **`DesignEngine`** — The core 8-phase design pipeline engine
 - **`process(request)`** — Process a design request through the full pipeline
 - **`createDesignEngine(config?)`** — Factory function
 - Supports all 4 Nexus execution modes: `speed`, `quality`, `balanced`, `creative`
 
 #### BM25 Search Engine (`src/design-skill/search-engine.ts`)
+
 - **`DesignSearchEngine`** — BM25-powered search across the design knowledge base
 - **`search(query, domain?, topK?)`** — Search for relevant design entries
 - 9 design sub-domains with 600+ curated entries covering layouts, color systems, typography, interactions, accessibility, responsive patterns, animation, iconography, and design tokens
 
 #### AI SLOPE Detection (`src/design-skill/types.ts`)
+
 - **10 SLOPE categories**: Generic Templates, Color-by-Numbers, Layout Defaults, Cookie-Cutter Components, Placeholder Content, Uniform Spacing, Predictable Interactions, Default Typography, Stock Visual Language, Template Patterns
 - Each category includes detection heuristics, severity scoring (1-5), and elimination strategies
 - SLOPE score calculated as weighted average across all detected patterns
 
 #### Design Knowledge Base (`src/design-skill/data/`)
+
 - **`layout-patterns.json`** — 80+ layout patterns with responsive variants
 - **`color-systems.json`** — 60+ color system definitions with accessibility ratings
 - **`typography-systems.json`** — 50+ typography scale systems
@@ -312,6 +322,7 @@ OUTPUT:    Final design specification with quality report
 - **`design-tokens.json`** — 100+ design token definitions
 
 #### Design CLI (`scripts/design-fusion.mjs`)
+
 - Design generation from the command line with SLOPE elimination
 - Flags: `--mode`, `--domain`, `--no-slope`, `--quality-threshold`, `--mtp`
 
@@ -350,11 +361,13 @@ RE-LOC:   Fast model re-locates comments that failed line matching
 ```
 
 With MTP enabled, phases overlap:
+
 - Plan + Review run concurrently (speculative review starts before plan completes)
 - Synthesis begins as soon as first reviews arrive (incremental)
 - Filter runs concurrently with synthesis
 
 #### Code Review Engine (`src/code-review/review-engine.ts`)
+
 - **`CodeReviewEngine`** — The core multi-model code review engine
 - **`review(request)`** — Process a code review request through the 5-phase pipeline
 - **`createCodeReviewEngine(config?)`** — Factory function
@@ -363,7 +376,10 @@ With MTP enabled, phases overlap:
 ```javascript
 import { createCodeReviewEngine } from 'nexus-dev-mmf';
 
-const engine = createCodeReviewEngine({ mode: 'balanced', enableFilterPhase: true });
+const engine = createCodeReviewEngine({
+  mode: 'balanced',
+  enableFilterPhase: true,
+});
 const result = await engine.review({
   id: 'review-1',
   diff: unifiedDiffString,
@@ -372,10 +388,11 @@ const result = await engine.review({
   requirementBackground: 'This change adds user authentication',
 });
 console.log(result.comments); // Filtered, deduplicated review comments
-console.log(result.summary);  // { filesReviewed, totalComments, highSeverity, ... }
+console.log(result.summary); // { filesReviewed, totalComments, highSeverity, ... }
 ```
 
 #### Language-Specific Review Rules (`src/code-review/rules.ts`)
+
 - **14 language rule sets** adapted from open-code-review: default, TypeScript, JavaScript, Java, Kotlin, Rust, C++, C, Go, Python, properties, JSON, YAML, XML, ArkTS
 - Each rule set contains detailed checklists covering correctness, security, performance, maintainability, and language-specific best practices
 - **`detectLanguage(filePath)`** — Auto-detect review language from file extension
@@ -383,7 +400,9 @@ console.log(result.summary);  // { filesReviewed, totalComments, highSeverity, .
 - **`getReviewRuleForFile(filePath)`** — Get the review rule auto-detected for a file
 
 #### Prompt Templates (`src/code-review/prompts.ts`)
+
 Adapted from open-code-review's `task_template.json`:
+
 - **MAIN_REVIEW_SYSTEM** — Primary code review system prompt with strict focus rules
 - **PLAN_REVIEW_SYSTEM** — Risk analysis and review planning prompt
 - **REVIEW_FILTER_SYSTEM** — Fact-checking prompt (falsify, not verify principle)
@@ -392,6 +411,7 @@ Adapted from open-code-review's `task_template.json`:
 - **`fillTemplate(template, values)`** — Template variable interpolation
 
 #### Diff Parser (`src/code-review/diff-parser.ts`)
+
 - **`parseDiff(diffText)`** — Parse unified diff into structured DiffHunk objects
 - **`getChangedFiles(diffText)`** — Extract list of changed file paths
 - **`findCodeInDiff(hunks, filePath, codeSnippet)`** — Locate code snippets in diff for comment anchoring
@@ -399,6 +419,7 @@ Adapted from open-code-review's `task_template.json`:
 - **`getTotalChangedLines(hunks)`** — Count total changed lines (for plan phase threshold)
 
 #### Code Review Types (`src/code-review/types.ts`)
+
 - **`ReviewComment`** — A single review finding with severity, location, and suggestion
 - **`DiffHunk`** / **`DiffLine`** — Parsed unified diff structure
 - **`CodeReviewRequest`** — Input to the review engine (diff + context + options)
@@ -408,6 +429,7 @@ Adapted from open-code-review's `task_template.json`:
 - **`CodeReviewConfig`** — Configuration with `DEFAULT_CODE_REVIEW_CONFIG`
 
 #### Code Review CLI (`scripts/code-review.mjs`)
+
 - Multi-model code review from the command line
 - Flags: `--diff`, `--file`, `--mode`, `--no-filter`, `--no-plan`, `--plan`, `--mtp`, `--rule`, `--background`
 
@@ -430,6 +452,7 @@ node scripts/code-review.mjs --mode quality --mtp  # Quality MTP review
 ### 📄 Attribution
 
 Code review prompts, rule checklists, and pipeline concepts adapted from [Alibaba Open Code Review](https://github.com/alibaba/open-code-review) (Apache-2.0 License). Key adaptations:
+
 - Go agent loop replaced with Nexus multi-model parallel execution
 - Single-model tool-calling replaced with multi-model fusion + synthesis
 - Anthropic/OpenAI client replaced with `z-ai-web-dev-sdk`
@@ -450,6 +473,7 @@ MTP:         [D+SpecD][R+Exec+SpecExec][IncSynth+Exec][FinalSynth+Quality]  = ~5
 ```
 
 #### MTP Engine (`src/core/mtp-engine.ts`)
+
 - **`MTPEngine`** — The core hyperthreading pipeline engine
 - **`process(query, options?)`** — Process a query through the MTP pipeline
 - **`setEventCallback(cb)`** — Subscribe to MTP pipeline events
@@ -466,12 +490,14 @@ console.log(result.metadata.mtpMetrics.speedupFactor); // ~2.2x
 ```
 
 #### Speculative Decomposition
+
 - Flagship model (glm-5.2) and fast model (glm-5) decompose the query simultaneously
 - If the flagship is slow (>8s), the speculative decomposition result is used instead
 - Never wait — the fast model provides a fallback that keeps the pipeline moving
 - Configurable via `mtp.speculativeDecomposition` (default: `true`)
 
 #### Speculative Execution
+
 - Fast models (glm-5v-turbo) draft answers for subtasks before routing completes
 - Primary results are always preferred over speculative drafts
 - If a primary result fails or is slow, the speculative draft is automatically used
@@ -479,6 +505,7 @@ console.log(result.metadata.mtpMetrics.speedupFactor); // ~2.2x
 - Maximum speculative threads per pipeline: `mtp.maxSpeculativeThreads` (default: 4)
 
 #### Incremental Synthesis
+
 - Start building the answer before all subtasks have finished
 - GLM 5.1 progressively integrates each arriving result into a growing answer
 - The incremental draft is passed to the final synthesis as a starting point
@@ -486,11 +513,13 @@ console.log(result.metadata.mtpMetrics.speedupFactor); // ~2.2x
 - Configurable via `mtp.incrementalSynthesis` (default: `true`)
 
 #### Concurrent Quality Scoring
+
 - Quality scoring runs in parallel with final synthesis — no sequential wait
 - If quality is below threshold, refinement kicks in immediately
 - Configurable via `mtp.concurrentQuality` (default: `true`)
 
 #### MTP Types (`src/core/mtp-types.ts`)
+
 - **`MTPThread`** — Represents an independent execution lane (id, type, state, model, speculative flag)
 - **`MTPThreadType`** — 9 thread types covering all MTP operations
 - **`MTPThreadState`** — Thread lifecycle (pending, running, completed, failed, cancelled, superseded)
@@ -502,6 +531,7 @@ console.log(result.metadata.mtpMetrics.speedupFactor); // ~2.2x
 - **`MTPDecomposedSubtask`** — Subtask from decomposition with source and confidence tracking
 
 #### MTP CLI (`scripts/mtp-fusion.mjs`)
+
 - Full MTP pipeline execution from the command line
 - Flags: `--mode`, `--no-spec`, `--no-spec-decomp`, `--no-spec-exec`, `--no-inc-synth`, `--threads`, `--max-spec`, `--overlap`
 - Shows real-time thread execution logs with emoji indicators
@@ -531,6 +561,7 @@ node scripts/mtp-fusion.mjs --no-spec "Run without speculation"
 ### 🚀 New Features
 
 #### Embedding-Based Task Similarity (`src/core/embedding-similarity.ts`)
+
 - **`EmbeddingSimilarity`** — Stores (embedding, modelId, qualityScore) tuples from successful subtask executions and retrieves the best historical model for new subtasks based on cosine similarity
 - **`addRecord(description, modelId, qualityScore, capabilities, executionTimeMs)`** — Store a new embedding record after successful execution
 - **`findSimilar(taskDescription, topK)`** — Find the most similar historical records, sorted by combined similarity × quality score
@@ -554,6 +585,7 @@ for (const result of similar) {
 ```
 
 #### Web UI Dashboard (`dashboard/index.html`)
+
 - **Standalone HTML dashboard** — No dependencies, single file, dark theme
 - **Real-time pipeline visualization** — 6-stage progress indicator (Received → Decomposing → Routing → Executing → Synthesizing → Completed)
 - **4 KPI stat cards** — Total Pipelines, Avg Quality Score, Avg Latency, Success Rate
@@ -573,6 +605,7 @@ for (const result of similar) {
 ### 🚀 Major New Features
 
 #### `/nexus` Command Integration
+
 - **`/nexus` prefix** — Messages starting with `/nexus` are automatically processed through the multi-model fusion pipeline
 - **`scripts/direct-fusion.mjs`** — Fast 2-phase fusion runner (parallel model calls + synthesis) optimized for interactive use
 - **`scripts/quick-run.mjs`** — Speed-optimized runner for rapid responses
@@ -582,6 +615,7 @@ for (const result of similar) {
 - Three model set presets per mode: `speed`, `quality`, `balanced`, `creative`
 
 #### Custom Model Registration (`src/core/model-registry.ts`)
+
 - **`registerModel(profile)`** — Register a new model into the global registry at runtime
 - **`registerModels(profiles)`** — Batch registration of multiple models
 - **`unregisterModel(modelId)`** — Remove a model from the registry
@@ -610,6 +644,7 @@ registerModel({
 ```
 
 #### Budget-Aware Routing (`src/core/budget-routing.ts`)
+
 - **`BudgetConstraint` interface** — Define max total cost, max cost per task, cheaper preference, and optimization threshold
 - **`optimizeForBudget(decisions, subtasks, budget)`** — Replaces expensive model assignments with cheaper alternatives to fit within budget
 - **`calculateTotalCost(decisions)`** — Calculate the total cost weight of a routing plan
@@ -625,6 +660,7 @@ console.log(`Total cost: ${result.totalCostWeight}`);
 ```
 
 #### Multi-Turn Conversation Support (`src/core/conversation.ts`)
+
 - **`ConversationManager`** — Manages conversation context across multiple orchestration requests
 - **`orchestrator.startConversation()`** — Create a new conversation, returns conversation ID
 - **`orchestrator.continueConversation(id, query)`** — Process a follow-up within the same context
@@ -640,6 +676,7 @@ const r2 = await orch.continueConversation(convId, 'What about their downsides?'
 ```
 
 #### Pipeline Event Streaming (`src/core/events.ts`)
+
 - **`NexusEventEmitter`** — EventEmitter-based event system for real-time pipeline monitoring
 - 13 event types: `pipeline:started`, `pipeline:stage`, `pipeline:completed`, `pipeline:failed`, `subtask:routed`, `subtask:started`, `subtask:completed`, `subtask:failed`, `subtask:retrying`, `synthesis:started`, `synthesis:completed`, `synthesis:refining`, `quality:scored`
 - **Wildcard listener** — `orchestrator.getEvents().onAny(callback)` subscribes to all events
@@ -655,6 +692,7 @@ orch.getEvents().onAny(event => {
 ```
 
 #### Model Performance Tracking (`src/core/performance-tracker.ts`)
+
 - **`PerformanceTracker`** — Tracks execution stats per model across requests
 - Records: total/successful/failed calls, avg execution time, avg quality score, total tokens, capability-specific scores
 - **`getBestModelForCapability(capability)`** — Find the model with the highest observed quality for a capability

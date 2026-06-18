@@ -42,6 +42,7 @@ This PR delivers a production-ready, feature-complete terminal AI coding assista
 See [`docs/ROOT-CAUSE-ANALYSIS.md`](./docs/ROOT-CAUSE-ANALYSIS.md) for the full root-cause analysis of every bug fixed.
 
 Key fixes:
+
 - Z.ai provider rewritten to match real `z-ai-web-dev-sdk@0.0.18` API
 - Anthropic `fetchModels()` uses raw `fetch()` (SDK doesn't expose `.models.list()`)
 - OpenAI/Anthropic providers use lazy SDK construction (no crash on missing API key)
@@ -52,14 +53,14 @@ Key fixes:
 
 ## Quality gates — all green
 
-| Gate | Result |
-|---|---|
-| TypeScript strict typecheck | **0 errors** |
-| `npm run build` | **40 JS files, clean output** |
-| `npm run lint` | **0 problems** |
-| `npm test` | **230 passing + 8 skipped** (env-gated) |
-| `npm run test:coverage` | **64.65% lines** (threshold 40%) |
-| CLI boot | `nexus --version` → **`1.1.7`** |
+| Gate                        | Result                                  |
+| --------------------------- | --------------------------------------- |
+| TypeScript strict typecheck | **0 errors**                            |
+| `npm run build`             | **40 JS files, clean output**           |
+| `npm run lint`              | **0 problems**                          |
+| `npm test`                  | **230 passing + 8 skipped** (env-gated) |
+| `npm run test:coverage`     | **64.65% lines** (threshold 40%)        |
+| CLI boot                    | `nexus --version` → **`1.1.7`**         |
 
 ## Test plan
 

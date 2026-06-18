@@ -8,11 +8,11 @@ This document catalogs every feature in nexus-code, organized by category. Each 
 
 ### Three provider kinds (v1.1.0)
 
-| Provider | Kind | Use case |
-|---|---|---|
-| Z.ai | `zai` | MMFE-native — routes through the Multi-Model Fusion Engine |
-| OpenAI-compatible | `openai` | OpenAI, OpenRouter, Together, Groq, Ollama, vLLM, llama.cpp |
-| Anthropic | `anthropic` | Anthropic API + any Anthropic-compatible endpoint |
+| Provider          | Kind        | Use case                                                    |
+| ----------------- | ----------- | ----------------------------------------------------------- |
+| Z.ai              | `zai`       | MMFE-native — routes through the Multi-Model Fusion Engine  |
+| OpenAI-compatible | `openai`    | OpenAI, OpenRouter, Together, Groq, Ollama, vLLM, llama.cpp |
+| Anthropic         | `anthropic` | Anthropic API + any Anthropic-compatible endpoint           |
 
 **How to use:** Configure in `~/.nexus/config.json` under `providers`. Switch at runtime with `/provider <id>`.
 
@@ -44,25 +44,25 @@ Providers no longer crash on construction when their API key is missing — the 
 
 ### Four execution modes (v1.1.0)
 
-| Mode | Behavior | Use case |
-|---|---|---|
-| `speed` | Prioritizes glm-5, glm-5v-turbo | Drafts, rapid iteration |
-| `balanced` *(default)* | Spreads across all models | Most prompts |
-| `quality` | Prioritizes glm-5.2, glm-5.2-1m | Final deliverables |
-| `creative` | Biases toward glm-4.7 | Writing, brainstorming |
+| Mode                   | Behavior                        | Use case                |
+| ---------------------- | ------------------------------- | ----------------------- |
+| `speed`                | Prioritizes glm-5, glm-5v-turbo | Drafts, rapid iteration |
+| `balanced` _(default)_ | Spreads across all models       | Most prompts            |
+| `quality`              | Prioritizes glm-5.2, glm-5.2-1m | Final deliverables      |
+| `creative`             | Biases toward glm-4.7           | Writing, brainstorming  |
 
 **How to use:** `/mode [speed|balanced|quality|creative]` or `--mode=<mode>` at boot.
 
 ### Six GLM models (v1.1.0)
 
-| Model | Tier | Strengths |
-|---|---|---|
-| `glm-5.2-1m` | Flagship | Advanced reasoning, 1M context |
-| `glm-5.2` | Flagship | Balanced quality-speed |
-| `glm-5.1` | Standard | Nuanced language, summarization |
-| `glm-5` | Fast | Speed, efficiency |
-| `glm-5v-turbo` | Fast | Vision support |
-| `glm-4.7` | Creative | Creative generation, code synthesis |
+| Model          | Tier     | Strengths                           |
+| -------------- | -------- | ----------------------------------- |
+| `glm-5.2-1m`   | Flagship | Advanced reasoning, 1M context      |
+| `glm-5.2`      | Flagship | Balanced quality-speed              |
+| `glm-5.1`      | Standard | Nuanced language, summarization     |
+| `glm-5`        | Fast     | Speed, efficiency                   |
+| `glm-5v-turbo` | Fast     | Vision support                      |
+| `glm-4.7`      | Creative | Creative generation, code synthesis |
 
 ### Routing decisions panel (v1.1.0)
 
@@ -90,13 +90,13 @@ Pass `tools=[...]` to any provider. The orchestrator handles execution.
 
 ### 5 builtin tools (v1.1.1)
 
-| Tool | Purpose |
-|---|---|
-| `read_file` | Read file contents (size-capped at 200KB) |
-| `write_file` | Overwrite a file |
-| `shell` | Execute shell commands with cwd + timeout |
-| `diff` | Generate unified diff |
-| `apply_diff` | Apply new content to a file |
+| Tool         | Purpose                                   |
+| ------------ | ----------------------------------------- |
+| `read_file`  | Read file contents (size-capped at 200KB) |
+| `write_file` | Overwrite a file                          |
+| `shell`      | Execute shell commands with cwd + timeout |
+| `diff`       | Generate unified diff                     |
+| `apply_diff` | Apply new content to a file               |
 
 ### Multi-round tool execution loop (v1.1.2)
 
@@ -137,28 +137,28 @@ List all registered tools (builtin + MCP + plugin).
 
 ### Builtin commands
 
-| Command | Version | Purpose |
-|---|---|---|
-| `/help [command]` | v1.1.0 | List commands or show detail |
-| `/mode [mode]` | v1.1.0 | Show/set MMFE mode |
-| `/provider [id]` | v1.1.0 | Show/switch provider |
-| `/model [id]` | v1.1.0 | Show/switch model |
-| `/fetch [providerId]` | v1.1.0 | Auto-fetch models from `/v1/models` |
-| `/add <provider> <model> [label]` | v1.1.0 | Manually register a model |
-| `/clear` | v1.1.0 | Clear transcript |
-| `/save [name]` | v1.1.0 | Save session |
-| `/load <name>` | v1.1.0 | Load saved session |
-| `/mmfe [on\|off]` | v1.1.0 | Toggle MMFE |
-| `/exit` | v1.1.0 | Quit |
-| `/status` | v1.1.3 | Full system snapshot |
-| `/tools` | v1.1.3 | List registered tools |
-| `/mcp` | v1.1.3 | List MCP servers |
-| `/history [query]` | v1.1.3 | Search input history |
-| `/theme [name]` | v1.1.4 | Switch color theme |
-| `/diff <path> [against]` | v1.1.5 | Show git diff |
-| `/branch <msgId\|idx>` | v1.1.5 | Fork conversation |
-| `/init` | v1.1.5 | Re-run config wizard |
-| `/plugins` | v1.1.5 | List loaded plugins |
+| Command                           | Version | Purpose                             |
+| --------------------------------- | ------- | ----------------------------------- |
+| `/help [command]`                 | v1.1.0  | List commands or show detail        |
+| `/mode [mode]`                    | v1.1.0  | Show/set MMFE mode                  |
+| `/provider [id]`                  | v1.1.0  | Show/switch provider                |
+| `/model [id]`                     | v1.1.0  | Show/switch model                   |
+| `/fetch [providerId]`             | v1.1.0  | Auto-fetch models from `/v1/models` |
+| `/add <provider> <model> [label]` | v1.1.0  | Manually register a model           |
+| `/clear`                          | v1.1.0  | Clear transcript                    |
+| `/save [name]`                    | v1.1.0  | Save session                        |
+| `/load <name>`                    | v1.1.0  | Load saved session                  |
+| `/mmfe [on\|off]`                 | v1.1.0  | Toggle MMFE                         |
+| `/exit`                           | v1.1.0  | Quit                                |
+| `/status`                         | v1.1.3  | Full system snapshot                |
+| `/tools`                          | v1.1.3  | List registered tools               |
+| `/mcp`                            | v1.1.3  | List MCP servers                    |
+| `/history [query]`                | v1.1.3  | Search input history                |
+| `/theme [name]`                   | v1.1.4  | Switch color theme                  |
+| `/diff <path> [against]`          | v1.1.5  | Show git diff                       |
+| `/branch <msgId\|idx>`            | v1.1.5  | Fork conversation                   |
+| `/init`                           | v1.1.5  | Re-run config wizard                |
+| `/plugins`                        | v1.1.5  | List loaded plugins                 |
 
 ### Command palette (v1.1.2)
 
@@ -176,11 +176,11 @@ Plugins can register custom slash commands. They appear in `/help` with a `(plug
 
 ## Themes (v1.1.4)
 
-| Theme | Description |
-|---|---|
-| `tech-dark` *(default)* | Cyan + violet on deep navy |
-| `editorial-light` | Slate + indigo on off-white |
-| `hacker-terminal` | Phosphor green on pure black |
+| Theme                   | Description                  |
+| ----------------------- | ---------------------------- |
+| `tech-dark` _(default)_ | Cyan + violet on deep navy   |
+| `editorial-light`       | Slate + indigo on off-white  |
+| `hacker-terminal`       | Phosphor green on pure black |
 
 **How to use:** `/theme [name]` — persisted to `config.ui.theme`.
 
@@ -229,10 +229,16 @@ Fork the conversation from a past message.
 Connects to MCP servers via stdio or HTTP transports.
 
 **How to configure:** Add `mcpServers` array to `~/.nexus/config.json`:
+
 ```json
 {
   "mcpServers": [
-    { "id": "fs", "transport": "stdio", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path"] }
+    {
+      "id": "fs",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path"]
+    }
   ]
 }
 ```
@@ -254,6 +260,7 @@ Lists all configured MCP servers with connection status, tool count, and last er
 Discovers + loads custom tools + commands from `~/.nexus/plugins/*.js` (or `.mjs`).
 
 Each plugin default-exports:
+
 ```js
 export default {
   name: 'my-plugin',
@@ -281,6 +288,7 @@ Plugin load failures (syntax errors, missing default export) are caught and surf
 Read all of stdin as prompt, send one chat completion, print response to stdout, exit.
 
 **How to use:**
+
 ```bash
 echo "What is 2+2?" | nexus
 cat code.ts | nexus --provider=openai --model=gpt-4o "explain this"
@@ -302,14 +310,14 @@ Boots a local HTTP server with a browser-based chat UI.
 
 ### REST API
 
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/` | GET | Single-page HTML chat UI |
-| `/api/config` | GET | Current provider + model + mode info |
-| `/api/messages` | GET | Message history |
-| `/api/chat` | POST | SSE-streamed chat completion |
-| `/api/command` | POST | Slash command execution |
-| `/api/clear` | POST | Clear transcript |
+| Endpoint        | Method | Purpose                              |
+| --------------- | ------ | ------------------------------------ |
+| `/`             | GET    | Single-page HTML chat UI             |
+| `/api/config`   | GET    | Current provider + model + mode info |
+| `/api/messages` | GET    | Message history                      |
+| `/api/chat`     | POST   | SSE-streamed chat completion         |
+| `/api/command`  | POST   | Slash command execution              |
+| `/api/clear`    | POST   | Clear transcript                     |
 
 ### UI features
 
@@ -330,6 +338,7 @@ Boots a local HTTP server with a browser-based chat UI.
 Interactive (or `--yes` non-interactive) config generator.
 
 **How to use:**
+
 ```bash
 nexus init           # interactive
 nexus init --yes     # non-interactive, accept defaults
@@ -347,20 +356,20 @@ nexus init --yes     # non-interactive, accept defaults
 
 ### Three GitHub Actions workflows
 
-| Workflow | Trigger | Purpose |
-|---|---|---|
-| `ci.yml` | Push/PR to `packages/nexus-code/**` | Typecheck + lint + build + test on Node 18/20/22 |
-| `publish.yml` | `v*.*.*` tag push | `npm publish --provenance --access public` |
-| `release.yml` | `v*.*.*` tag push | GitHub Release with auto-extracted CHANGELOG section |
+| Workflow      | Trigger                             | Purpose                                              |
+| ------------- | ----------------------------------- | ---------------------------------------------------- |
+| `ci.yml`      | Push/PR to `packages/nexus-code/**` | Typecheck + lint + build + test on Node 18/20/22     |
+| `publish.yml` | `v*.*.*` tag push                   | `npm publish --provenance --access public`           |
+| `release.yml` | `v*.*.*` tag push                   | GitHub Release with auto-extracted CHANGELOG section |
 
 ---
 
 ## Quality gates
 
-| Gate | Tool | Threshold |
-|---|---|---|
-| TypeScript strict | `tsc --noEmit` | 0 errors |
-| Lint | ESLint + `@typescript-eslint` | 0 problems |
-| Build | `tsc -p tsconfig.json` | Clean `dist/` output |
-| Tests | Vitest | All passing (8 env-gated skipped) |
-| Coverage | `@vitest/coverage-v8` | 40% minimum (current: 65%) |
+| Gate              | Tool                          | Threshold                         |
+| ----------------- | ----------------------------- | --------------------------------- |
+| TypeScript strict | `tsc --noEmit`                | 0 errors                          |
+| Lint              | ESLint + `@typescript-eslint` | 0 problems                        |
+| Build             | `tsc -p tsconfig.json`        | Clean `dist/` output              |
+| Tests             | Vitest                        | All passing (8 env-gated skipped) |
+| Coverage          | `@vitest/coverage-v8`         | 40% minimum (current: 65%)        |

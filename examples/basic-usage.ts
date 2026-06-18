@@ -15,9 +15,7 @@ async function main() {
 
   console.log('Processing query: "Explain the CAP theorem in distributed systems"\n');
 
-  const result = await orchestrator.process(
-    'Explain the CAP theorem in distributed systems and give a real-world example of each tradeoff'
-  );
+  const result = await orchestrator.process('Explain the CAP theorem in distributed systems and give a real-world example of each tradeoff');
 
   console.log('═'.repeat(60));
   console.log('RESULT\n');

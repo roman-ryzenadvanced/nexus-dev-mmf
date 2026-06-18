@@ -43,11 +43,11 @@ export function SessionPicker({ sessions, onPick }: Props) {
 
   useInput((input, key) => {
     if (key.upArrow) {
-      setIdx((i) => (i - 1 + total) % total);
+      setIdx(i => (i - 1 + total) % total);
       return;
     }
     if (key.downArrow) {
-      setIdx((i) => (i + 1) % total);
+      setIdx(i => (i + 1) % total);
       return;
     }
     if (key.return) {
@@ -68,7 +68,9 @@ export function SessionPicker({ sessions, onPick }: Props) {
   return (
     <Box flexDirection="column" paddingX={2} paddingY={1}>
       <Box marginBottom={1}>
-        <Text color="#8B5CF6" bold>✦ Welcome back</Text>
+        <Text color="#8B5CF6" bold>
+          ✦ Welcome back
+        </Text>
         <Text color="#475569"> — resume a conversation or start fresh</Text>
       </Box>
       <Box flexDirection="column" marginBottom={1}>
@@ -78,9 +80,7 @@ export function SessionPicker({ sessions, onPick }: Props) {
             {'+ Start a new session'.padEnd(28)}
           </Text>
         </Box>
-        {sessions.length === 0 && (
-          <Text color="#475569">  (no saved sessions yet)</Text>
-        )}
+        {sessions.length === 0 && <Text color="#475569"> (no saved sessions yet)</Text>}
         {sessions.map((s, i) => {
           const rowIdx = i + 1;
           const selected = rowIdx === idx;

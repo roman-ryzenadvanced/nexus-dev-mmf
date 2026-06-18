@@ -15,8 +15,7 @@ export const PLUGIN_COMMANDS: SlashCommand[] = [];
 
 /** Register a command from a plugin. Idempotent — skips if name already exists. */
 export function registerPluginCommand(cmd: SlashCommand): boolean {
-  const exists = REGISTRY.some((c) => c.name === cmd.name) ||
-    PLUGIN_COMMANDS.some((c) => c.name === cmd.name);
+  const exists = REGISTRY.some(c => c.name === cmd.name) || PLUGIN_COMMANDS.some(c => c.name === cmd.name);
   if (exists) return false;
   PLUGIN_COMMANDS.push(cmd);
   return true;
@@ -24,7 +23,7 @@ export function registerPluginCommand(cmd: SlashCommand): boolean {
 
 /** Unregister a plugin command by name. */
 export function unregisterPluginCommand(name: string): boolean {
-  const idx = PLUGIN_COMMANDS.findIndex((c) => c.name === name);
+  const idx = PLUGIN_COMMANDS.findIndex(c => c.name === name);
   if (idx === -1) return false;
   PLUGIN_COMMANDS.splice(idx, 1);
   return true;
@@ -48,13 +47,13 @@ const help: SlashCommand = {
   examples: ['/help', '/help mode'],
   async run(args, _ctx) {
     if (args[0]) {
-      const cmd = allCommands().find((c) => c.name === args[0] || c.aliases?.includes(args[0]));
+      const cmd = allCommands().find(c => c.name === args[0] || c.aliases?.includes(args[0]));
       if (!cmd) return `Unknown command: ${args[0]}`;
       return [
         `${cmd.name}  ${cmd.aliases?.length ? `(${cmd.aliases.join(', ')})` : ''}`,
         `  ${cmd.description}`,
         `  usage: ${cmd.usage}`,
-        ...(cmd.examples ? [`  examples:`, ...cmd.examples.map((e) => `    ${e}`)] : []),
+        ...(cmd.examples ? [`  examples:`, ...cmd.examples.map(e => `    ${e}`)] : []),
       ].join('\n');
     }
     const lines = ['Available slash commands:', ''];
@@ -99,9 +98,12 @@ const provider: SlashCommand = {
       }
       return lines.join('\n');
     }
-    const p = ctx.config.providers.find((x) => x.id === args[0]);
+    const p = ctx.config.providers.find(x => x.id === args[0]);
     if (!p) return `Unknown provider: ${args[0]}`;
-    ctx.setConfig({ activeProviderId: p.id, activeModelId: p.defaultModel || '' });
+    ctx.setConfig({
+      activeProviderId: p.id,
+      activeModelId: p.defaultModel || '',
+    });
     return `Provider → ${p.id} (${p.name})`;
   },
 };
@@ -114,10 +116,7 @@ const model: SlashCommand = {
   async run(args, ctx) {
     if (!args[0]) {
       const lines = [`Models for provider "${ctx.config.activeProviderId}":`];
-      const all = ctx.config.providers.flatMap((p) =>
-        (p.id === ctx.config.activeProviderId ? ctx.config.manualModels : [])
-          .filter((m) => m.providerId === p.id)
-      );
+      const all = ctx.config.providers.flatMap(p => (p.id === ctx.config.activeProviderId ? ctx.config.manualModels : []).filter(m => m.providerId === p.id));
       if (!all.length) {
         lines.push('  (no models registered — use /fetch or /add)');
       } else {
@@ -152,7 +151,7 @@ const add: SlashCommand = {
   async run(args, ctx) {
     if (args.length < 2) return 'Usage: /add <providerId> <modelId> [label]';
     const [providerId, modelId, ...labelParts] = args;
-    const provider = ctx.config.providers.find((p) => p.id === providerId);
+    const provider = ctx.config.providers.find(p => p.id === providerId);
     if (!provider) return `Unknown provider: ${providerId}`;
     ctx.addModel(providerId, modelId, labelParts.join(' ') || undefined);
     return `Added model "${modelId}" to provider "${providerId}".`;
@@ -292,14 +291,7 @@ const mcp: SlashCommand = {
     if (!ctx.getMcpStatuses) return 'MCP not available in this context.';
     const statuses = ctx.getMcpStatuses();
     if (!statuses.length) return 'No MCP servers configured.';
-    return statuses
-      .map(
-        (s) =>
-          `  ${s.id.padEnd(16)} ${s.connected ? '✓' : '✗'}  ${s.toolCount} tools${
-            s.lastError ? `  (${s.lastError})` : ''
-          }`
-      )
-      .join('\n');
+    return statuses.map(s => `  ${s.id.padEnd(16)} ${s.connected ? '✓' : '✗'}  ${s.toolCount} tools${s.lastError ? `  (${s.lastError})` : ''}`).join('\n');
   },
 };
 
@@ -313,9 +305,7 @@ const history: SlashCommand = {
     const { loadHistory } = await import('../session/history.js');
     const all = await loadHistory();
     if (!all.length) return 'No history yet.';
-    const filtered = args[0]
-      ? all.filter((e) => e.text.toLowerCase().includes(args[0].toLowerCase()))
-      : all;
+    const filtered = args[0] ? all.filter(e => e.text.toLowerCase().includes(args[0].toLowerCase())) : all;
     if (!filtered.length) return `No history matching "${args[0]}".`;
     const recent = filtered.slice(-20);
     const lines = [`Last ${recent.length} entr${recent.length === 1 ? 'y' : 'ies'}${args[0] ? ` matching "${args[0]}"` : ''}:`, ''];
@@ -355,7 +345,9 @@ const theme: SlashCommand = {
     }
     setTheme(args[0] as never);
     // Also persist to config so it survives restarts.
-    ctx.setConfig({ ui: { ...(ctx.config.ui || {}), theme: args[0] as never } });
+    ctx.setConfig({
+      ui: { ...(ctx.config.ui || {}), theme: args[0] as never },
+    });
     return `Theme → ${args[0]}`;
   },
 };
@@ -376,7 +368,9 @@ const diff: SlashCommand = {
     }
     // Try git diff first
     try {
-      const res = await execShell(`git diff ${against} -- ${path}`, { timeoutMs: 10_000 });
+      const res = await execShell(`git diff ${against} -- ${path}`, {
+        timeoutMs: 10_000,
+      });
       if (res.exitCode === 0 && res.stdout.trim()) {
         return `diff for ${path} (vs ${against}):\n\n${res.stdout}`;
       }
@@ -417,10 +411,13 @@ const branch: SlashCommand = {
     }
     // Fall back to message id match
     if (idx === -1) {
-      idx = messages.findIndex((m) => m.id === target);
+      idx = messages.findIndex(m => m.id === target);
     }
     if (idx === -1) {
-      return `Message "${target}" not found. Available: ${messages.slice(0, 5).map((m) => m.id).join(', ')}${messages.length > 5 ? ` ... (${messages.length} total)` : ''}`;
+      return `Message "${target}" not found. Available: ${messages
+        .slice(0, 5)
+        .map(m => m.id)
+        .join(', ')}${messages.length > 5 ? ` ... (${messages.length} total)` : ''}`;
     }
     // Truncate to keep messages [0..idx-1] (everything before the target)
     const kept = messages.slice(0, idx);
@@ -457,11 +454,7 @@ const plugins: SlashCommand = {
     const loaded = await loadAllPlugins();
     if (!loaded.length) {
       await writeExamplePlugin();
-      return [
-        'No plugins found.',
-        `Created an example plugin at ${PLUGINS_DIR}/example.js`,
-        'Edit it, then restart the TUI to load.',
-      ].join('\n');
+      return ['No plugins found.', `Created an example plugin at ${PLUGINS_DIR}/example.js`, 'Edit it, then restart the TUI to load.'].join('\n');
     }
     const lines = [`Loaded ${loaded.length} plugin(s) from ${PLUGINS_DIR}:`, ''];
     for (const p of loaded) {
@@ -476,12 +469,34 @@ const plugins: SlashCommand = {
 };
 
 export const REGISTRY: SlashCommand[] = [
-  help, mode, provider, model, fetch, add, clear, save, load, mmfe, status, tools, mcp, history, theme, diff, branch, init, plugins, exit,
+  help,
+  mode,
+  provider,
+  model,
+  fetch,
+  add,
+  clear,
+  save,
+  load,
+  mmfe,
+  status,
+  tools,
+  mcp,
+  history,
+  theme,
+  diff,
+  branch,
+  init,
+  plugins,
+  exit,
 ];
 
-export function findCommand(input: string): { cmd?: SlashCommand; args: string[] } {
+export function findCommand(input: string): {
+  cmd?: SlashCommand;
+  args: string[];
+} {
   const [name, ...args] = input.trim().replace(/^\//, '').split(/\s+/);
-  const cmd = allCommands().find((c) => c.name === name || c.aliases?.includes(name));
+  const cmd = allCommands().find(c => c.name === name || c.aliases?.includes(name));
   return { cmd, args };
 }
 

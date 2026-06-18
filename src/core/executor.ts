@@ -4,15 +4,15 @@
  * Supports multi-provider execution (ZAI, OpenAI, Anthropic, Google).
  */
 
-import { SubTask, SubTaskResult, RoutingDecision } from '../core/types.js';
+import type { NexusDevConfig } from '../core/config.js';
 import { MODEL_REGISTRY } from '../core/models.js';
-import { NexusDevConfig } from '../core/config.js';
-import { ProviderRouter } from '../providers/provider-router.js';
-import { ProviderMessage, ProviderCompletionOptions } from '../providers/types.js';
+import type { RoutingDecision, SubTask, SubTaskResult } from '../core/types.js';
+import type { ProviderRouter } from '../providers/provider-router.js';
+import type { ProviderCompletionOptions, ProviderMessage } from '../providers/types.js';
 
 export class ParallelExecutor {
-  private providerRouter: ProviderRouter;
-  private config: NexusDevConfig;
+  private readonly providerRouter: ProviderRouter;
+  private readonly config: NexusDevConfig;
 
   constructor(config: NexusDevConfig, providerRouter: ProviderRouter) {
     this.config = config;
@@ -23,11 +23,7 @@ export class ParallelExecutor {
    * Execute all subtasks in parallel, respecting dependency ordering.
    * Returns results keyed by subtask ID.
    */
-  async execute(
-    subtasks: SubTask[],
-    routingDecisions: RoutingDecision[],
-    systemPrompt?: string
-  ): Promise<Map<string, SubTaskResult>> {
+  async execute(subtasks: SubTask[], routingDecisions: RoutingDecision[], systemPrompt?: string): Promise<Map<string, SubTaskResult>> {
     const results = new Map<string, SubTaskResult>();
     const routingMap = new Map(routingDecisions.map(r => [r.subTaskId, r]));
 
@@ -82,11 +78,7 @@ export class ParallelExecutor {
   /**
    * Execute a wave of independent subtasks in parallel.
    */
-  private async executeWave(
-    tasks: SubTask[],
-    routingMap: Map<string, RoutingDecision>,
-    systemPrompt?: string
-  ): Promise<Map<string, SubTaskResult>> {
+  private async executeWave(tasks: SubTask[], routingMap: Map<string, RoutingDecision>, systemPrompt?: string): Promise<Map<string, SubTaskResult>> {
     const maxConcurrent = this.config.maxParallelSubTasks;
     const results = new Map<string, SubTaskResult>();
 
@@ -122,11 +114,7 @@ export class ParallelExecutor {
   /**
    * Execute a single subtask against its assigned model via the provider router.
    */
-  private async executeOne(
-    task: SubTask,
-    routingMap: Map<string, RoutingDecision>,
-    systemPrompt?: string
-  ): Promise<SubTaskResult> {
+  private async executeOne(task: SubTask, routingMap: Map<string, RoutingDecision>, systemPrompt?: string): Promise<SubTaskResult> {
     const decision = routingMap.get(task.id);
     const modelId = decision?.selectedModel ?? 'glm-5.2';
     const profile = MODEL_REGISTRY[modelId];
@@ -150,12 +138,7 @@ export class ParallelExecutor {
 
     try {
       const result = await Promise.race([
-        this.providerRouter.completeWithFallback(
-          modelId,
-          messages,
-          options,
-          decision?.alternativeModels
-        ),
+        this.providerRouter.completeWithFallback(modelId, messages, options, decision?.alternativeModels),
         this.createTimeout(task.timeout),
       ]);
 
@@ -173,11 +156,13 @@ export class ParallelExecutor {
         success: true,
         output,
         executionTimeMs,
-        tokenUsage: result.usage ? {
-          prompt: result.usage.promptTokens,
-          completion: result.usage.completionTokens,
-          total: result.usage.totalTokens,
-        } : undefined,
+        tokenUsage: result.usage
+          ? {
+              prompt: result.usage.promptTokens,
+              completion: result.usage.completionTokens,
+              total: result.usage.totalTokens,
+            }
+          : undefined,
         metadata: {
           routingConfidence: decision?.confidence,
           modelProfile: profile?.tier,
@@ -207,11 +192,7 @@ export class ParallelExecutor {
   /**
    * Retry a failed subtask with an alternative model.
    */
-  private async retryWithAlternative(
-    task: SubTask,
-    alternativeModelId: string,
-    originalStartTime: number
-  ): Promise<SubTaskResult> {
+  private async retryWithAlternative(task: SubTask, alternativeModelId: string, originalStartTime: number): Promise<SubTaskResult> {
     const messages: ProviderMessage[] = [
       {
         role: 'system',
@@ -221,11 +202,7 @@ export class ParallelExecutor {
     ];
 
     try {
-      const result = await this.providerRouter.complete(
-        alternativeModelId,
-        messages,
-        { temperature: 0.4 }
-      );
+      const result = await this.providerRouter.complete(alternativeModelId, messages, { temperature: 0.4 });
 
       return {
         subTaskId: task.id,
@@ -233,7 +210,11 @@ export class ParallelExecutor {
         success: true,
         output: result.content,
         executionTimeMs: Date.now() - originalStartTime,
-        metadata: { retry: true, originalModel: task.preferredModels[0], provider: result.provider },
+        metadata: {
+          retry: true,
+          originalModel: task.preferredModels[0],
+          provider: result.provider,
+        },
       };
     } catch (error: any) {
       return {

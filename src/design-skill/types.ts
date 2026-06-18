@@ -17,16 +17,16 @@
  * These represent the common patterns that make AI-generated designs look generic.
  */
 export type AISlopeCategory =
-  | 'generic-colors'           // AI purple/pink gradients, default blue (#3B82F6)
-  | 'template-layout'          // Centered hero + 3-column features + CTA
-  | 'stock-imagery'            // Generic hero images, no brand personality
-  | 'flat-typography'          // No typographic hierarchy, same weight everywhere
-  | 'overused-effects'         // Backdrop blur on everything, excessive rounded corners
-  | 'missing-brand-identity'   // No unique visual language, no signature element
-  | 'cliche-microcopy'         // "Empower your workflow", "Revolutionize your X"
-  | 'uniform-spacing'          // Same padding everywhere, no rhythm variation
-  | 'default-icon-sets'        // Lucide/Phosphor without customization
-  | 'predictable-animations';  // Fade-in-up on everything, same duration
+  | 'generic-colors' // AI purple/pink gradients, default blue (#3B82F6)
+  | 'template-layout' // Centered hero + 3-column features + CTA
+  | 'stock-imagery' // Generic hero images, no brand personality
+  | 'flat-typography' // No typographic hierarchy, same weight everywhere
+  | 'overused-effects' // Backdrop blur on everything, excessive rounded corners
+  | 'missing-brand-identity' // No unique visual language, no signature element
+  | 'cliche-microcopy' // "Empower your workflow", "Revolutionize your X"
+  | 'uniform-spacing' // Same padding everywhere, no rhythm variation
+  | 'default-icon-sets' // Lucide/Phosphor without customization
+  | 'predictable-animations'; // Fade-in-up on everything, same duration
 
 /**
  * A detected AI SLOPE issue in a design.
@@ -68,16 +68,16 @@ export interface AISlopeReport {
  * Design skill sub-domain routing (adapted from UI/UX Pro Max design-routing.md)
  */
 export type DesignSubDomain =
-  | 'brand'           // Brand identity, voice, assets
-  | 'design-system'   // Token architecture, specs
-  | 'ui-styling'      // Component implementation (shadcn/ui, Tailwind)
-  | 'logo'            // AI logo generation
-  | 'cip'             // Corporate Identity Program deliverables
-  | 'slides'          // HTML presentations with Chart.js
-  | 'banner'          // Banner design for social, ads, web, print
-  | 'icon'            // SVG icon generation
-  | 'social-photos'   // Social media images/photos
-  | 'ux-audit';       // UX review, accessibility audit
+  | 'brand' // Brand identity, voice, assets
+  | 'design-system' // Token architecture, specs
+  | 'ui-styling' // Component implementation (shadcn/ui, Tailwind)
+  | 'logo' // AI logo generation
+  | 'cip' // Corporate Identity Program deliverables
+  | 'slides' // HTML presentations with Chart.js
+  | 'banner' // Banner design for social, ads, web, print
+  | 'icon' // SVG icon generation
+  | 'social-photos' // Social media images/photos
+  | 'ux-audit'; // UX review, accessibility audit
 
 /**
  * Input to the design skill engine.
@@ -263,20 +263,23 @@ export const DEFAULT_DESIGN_SKILL_CONFIG: DesignSkillConfig = {
  * AI SLOPE detection patterns.
  * These are the telltale signs of AI-generated design sameness.
  */
-export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
-  detectionPatterns: string[];
-  eliminationRules: string[];
-  severity: 'high' | 'medium' | 'low';
-}> = {
+export const AI_SLOPE_PATTERNS: Record<
+  AISlopeCategory,
+  {
+    detectionPatterns: string[];
+    eliminationRules: string[];
+    severity: 'high' | 'medium' | 'low';
+  }
+> = {
   'generic-colors': {
     detectionPatterns: [
-      '#3B82F6',           // Tailwind default blue
-      '#6366F1',           // AI purple / Indigo
-      '#8B5CF6',           // Violet
-      '#EC4899',           // Pink
-      'purple-gradient',   // Generic purple gradient
-      'indigo-to-pink',    // AI cliché gradient
-      'blue-to-purple',    // Overused gradient
+      '#3B82F6', // Tailwind default blue
+      '#6366F1', // AI purple / Indigo
+      '#8B5CF6', // Violet
+      '#EC4899', // Pink
+      'purple-gradient', // Generic purple gradient
+      'indigo-to-pink', // AI cliché gradient
+      'blue-to-purple', // Overused gradient
     ],
     eliminationRules: [
       'Replace default blue (#3B82F6) with brand-specific primary color',
@@ -288,14 +291,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'high',
   },
   'template-layout': {
-    detectionPatterns: [
-      'hero-centered-3col',
-      'centered-hero-cta',
-      'three-column-features',
-      'testimonial-row',
-      'pricing-three-tier',
-      'faq-accordion',
-    ],
+    detectionPatterns: ['hero-centered-3col', 'centered-hero-cta', 'three-column-features', 'testimonial-row', 'pricing-three-tier', 'faq-accordion'],
     eliminationRules: [
       'Replace centered hero with asymmetric or split-layout hero',
       'Use bento grid instead of 3-column features',
@@ -306,13 +302,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'high',
   },
   'stock-imagery': {
-    detectionPatterns: [
-      'generic-hero-image',
-      'diverse-team-photo',
-      'handshake-stock',
-      'cityscape-night',
-      'abstract-gradient-bg',
-    ],
+    detectionPatterns: ['generic-hero-image', 'diverse-team-photo', 'handshake-stock', 'cityscape-night', 'abstract-gradient-bg'],
     eliminationRules: [
       'Use brand-specific illustrations or screenshots instead of stock photos',
       'Generate custom illustrations using the brand color palette',
@@ -323,12 +313,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'medium',
   },
   'flat-typography': {
-    detectionPatterns: [
-      'single-font-weight',
-      'no-typographic-hierarchy',
-      'inter-only',
-      'same-size-headings',
-    ],
+    detectionPatterns: ['single-font-weight', 'no-typographic-hierarchy', 'inter-only', 'same-size-headings'],
     eliminationRules: [
       'Use contrasting font weights (300 vs 700, or 400 vs 800)',
       'Introduce a display/identity font for key headings',
@@ -339,12 +324,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'medium',
   },
   'overused-effects': {
-    detectionPatterns: [
-      'backdrop-blur-everywhere',
-      'excessive-rounded-corners',
-      'card-with-shadow-only',
-      'gradient-border',
-    ],
+    detectionPatterns: ['backdrop-blur-everywhere', 'excessive-rounded-corners', 'card-with-shadow-only', 'gradient-border'],
     eliminationRules: [
       'Use backdrop-filter sparingly (only for overlays and modals)',
       'Vary border-radius: sharp (0-4px) for some, rounded (12-16px) for others',
@@ -355,12 +335,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'medium',
   },
   'missing-brand-identity': {
-    detectionPatterns: [
-      'no-signature-element',
-      'no-brand-color-usage',
-      'generic-icon-only',
-      'no-visual-language',
-    ],
+    detectionPatterns: ['no-signature-element', 'no-brand-color-usage', 'generic-icon-only', 'no-visual-language'],
     eliminationRules: [
       'Define a signature visual element (unique shape, pattern, or illustration style)',
       'Use brand color as the dominant visual anchor, not just accent',
@@ -371,15 +346,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'high',
   },
   'cliche-microcopy': {
-    detectionPatterns: [
-      'empower-your-workflow',
-      'revolutionize',
-      'seamless-experience',
-      'cutting-edge',
-      'next-generation',
-      'streamline',
-      'elevate-your',
-    ],
+    detectionPatterns: ['empower-your-workflow', 'revolutionize', 'seamless-experience', 'cutting-edge', 'next-generation', 'streamline', 'elevate-your'],
     eliminationRules: [
       'Write copy that describes specific value, not vague promises',
       'Use the brand voice framework for all copy decisions',
@@ -390,11 +357,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'low',
   },
   'uniform-spacing': {
-    detectionPatterns: [
-      'same-padding-everywhere',
-      'no-spacing-rhythm',
-      '24px-gap-only',
-    ],
+    detectionPatterns: ['same-padding-everywhere', 'no-spacing-rhythm', '24px-gap-only'],
     eliminationRules: [
       'Use a spacing scale with dramatic jumps (8, 16, 32, 64, 128px)',
       'Create visual hierarchy through spacing alone (tight for related, loose for sections)',
@@ -404,11 +367,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'low',
   },
   'default-icon-sets': {
-    detectionPatterns: [
-      'lucide-only',
-      'phosphor-default-style',
-      'heroicons-outline-only',
-    ],
+    detectionPatterns: ['lucide-only', 'phosphor-default-style', 'heroicons-outline-only'],
     eliminationRules: [
       'Customize icon style to match brand (fill vs stroke, rounded vs sharp)',
       'Use duotone or custom-colored icons for key UI elements',
@@ -418,11 +377,7 @@ export const AI_SLOPE_PATTERNS: Record<AISlopeCategory, {
     severity: 'low',
   },
   'predictable-animations': {
-    detectionPatterns: [
-      'fade-in-up-everywhere',
-      'same-duration-all',
-      'stagger-same-delay',
-    ],
+    detectionPatterns: ['fade-in-up-everywhere', 'same-duration-all', 'stagger-same-delay'],
     eliminationRules: [
       'Use varied animation durations (200ms micro, 400ms transition, 800ms feature)',
       'Add spring physics or custom easing instead of default ease-out',

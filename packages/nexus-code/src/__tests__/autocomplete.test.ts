@@ -7,12 +7,13 @@ import { REGISTRY } from '../commands/builtin.js';
 function tabComplete(input: string, history: string[]): string[] {
   if (input.startsWith('/')) {
     const q = input.slice(1).toLowerCase();
-    return REGISTRY
-      .filter((c) => c.name.startsWith(q) || c.aliases?.some((a) => a.startsWith(q)))
-      .flatMap((c) => [`/${c.name}`, ...(c.aliases?.map((a) => `/${a}`) || [])])
-      // Match case-insensitively against the user's input
-      .filter((s) => s.toLowerCase().startsWith(input.toLowerCase()))
-      .slice(0, 8);
+    return (
+      REGISTRY.filter(c => c.name.startsWith(q) || c.aliases?.some(a => a.startsWith(q)))
+        .flatMap(c => [`/${c.name}`, ...(c.aliases?.map(a => `/${a}`) || [])])
+        // Match case-insensitively against the user's input
+        .filter(s => s.toLowerCase().startsWith(input.toLowerCase()))
+        .slice(0, 8)
+    );
   }
   const q = input.toLowerCase();
   const seen = new Set<string>();

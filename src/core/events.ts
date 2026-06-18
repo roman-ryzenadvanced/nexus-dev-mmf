@@ -4,7 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { PipelineStage, SubTaskResult, RoutingDecision } from './types.js';
+
+import { PipelineStage, RoutingDecision, SubTaskResult } from './types.js';
 
 export type NexusEventType =
   | 'pipeline:started'
@@ -30,7 +31,7 @@ export interface NexusEvent {
 
 export class NexusEventEmitter extends EventEmitter {
   private eventLog: NexusEvent[] = [];
-  private maxLogSize: number;
+  private readonly maxLogSize: number;
 
   constructor(maxLogSize = 1000) {
     super();

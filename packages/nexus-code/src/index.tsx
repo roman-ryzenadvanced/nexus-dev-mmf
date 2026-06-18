@@ -30,19 +30,14 @@ export async function runTUI(opts: RunOptions = {}): Promise<void> {
   if (typeof opts.useMMFE === 'boolean') config.useMMFE = opts.useMMFE;
 
   const { waitUntilExit } = render(
-    <App
-      initialConfig={config}
-      initialPrompt={opts.initialPrompt}
-      resumeSession={opts.resumeSession}
-      noResume={opts.noResume}
-    />
+    <App initialConfig={config} initialPrompt={opts.initialPrompt} resumeSession={opts.resumeSession} noResume={opts.noResume} />
   );
   await waitUntilExit();
 }
 
 // Allow direct invocation: `node dist/index.js`
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runTUI().catch((err) => {
+  runTUI().catch(err => {
     console.error('nexus-code failed to boot:');
     console.error(err.stack || err.message || err);
     process.exit(1);

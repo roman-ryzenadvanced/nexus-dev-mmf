@@ -126,7 +126,7 @@ describe('plugin loader', () => {
     await writeFile(join(PLUGINS_DIR, f2), `export default { name: 'b', tools: [], commands: [] };`, 'utf8');
     try {
       const all = await loadAllPlugins();
-      const names = all.map((p) => p.name);
+      const names = all.map(p => p.name);
       expect(names).toContain('a');
       expect(names).toContain('b');
     } finally {
@@ -142,9 +142,9 @@ describe('plugin loader', () => {
     await writeExamplePlugin();
     expect(existsSync(examplePath)).toBe(true);
     // Calling again should NOT overwrite (idempotent)
-    const content1 = await import('node:fs/promises').then((m) => m.readFile(examplePath, 'utf8'));
+    const content1 = await import('node:fs/promises').then(m => m.readFile(examplePath, 'utf8'));
     await writeExamplePlugin();
-    const content2 = await import('node:fs/promises').then((m) => m.readFile(examplePath, 'utf8'));
+    const content2 = await import('node:fs/promises').then(m => m.readFile(examplePath, 'utf8'));
     expect(content1).toBe(content2);
   });
 });

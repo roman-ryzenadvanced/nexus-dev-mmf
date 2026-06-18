@@ -49,7 +49,9 @@ async function run() {
     // Human-readable output
     console.log(result.answer);
     console.log('\n---');
-    console.log(`🔧 Models: ${result.modelsUsed.join(', ')} | Score: ${result.qualityScore}/100 | Time: ${result.totalExecutionTimeMs}ms | Strategy: ${result.decompositionStrategy} → ${result.synthesisStrategy}`);
+    console.log(
+      `🔧 Models: ${result.modelsUsed.join(', ')} | Score: ${result.qualityScore}/100 | Time: ${result.totalExecutionTimeMs}ms | Strategy: ${result.decompositionStrategy} → ${result.synthesisStrategy}`
+    );
   }
 }
 

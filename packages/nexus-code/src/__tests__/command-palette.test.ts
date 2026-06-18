@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  PALETTE_ENTRIES,
-  filterEntries,
-  type PaletteEntry,
-} from '../components/CommandPalette.js';
+import { PALETTE_ENTRIES, filterEntries, type PaletteEntry } from '../components/CommandPalette.js';
 
 describe('CommandPalette — pure logic', () => {
   it('PALETTE_ENTRIES has 20 commands', () => {
@@ -19,7 +15,7 @@ describe('CommandPalette — pure logic', () => {
   });
 
   it('entry names are unique', () => {
-    const names = PALETTE_ENTRIES.map((e) => e.name);
+    const names = PALETTE_ENTRIES.map(e => e.name);
     expect(new Set(names).size).toBe(names.length);
   });
 
@@ -31,21 +27,21 @@ describe('CommandPalette — pure logic', () => {
   it('filterEntries matches by name (case-insensitive)', () => {
     const filtered = filterEntries(PALETTE_ENTRIES, 'MODE');
     expect(filtered.length).toBeGreaterThanOrEqual(1);
-    expect(filtered.some((e) => e.name === 'mode')).toBe(true);
+    expect(filtered.some(e => e.name === 'mode')).toBe(true);
   });
 
   it('filterEntries matches by description', () => {
     const filtered = filterEntries(PALETTE_ENTRIES, 'save');
     // Both `save` (save current session) and `load` ("Load a saved session") match
     expect(filtered.length).toBeGreaterThanOrEqual(1);
-    expect(filtered.some((e) => e.name === 'save')).toBe(true);
+    expect(filtered.some(e => e.name === 'save')).toBe(true);
   });
 
   it('filterEntries matches multiple commands', () => {
     const filtered = filterEntries(PALETTE_ENTRIES, 'm');
     // mode, model, mmfe
     expect(filtered.length).toBeGreaterThanOrEqual(3);
-    const names = filtered.map((e) => e.name);
+    const names = filtered.map(e => e.name);
     expect(names).toContain('mode');
     expect(names).toContain('model');
     expect(names).toContain('mmfe');
@@ -58,7 +54,7 @@ describe('CommandPalette — pure logic', () => {
 
   it('filterEntries matches partial strings', () => {
     const filtered = filterEntries(PALETTE_ENTRIES, 'pro');
-    expect(filtered.some((e) => e.name === 'provider')).toBe(true);
+    expect(filtered.some(e => e.name === 'provider')).toBe(true);
   });
 
   it('filterEntries handles a custom entry list', () => {

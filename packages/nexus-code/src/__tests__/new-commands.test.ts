@@ -3,7 +3,7 @@ import { REGISTRY, findCommand } from '../commands/builtin.js';
 
 describe('new slash commands', () => {
   it('REGISTRY includes /diff, /branch, /init, /plugins', () => {
-    const names = REGISTRY.map((c) => c.name);
+    const names = REGISTRY.map(c => c.name);
     expect(names).toContain('diff');
     expect(names).toContain('branch');
     expect(names).toContain('init');
@@ -33,9 +33,7 @@ describe('new slash commands', () => {
   });
 
   it('every new command has run() function', () => {
-    const newCmds = REGISTRY.filter((c) =>
-      ['diff', 'branch', 'init', 'plugins'].includes(c.name)
-    );
+    const newCmds = REGISTRY.filter(c => ['diff', 'branch', 'init', 'plugins'].includes(c.name));
     for (const cmd of newCmds) {
       expect(typeof cmd.run).toBe('function');
       expect(cmd.description).toBeTruthy();
@@ -108,7 +106,14 @@ function makeCtx() {
   return makeCtxWithMessages([]);
 }
 
-function makeCtxWithMessages(msgs: Array<{ id: string; role: 'user' | 'assistant'; content: string; ts: number }>) {
+function makeCtxWithMessages(
+  msgs: Array<{
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    ts: number;
+  }>
+) {
   const session = {
     id: 'test',
     createdAt: Date.now(),
@@ -134,7 +139,9 @@ function makeCtxWithMessages(msgs: Array<{ id: string; role: 'user' | 'assistant
     setConfig: () => {},
     setSession: () => {},
     pushMessage: () => {},
-    clearMessages: () => { session.messages = []; },
+    clearMessages: () => {
+      session.messages = [];
+    },
     saveSession: async () => {},
     loadSession: async () => false,
     fetchModels: async () => [],

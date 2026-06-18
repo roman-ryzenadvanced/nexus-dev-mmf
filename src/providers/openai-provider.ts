@@ -9,28 +9,12 @@
  * @version 4.0.0
  */
 
-import {
-  LLMProvider,
-  ProviderId,
-  ProviderConfig,
-  ProviderMessage,
-  ProviderCompletionOptions,
-  ProviderCompletionResult,
-} from './types.js';
+import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult, ProviderConfig, ProviderId, ProviderMessage } from './types.js';
 
 export class OpenAIProvider implements LLMProvider {
   readonly providerId: ProviderId = 'openai';
   readonly name = 'OpenAI';
-  readonly supportedModels: string[] = [
-    'gpt-4o',
-    'gpt-4o-mini',
-    'gpt-4.1',
-    'gpt-4.1-mini',
-    'gpt-4.1-nano',
-    'o3',
-    'o3-mini',
-    'o4-mini',
-  ];
+  readonly supportedModels: string[] = ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'o3', 'o3-mini', 'o4-mini'];
 
   private apiKey: string = '';
   private baseURL: string = 'https://api.openai.com/v1';
@@ -53,11 +37,7 @@ export class OpenAIProvider implements LLMProvider {
     this._isReady = true;
   }
 
-  async complete(
-    model: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult> {
+  async complete(model: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult> {
     if (!this._isReady) {
       throw new Error('OpenAI provider not initialized');
     }
@@ -103,7 +83,7 @@ export class OpenAIProvider implements LLMProvider {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.apiKey}`,
+      Authorization: `Bearer ${this.apiKey}`,
     };
 
     if (this.organization) {
@@ -122,17 +102,19 @@ export class OpenAIProvider implements LLMProvider {
       throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json();
 
     return {
       content: data.choices?.[0]?.message?.content ?? '',
       model: data.model ?? model,
       provider: 'openai',
-      usage: data.usage ? {
-        promptTokens: data.usage.prompt_tokens ?? 0,
-        completionTokens: data.usage.completion_tokens ?? 0,
-        totalTokens: data.usage.total_tokens ?? 0,
-      } : undefined,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.prompt_tokens ?? 0,
+            completionTokens: data.usage.completion_tokens ?? 0,
+            totalTokens: data.usage.total_tokens ?? 0,
+          }
+        : undefined,
       thinkingUsed: isReasoningModel && options?.enableThinking,
       metadata: {
         id: data.id,
@@ -145,7 +127,7 @@ export class OpenAIProvider implements LLMProvider {
   async healthCheck(): Promise<boolean> {
     try {
       const headers: Record<string, string> = {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
       };
       const response = await fetch(`${this.baseURL}/models`, {
         headers,

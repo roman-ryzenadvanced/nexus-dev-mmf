@@ -24,22 +24,22 @@
  */
 
 import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
-import { uuidv4 } from './utils/uuid.js';
-import { SubTask, SubTaskResult, OrchestrationRequest, OrchestrationResult, RoutingDecision } from './types.js';
+import type { NexusDevConfig } from './config.js';
+import { DEFAULT_CONFIG, mergeConfig } from './config.js';
 import { MODEL_REGISTRY } from './models.js';
-import { NexusDevConfig, DEFAULT_CONFIG, mergeConfig } from './config.js';
-import {
-  MTPThread,
-  MTPThreadType,
-  MTPThreadState,
-  MTPThreadResult,
-  MTPDecomposedSubtask,
-  MTPPipelineSnapshot,
-  MTPPipelinePhase,
-  MTPMetrics,
+import type {
   MTPConfig,
-  DEFAULT_MTP_CONFIG,
+  MTPDecomposedSubtask,
+  MTPMetrics,
+  MTPPipelinePhase,
+  MTPPipelineSnapshot,
+  MTPThread,
+  MTPThreadResult,
+  MTPThreadType,
 } from './mtp-types.js';
+import { DEFAULT_MTP_CONFIG, MTPThreadState } from './mtp-types.js';
+import type { OrchestrationRequest, OrchestrationResult, RoutingDecision, SubTask, SubTaskResult } from './types.js';
+import { uuidv4 } from './utils/uuid.js';
 
 // ──────────────── SYSTEM PROMPTS ────────────────
 
@@ -75,18 +75,23 @@ OUTPUT: A single, polished, comprehensive answer.`;
 
 export class MTPEngine {
   private zai: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
-  private config: NexusDevConfig;
-  private mtpConfig: MTPConfig;
-  private threads: Map<string, MTPThread> = new Map();
+  private readonly config: NexusDevConfig;
+  private readonly mtpConfig: MTPConfig;
+  private readonly threads: Map<string, MTPThread> = new Map();
   private pipelineId: string = '';
   private phase: MTPPipelinePhase = 'initializing';
   private startTime: number = 0;
   private phaseTimings: Record<MTPPipelinePhase, number> = {
-    'initializing': 0, 'dual-decomposing': 0, 'routing-executing': 0,
-    'incremental-synth': 0, 'final-synthesis': 0, 'quality-pass': 0,
-    'completed': 0, 'failed': 0,
+    initializing: 0,
+    'dual-decomposing': 0,
+    'routing-executing': 0,
+    'incremental-synth': 0,
+    'final-synthesis': 0,
+    'quality-pass': 0,
+    completed: 0,
+    failed: 0,
   };
-  private phaseStartTimes: Map<MTPPipelinePhase, number> = new Map();
+  private readonly phaseStartTimes: Map<MTPPipelinePhase, number> = new Map();
   private speculativeHits: number = 0;
   private speculativeMisses: number = 0;
   private peakConcurrency: number = 0;
@@ -141,7 +146,12 @@ export class MTPEngine {
       speculative,
     };
     this.threads.set(thread.id, thread);
-    this.emit('mtp:thread:created', { threadId: thread.id, type, modelId, speculative });
+    this.emit('mtp:thread:created', {
+      threadId: thread.id,
+      type,
+      modelId,
+      speculative,
+    });
     this.updatePeakConcurrency();
     return thread;
   }
@@ -162,9 +172,14 @@ export class MTPEngine {
     this.startTime = Date.now();
     this.threads.clear();
     this.phaseTimings = {
-      'initializing': 0, 'dual-decomposing': 0, 'routing-executing': 0,
-      'incremental-synth': 0, 'final-synthesis': 0, 'quality-pass': 0,
-      'completed': 0, 'failed': 0,
+      initializing: 0,
+      'dual-decomposing': 0,
+      'routing-executing': 0,
+      'incremental-synth': 0,
+      'final-synthesis': 0,
+      'quality-pass': 0,
+      completed: 0,
+      failed: 0,
     };
 
     const request: OrchestrationRequest = {
@@ -188,7 +203,10 @@ export class MTPEngine {
       // Flagship model decomposes fully while fast model produces a quick spec
       this.setPhase('dual-decomposing');
       const { subtasks, primaryDecomposeTime } = await this.dualDecompose(request);
-      this.emit('mtp:decomposed', { subtaskCount: subtasks.length, primaryDecomposeTime });
+      this.emit('mtp:decomposed', {
+        subtaskCount: subtasks.length,
+        primaryDecomposeTime,
+      });
 
       // ═══ PHASE 2: ROUTING + SPECULATIVE EXECUTION (OVERLAPPED) ═══
       // Route all subtasks AND start speculative execution on fast model simultaneously
@@ -199,9 +217,7 @@ export class MTPEngine {
       this.emit('mtp:routed', { decisions: routingDecisions.length });
 
       // 2b: Execute primary subtasks AND speculative drafts in parallel
-      const { primaryResults, speculativeResults } = await this.executeWithSpeculation(
-        subtasks, routingDecisions, request
-      );
+      const { primaryResults, speculativeResults } = await this.executeWithSpeculation(subtasks, routingDecisions, request);
 
       // 2c: Merge speculative results where primary results are slow/missing
       const mergedResults = this.mergeResults(primaryResults, speculativeResults);
@@ -252,8 +268,7 @@ export class MTPEngine {
         totalTime,
         speedupFactor,
         qualityScore,
-        speculativeHitRate: this.speculativeHits + this.speculativeMisses > 0
-          ? this.speculativeHits / (this.speculativeHits + this.speculativeMisses) : 0,
+        speculativeHitRate: this.speculativeHits + this.speculativeMisses > 0 ? this.speculativeHits / (this.speculativeHits + this.speculativeMisses) : 0,
       });
 
       const allSubTaskResults = Array.from(mergedResults.values());
@@ -264,13 +279,15 @@ export class MTPEngine {
         subTaskResults: allSubTaskResults,
         routingDecisions,
         totalExecutionTimeMs: totalTime,
-        modelsUsed: [...new Set([
-          ...routingDecisions.map(r => r.selectedModel),
-          'glm-5.2', // synthesis
-          ...(this.mtpConfig.enableSpeculativeDecomposition ? [this.mtpConfig.speculativeDecomposeModel] : []),
-          ...(this.mtpConfig.enableSpeculativeExecution ? [this.mtpConfig.speculativeExecuteModel] : []),
-          ...(this.mtpConfig.enableIncrementalSynthesis ? [this.mtpConfig.incrementalSynthModel] : []),
-        ])],
+        modelsUsed: [
+          ...new Set([
+            ...routingDecisions.map(r => r.selectedModel),
+            'glm-5.2', // synthesis
+            ...(this.mtpConfig.enableSpeculativeDecomposition ? [this.mtpConfig.speculativeDecomposeModel] : []),
+            ...(this.mtpConfig.enableSpeculativeExecution ? [this.mtpConfig.speculativeExecuteModel] : []),
+            ...(this.mtpConfig.enableIncrementalSynthesis ? [this.mtpConfig.incrementalSynthModel] : []),
+          ]),
+        ],
         decompositionStrategy: 'mtp-dual-decompose',
         synthesisStrategy: 'mtp-incremental-plus-final',
         qualityScore,
@@ -332,20 +349,14 @@ Produce the subtask decomposition now.`;
     primaryThread.startedAt = primaryStart;
     this.updatePeakConcurrency();
 
-    const primaryPromise = this.runDecomposeThread(
-      client, primaryThread,
-      'glm-5.2', decomposePrompt, true
-    );
+    const primaryPromise = this.runDecomposeThread(client, primaryThread, 'glm-5.2', decomposePrompt, true);
 
     if (specThread) {
       specThread.state = 'running';
       specThread.startedAt = Date.now();
       this.updatePeakConcurrency();
 
-      specPromise = this.runDecomposeThread(
-        client, specThread,
-        this.mtpConfig.speculativeDecomposeModel, SPEC_DECOMPOSE_PROMPT, false
-      );
+      specPromise = this.runDecomposeThread(client, specThread, this.mtpConfig.speculativeDecomposeModel, SPEC_DECOMPOSE_PROMPT, false);
     }
 
     // Race: if fast model finishes first and flagship is slow, start executing early
@@ -353,7 +364,7 @@ Produce the subtask decomposition now.`;
     let specResult: MTPThreadResult | null = null;
 
     // Wait for primary with optional early start from spec
-    const primaryTimeout = new Promise<null>((resolve) => {
+    const primaryTimeout = new Promise<null>(resolve => {
       setTimeout(() => resolve(null), 8000); // 8s max wait for primary
     });
 
@@ -361,10 +372,7 @@ Produce the subtask decomposition now.`;
 
     // If spec finished, collect it too
     if (specPromise) {
-      specResult = await Promise.race([
-        specPromise,
-        new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
-      ]).catch(() => null);
+      specResult = await Promise.race([specPromise, new Promise<null>(resolve => setTimeout(() => resolve(null), 3000))]).catch(() => null);
     }
 
     // Complete thread states
@@ -381,9 +389,7 @@ Produce the subtask decomposition now.`;
     }
 
     // Prefer primary decomposition, fall back to speculative
-    const decomposedSubtasks = primaryResult?.decomposedSubtasks
-      ?? specResult?.decomposedSubtasks
-      ?? [];
+    const decomposedSubtasks = primaryResult?.decomposedSubtasks ?? specResult?.decomposedSubtasks ?? [];
 
     // Mark unused spec
     if (primaryResult && specResult && specThread) {
@@ -437,13 +443,7 @@ Produce the subtask decomposition now.`;
   /**
    * Run a single decomposition thread.
    */
-  private async runDecomposeThread(
-    client: ZAI,
-    thread: MTPThread,
-    modelId: string,
-    prompt: string,
-    isFlagship: boolean,
-  ): Promise<MTPThreadResult> {
+  private async runDecomposeThread(client: ZAI, thread: MTPThread, modelId: string, prompt: string, isFlagship: boolean): Promise<MTPThreadResult> {
     const startTime = Date.now();
     try {
       const requestOptions: any = {
@@ -468,11 +468,13 @@ Produce the subtask decomposition now.`;
       return {
         output: content,
         executionTimeMs: Date.now() - startTime,
-        tokenUsage: response.usage ? {
-          prompt: response.usage.prompt_tokens ?? 0,
-          completion: response.usage.completion_tokens ?? 0,
-          total: response.usage.total_tokens ?? 0,
-        } : undefined,
+        tokenUsage: response.usage
+          ? {
+              prompt: response.usage.prompt_tokens ?? 0,
+              completion: response.usage.completion_tokens ?? 0,
+              total: response.usage.total_tokens ?? 0,
+            }
+          : undefined,
         decomposedSubtasks,
       };
     } catch (error: any) {
@@ -549,21 +551,31 @@ Produce the subtask decomposition now.`;
         const reasons: string[] = [];
 
         // Capability match
-        const capMatch = subtask.requiredCapabilities.filter(c =>
-          profile.capabilities.includes(c as any)
-        ).length;
-        const capRatio = subtask.requiredCapabilities.length > 0
-          ? capMatch / subtask.requiredCapabilities.length : 0.5;
+        const capMatch = subtask.requiredCapabilities.filter(c => profile.capabilities.includes(c as any)).length;
+        const capRatio = subtask.requiredCapabilities.length > 0 ? capMatch / subtask.requiredCapabilities.length : 0.5;
 
-        if (capRatio >= 1.0) { score += 40; reasons.push('full cap match'); }
-        else if (capRatio >= 0.5) { score += 20; reasons.push('partial cap match'); }
-        else { score -= 10; reasons.push('poor cap match'); }
+        if (capRatio >= 1.0) {
+          score += 40;
+          reasons.push('full cap match');
+        } else if (capRatio >= 0.5) {
+          score += 20;
+          reasons.push('partial cap match');
+        } else {
+          score -= 10;
+          reasons.push('poor cap match');
+        }
 
         // Mode preference
         switch (mode) {
-          case 'speed': score += (6 - profile.speedRank) * 10; break;
-          case 'quality': score += (6 - profile.qualityRank) * 10; break;
-          case 'balanced': score += (6 - profile.speedRank) * 5 + (6 - profile.qualityRank) * 5; break;
+          case 'speed':
+            score += (6 - profile.speedRank) * 10;
+            break;
+          case 'quality':
+            score += (6 - profile.qualityRank) * 10;
+            break;
+          case 'balanced':
+            score += (6 - profile.speedRank) * 5 + (6 - profile.qualityRank) * 5;
+            break;
           case 'creative':
             if (profile.tier === 'creative') score += 30;
             score += (6 - profile.qualityRank) * 8;
@@ -574,7 +586,8 @@ Produce the subtask decomposition now.`;
         const cScores: Record<string, number> = {
           trivial: profile.speedRank <= 2 ? 10 : 0,
           simple: profile.speedRank <= 2 ? 10 : 5,
-          moderate: 5, complex: profile.qualityRank <= 2 ? 15 : 5,
+          moderate: 5,
+          complex: profile.qualityRank <= 2 ? 15 : 5,
           expert: profile.qualityRank === 1 ? 20 : 10,
         };
         score += cScores[subtask.estimatedComplexity] ?? 5;
@@ -621,7 +634,7 @@ Produce the subtask decomposition now.`;
   private async executeWithSpeculation(
     subtasks: SubTask[],
     routingDecisions: RoutingDecision[],
-    request: OrchestrationRequest,
+    request: OrchestrationRequest
   ): Promise<{
     primaryResults: Map<string, SubTaskResult>;
     speculativeResults: Map<string, SubTaskResult>;
@@ -651,16 +664,23 @@ Produce the subtask decomposition now.`;
       if (ready.length === 0 && pending.size > 0) {
         for (const id of pending) {
           primaryResults.set(id, {
-            subTaskId: id, modelId: 'none', success: false,
-            output: '', executionTimeMs: 0,
-            error: 'Deadlock: unresolved dependencies', metadata: {},
+            subTaskId: id,
+            modelId: 'none',
+            success: false,
+            output: '',
+            executionTimeMs: 0,
+            error: 'Deadlock: unresolved dependencies',
+            metadata: {},
           });
         }
         break;
       }
 
       // ══ OVERLAP: Execute primary + speculative in the same wave ══
-      const primaryPromises: Promise<{ taskId: string; result: SubTaskResult }>[] = [];
+      const primaryPromises: Promise<{
+        taskId: string;
+        result: SubTaskResult;
+      }>[] = [];
       const specPromises: Promise<{ taskId: string; result: SubTaskResult }>[] = [];
 
       for (const task of ready) {
@@ -683,9 +703,11 @@ Produce the subtask decomposition now.`;
         );
 
         // Speculative execution on fast model (if enabled and subtask is high-confidence)
-        if (this.mtpConfig.enableSpeculativeExecution
-            && (decision?.confidence ?? 0) >= this.mtpConfig.speculativeConfidenceThreshold
-            && specPromises.length < this.mtpConfig.maxSpeculativeThreads) {
+        if (
+          this.mtpConfig.enableSpeculativeExecution &&
+          (decision?.confidence ?? 0) >= this.mtpConfig.speculativeConfidenceThreshold &&
+          specPromises.length < this.mtpConfig.maxSpeculativeThreads
+        ) {
           const specModel = this.mtpConfig.speculativeExecuteModel;
           const specThread = this.createThread('execute-speculative', specModel, true);
           specThread.subtaskId = task.id;
@@ -694,27 +716,33 @@ Produce the subtask decomposition now.`;
           this.updatePeakConcurrency();
 
           specPromises.push(
-            this.executeSpeculative(client, task, specModel).then(result => {
-              specThread.state = 'completed';
-              specThread.completedAt = Date.now();
-              return { taskId: task.id, result };
-            }).catch(() => {
-              specThread.state = 'failed';
-              specThread.completedAt = Date.now();
-              return { taskId: task.id, result: {
-                subTaskId: task.id, modelId: specModel, success: false,
-                output: '', executionTimeMs: 0, metadata: { speculative: true },
-              } as SubTaskResult };
-            })
+            this.executeSpeculative(client, task, specModel)
+              .then(result => {
+                specThread.state = 'completed';
+                specThread.completedAt = Date.now();
+                return { taskId: task.id, result };
+              })
+              .catch(() => {
+                specThread.state = 'failed';
+                specThread.completedAt = Date.now();
+                return {
+                  taskId: task.id,
+                  result: {
+                    subTaskId: task.id,
+                    modelId: specModel,
+                    success: false,
+                    output: '',
+                    executionTimeMs: 0,
+                    metadata: { speculative: true },
+                  },
+                };
+              })
           );
         }
       }
 
       // Wait for all primary + speculative results concurrently
-      const [primarySettled, specSettled] = await Promise.all([
-        Promise.allSettled(primaryPromises),
-        Promise.allSettled(specPromises),
-      ]);
+      const [primarySettled, specSettled] = await Promise.all([Promise.allSettled(primaryPromises), Promise.allSettled(specPromises)]);
 
       // Collect primary results
       for (const settled of primarySettled) {
@@ -739,12 +767,7 @@ Produce the subtask decomposition now.`;
   /**
    * Execute a single subtask on its assigned model.
    */
-  private async executeOneSubtask(
-    client: ZAI,
-    task: SubTask,
-    modelId: string,
-    decision?: RoutingDecision,
-  ): Promise<SubTaskResult> {
+  private async executeOneSubtask(client: ZAI, task: SubTask, modelId: string, decision?: RoutingDecision): Promise<SubTaskResult> {
     const profile = MODEL_REGISTRY[modelId];
     const startTime = Date.now();
 
@@ -765,9 +788,7 @@ Produce the subtask decomposition now.`;
     try {
       const response = await Promise.race([
         client.chat.completions.create(requestOptions),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Subtask timed out after ${task.timeout}ms`)), task.timeout)
-        ),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Subtask timed out after ${task.timeout}ms`)), task.timeout)),
       ]);
 
       const output = response.choices?.[0]?.message?.content ?? '';
@@ -779,13 +800,22 @@ Produce the subtask decomposition now.`;
       }
 
       return {
-        subTaskId: task.id, modelId, success: true, output, executionTimeMs,
-        tokenUsage: response.usage ? {
-          prompt: response.usage.prompt_tokens ?? 0,
-          completion: response.usage.completion_tokens ?? 0,
-          total: response.usage.total_tokens ?? 0,
-        } : undefined,
-        metadata: { routingConfidence: decision?.confidence, modelProfile: profile?.tier },
+        subTaskId: task.id,
+        modelId,
+        success: true,
+        output,
+        executionTimeMs,
+        tokenUsage: response.usage
+          ? {
+              prompt: response.usage.prompt_tokens ?? 0,
+              completion: response.usage.completion_tokens ?? 0,
+              total: response.usage.total_tokens ?? 0,
+            }
+          : undefined,
+        metadata: {
+          routingConfidence: decision?.confidence,
+          modelProfile: profile?.tier,
+        },
       };
     } catch (error: any) {
       const executionTimeMs = Date.now() - startTime;
@@ -793,8 +823,13 @@ Produce the subtask decomposition now.`;
         return this.retryAlternative(client, task, decision.alternativeModels[0], startTime);
       }
       return {
-        subTaskId: task.id, modelId, success: false, output: '',
-        executionTimeMs, error: error?.message ?? 'Execution failed', metadata: {},
+        subTaskId: task.id,
+        modelId,
+        success: false,
+        output: '',
+        executionTimeMs,
+        error: error?.message ?? 'Execution failed',
+        metadata: {},
       };
     }
   }
@@ -802,11 +837,7 @@ Produce the subtask decomposition now.`;
   /**
    * Execute a speculative draft on a fast model.
    */
-  private async executeSpeculative(
-    client: ZAI,
-    task: SubTask,
-    modelId: string,
-  ): Promise<SubTaskResult> {
+  private async executeSpeculative(client: ZAI, task: SubTask, modelId: string): Promise<SubTaskResult> {
     const startTime = Date.now();
     try {
       const response = await client.chat.completions.create({
@@ -819,15 +850,20 @@ Produce the subtask decomposition now.`;
       });
 
       return {
-        subTaskId: task.id, modelId, success: true,
+        subTaskId: task.id,
+        modelId,
+        success: true,
         output: response.choices?.[0]?.message?.content ?? '',
         executionTimeMs: Date.now() - startTime,
         metadata: { speculative: true },
       };
     } catch {
       return {
-        subTaskId: task.id, modelId, success: false,
-        output: '', executionTimeMs: Date.now() - startTime,
+        subTaskId: task.id,
+        modelId,
+        success: false,
+        output: '',
+        executionTimeMs: Date.now() - startTime,
         metadata: { speculative: true },
       };
     }
@@ -836,33 +872,37 @@ Produce the subtask decomposition now.`;
   /**
    * Retry with alternative model.
    */
-  private async retryAlternative(
-    client: ZAI,
-    task: SubTask,
-    altModel: string,
-    originalStart: number,
-  ): Promise<SubTaskResult> {
+  private async retryAlternative(client: ZAI, task: SubTask, altModel: string, originalStart: number): Promise<SubTaskResult> {
     try {
       const response = await client.chat.completions.create({
         model: altModel,
         messages: [
-          { role: 'system', content: `You are a specialized AI assistant. Produce a precise result for: "${task.description}".` },
+          {
+            role: 'system',
+            content: `You are a specialized AI assistant. Produce a precise result for: "${task.description}".`,
+          },
           { role: 'user', content: task.input },
         ],
         temperature: 0.4,
       });
 
       return {
-        subTaskId: task.id, modelId: altModel, success: true,
+        subTaskId: task.id,
+        modelId: altModel,
+        success: true,
         output: response.choices?.[0]?.message?.content ?? '',
         executionTimeMs: Date.now() - originalStart,
         metadata: { retry: true },
       };
     } catch (error: any) {
       return {
-        subTaskId: task.id, modelId: altModel, success: false,
-        output: '', executionTimeMs: Date.now() - originalStart,
-        error: `Retry failed: ${error?.message}`, metadata: { retry: true },
+        subTaskId: task.id,
+        modelId: altModel,
+        success: false,
+        output: '',
+        executionTimeMs: Date.now() - originalStart,
+        error: `Retry failed: ${error?.message}`,
+        metadata: { retry: true },
       };
     }
   }
@@ -871,18 +911,18 @@ Produce the subtask decomposition now.`;
    * Merge primary and speculative results.
    * If a primary result failed but speculative succeeded, use speculative.
    */
-  private mergeResults(
-    primaryResults: Map<string, SubTaskResult>,
-    speculativeResults: Map<string, SubTaskResult>,
-  ): Map<string, SubTaskResult> {
+  private mergeResults(primaryResults: Map<string, SubTaskResult>, speculativeResults: Map<string, SubTaskResult>): Map<string, SubTaskResult> {
     const merged = new Map(primaryResults);
 
     for (const [id, specResult] of speculativeResults) {
       const primaryResult = merged.get(id);
-      if (!primaryResult || !primaryResult.success) {
+      if (!primaryResult?.success) {
         // Speculative result saves the day
         if (specResult.success) {
-          merged.set(id, { ...specResult, metadata: { ...specResult.metadata, speculativeUsed: true } });
+          merged.set(id, {
+            ...specResult,
+            metadata: { ...specResult.metadata, speculativeUsed: true },
+          });
           this.speculativeHits++;
         }
       } else {
@@ -900,10 +940,7 @@ Produce the subtask decomposition now.`;
    * Incremental synthesis — build a partial answer from the results
    * that have arrived so far. This runs concurrently with ongoing execution.
    */
-  private async incrementalSynthesize(
-    request: OrchestrationRequest,
-    results: Map<string, SubTaskResult>,
-  ): Promise<string> {
+  private async incrementalSynthesize(request: OrchestrationRequest, results: Map<string, SubTaskResult>): Promise<string> {
     if (!this.mtpConfig.enableIncrementalSynthesis) {
       return '';
     }
@@ -962,11 +999,7 @@ Produce the subtask decomposition now.`;
    * Final synthesis — combines the incremental answer with any remaining results
    * to produce the final, polished answer.
    */
-  private async finalSynthesize(
-    request: OrchestrationRequest,
-    results: Map<string, SubTaskResult>,
-    incrementalResult: string,
-  ): Promise<string> {
+  private async finalSynthesize(request: OrchestrationRequest, results: Map<string, SubTaskResult>, incrementalResult: string): Promise<string> {
     const client = await this.getClient();
     const synthThread = this.createThread('synthesize-final', 'glm-5.2', false);
     synthThread.state = 'running';
@@ -1031,7 +1064,10 @@ Produce the subtask decomposition now.`;
             role: 'system',
             content: `You are a quality assessment engine. Score the following response on a scale of 0-100 based on completeness, accuracy, coherence, depth, and clarity. Return ONLY a number.`,
           },
-          { role: 'user', content: `QUERY: ${query}\n\nRESPONSE:\n${answer}\n\nScore:` },
+          {
+            role: 'user',
+            content: `QUERY: ${query}\n\nRESPONSE:\n${answer}\n\nScore:`,
+          },
         ],
         temperature: 0.1,
         max_tokens: 10,

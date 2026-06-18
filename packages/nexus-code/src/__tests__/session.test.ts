@@ -22,7 +22,11 @@ describe('session store', () => {
   });
 
   it('newSession accepts overrides', () => {
-    const s = newSession({ mode: 'quality', providerId: 'openai', modelId: 'gpt-4o' });
+    const s = newSession({
+      mode: 'quality',
+      providerId: 'openai',
+      modelId: 'gpt-4o',
+    });
     expect(s.mode).toBe('quality');
     expect(s.providerId).toBe('openai');
     expect(s.modelId).toBe('gpt-4o');

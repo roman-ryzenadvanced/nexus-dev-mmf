@@ -48,5 +48,5 @@ export async function searchHistory(query: string): Promise<HistoryEntry[]> {
   const all = await loadHistory();
   if (!query) return all;
   const q = query.toLowerCase();
-  return all.filter((e) => e.text.toLowerCase().includes(q));
+  return all.filter(e => e.text.toLowerCase().includes(q));
 }

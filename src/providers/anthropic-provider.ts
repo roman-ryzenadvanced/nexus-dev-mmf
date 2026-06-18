@@ -9,14 +9,7 @@
  * @version 4.0.0
  */
 
-import {
-  LLMProvider,
-  ProviderId,
-  ProviderConfig,
-  ProviderMessage,
-  ProviderCompletionOptions,
-  ProviderCompletionResult,
-} from './types.js';
+import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult, ProviderConfig, ProviderId, ProviderMessage } from './types.js';
 
 export class AnthropicProvider implements LLMProvider {
   readonly providerId: ProviderId = 'anthropic';
@@ -39,16 +32,29 @@ export class AnthropicProvider implements LLMProvider {
   };
 
   private apiKey: string = '';
-  private baseURL: string = 'https://api.anthropic.com/v1';
+  private baseURL: string = 'https://api.anthropic.com';
   private _isReady = false;
 
   get isReady(): boolean {
     return this._isReady;
   }
 
+  /**
+   * Build the absolute Messages URL from the configured base URL.
+   *
+   * Per the Anthropic convention (official SDK + Claude Code), the base URL
+   * must NOT include `/v1` — e.g. `ANTHROPIC_BASE_URL=https://api.anthropic.com`
+   * or a proxy like `https://cc.freemodel.dev`. The `/v1/messages` route is
+   * appended here. Trailing slashes on the base are tolerated.
+   */
+  private get messagesUrl(): string {
+    const trimmed = this.baseURL.replace(/\/+$/, '');
+    return `${trimmed}/v1/messages`;
+  }
+
   async initialize(config: ProviderConfig): Promise<void> {
     this.apiKey = config.apiKey ?? process.env.ANTHROPIC_API_KEY ?? '';
-    this.baseURL = config.baseURL ?? process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com/v1';
+    this.baseURL = config.baseURL ?? process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com';
 
     if (!this.apiKey) {
       throw new Error('Anthropic provider requires ANTHROPIC_API_KEY or apiKey in config');
@@ -64,11 +70,7 @@ export class AnthropicProvider implements LLMProvider {
     return AnthropicProvider.MODEL_ALIASES[modelId] ?? modelId;
   }
 
-  async complete(
-    model: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult> {
+  async complete(model: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult> {
     if (!this._isReady) {
       throw new Error('Anthropic provider not initialized');
     }
@@ -128,9 +130,13 @@ export class AnthropicProvider implements LLMProvider {
       'Content-Type': 'application/json',
       'x-api-key': this.apiKey,
       'anthropic-version': '2023-06-01',
+      // Identify as a Claude Code client. Anthropic-compatible proxies /
+      // gateways (and the official endpoint) recognize this UA, same
+      // convention as the ZAI Anthropic provider and OpenClaw's kimi-coding.
+      'User-Agent': 'claude-code/0.1.0',
     };
 
-    const response = await fetch(`${this.baseURL}/messages`, {
+    const response = await fetch(this.messagesUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -142,7 +148,7 @@ export class AnthropicProvider implements LLMProvider {
       throw new Error(`Anthropic API error (${response.status}): ${errorText}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json();
 
     // Extract text content from Anthropic's content block format
     let content = '';
@@ -160,11 +166,13 @@ export class AnthropicProvider implements LLMProvider {
       content,
       model: data.model ?? resolvedModel,
       provider: 'anthropic',
-      usage: data.usage ? {
-        promptTokens: data.usage.input_tokens ?? 0,
-        completionTokens: data.usage.output_tokens ?? 0,
-        totalTokens: (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
-      } : undefined,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.input_tokens ?? 0,
+            completionTokens: data.usage.output_tokens ?? 0,
+            totalTokens: (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
+          }
+        : undefined,
       thinkingUsed: options?.enableThinking,
       metadata: {
         id: data.id,
@@ -178,9 +186,10 @@ export class AnthropicProvider implements LLMProvider {
       const headers: Record<string, string> = {
         'x-api-key': this.apiKey,
         'anthropic-version': '2023-06-01',
+        'User-Agent': 'claude-code/0.1.0',
       };
       // Anthropic doesn't have a simple health endpoint, so try a minimal request
-      const response = await fetch(`${this.baseURL}/messages`, {
+      const response = await fetch(this.messagesUrl, {
         method: 'POST',
         headers: {
           ...headers,
@@ -204,8 +213,7 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   supportsModel(modelId: string): boolean {
-    return this.supportedModels.includes(modelId) ||
-           modelId in AnthropicProvider.MODEL_ALIASES;
+    return this.supportedModels.includes(modelId) || modelId in AnthropicProvider.MODEL_ALIASES;
   }
 
   async shutdown(): Promise<void> {

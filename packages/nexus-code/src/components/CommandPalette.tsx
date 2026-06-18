@@ -17,7 +17,7 @@ export interface PaletteEntry {
   preview: string;
 }
 
-export const PALETTE_ENTRIES: PaletteEntry[] = REGISTRY.map((c) => ({
+export const PALETTE_ENTRIES: PaletteEntry[] = REGISTRY.map(c => ({
   name: c.name,
   description: c.description,
   preview: c.usage,
@@ -27,11 +27,7 @@ export const PALETTE_ENTRIES: PaletteEntry[] = REGISTRY.map((c) => ({
 export function filterEntries(entries: PaletteEntry[], query: string): PaletteEntry[] {
   if (!query) return entries;
   const q = query.toLowerCase();
-  return entries.filter(
-    (e) =>
-      e.name.toLowerCase().includes(q) ||
-      e.description.toLowerCase().includes(q)
-  );
+  return entries.filter(e => e.name.toLowerCase().includes(q) || e.description.toLowerCase().includes(q));
 }
 
 export function CommandPalette({ onPick, onClose }: Props) {
@@ -54,20 +50,20 @@ export function CommandPalette({ onPick, onClose }: Props) {
       return;
     }
     if (key.upArrow) {
-      setSelected((s) => Math.max(0, s - 1));
+      setSelected(s => Math.max(0, s - 1));
       return;
     }
     if (key.downArrow) {
-      setSelected((s) => Math.min(filtered.length - 1, s + 1));
+      setSelected(s => Math.min(filtered.length - 1, s + 1));
       return;
     }
     if (key.backspace || key.delete) {
-      setQuery((q) => q.slice(0, -1));
+      setQuery(q => q.slice(0, -1));
       setSelected(0);
       return;
     }
     if (input && !key.ctrl && !key.meta && input !== 'p') {
-      setQuery((q) => q + input);
+      setQuery(q => q + input);
       setSelected(0);
     }
   });
@@ -75,7 +71,9 @@ export function CommandPalette({ onPick, onClose }: Props) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="#06B6D4" paddingX={1} paddingY={0}>
       <Box>
-        <Text color="#06B6D4" bold>❯ </Text>
+        <Text color="#06B6D4" bold>
+          ❯{' '}
+        </Text>
         <Text color="#E2E8F0">{query}</Text>
         <Text color="#06B6D4">▋</Text>
       </Box>
@@ -93,19 +91,17 @@ export function CommandPalette({ onPick, onClose }: Props) {
           {filtered.slice(0, 8).map((entry, idx) => (
             <Box key={entry.name} flexDirection="column">
               <Box gap={1}>
-                <Text color={idx === safeSelected ? '#06B6D4' : '#475569'}>
-                  {idx === safeSelected ? '▸' : ' '}
-                </Text>
+                <Text color={idx === safeSelected ? '#06B6D4' : '#475569'}>{idx === safeSelected ? '▸' : ' '}</Text>
                 <Text color={idx === safeSelected ? '#E2E8F0' : '#94A3B8'} bold={idx === safeSelected}>
                   /{entry.name.padEnd(12)}
                 </Text>
-                <Text color={idx === safeSelected ? '#94A3B8' : '#475569'}>
-                  {entry.description.slice(0, 50)}
-                </Text>
+                <Text color={idx === safeSelected ? '#94A3B8' : '#475569'}>{entry.description.slice(0, 50)}</Text>
               </Box>
               {idx === safeSelected && (
                 <Box marginLeft={2}>
-                  <Text color="#475569" dimColor>{entry.preview}</Text>
+                  <Text color="#475569" dimColor>
+                    {entry.preview}
+                  </Text>
                 </Box>
               )}
             </Box>

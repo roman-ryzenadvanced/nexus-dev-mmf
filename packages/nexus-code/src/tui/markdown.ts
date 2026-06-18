@@ -80,8 +80,6 @@ function inlineFormat(text: string): string {
   // Italic
   t = t.replace(/(^|[^*])\*([^*]+)\*/g, (_, pre, c) => `${pre}${chalk.italic(c)}`);
   // Links
-  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
-    `${chalk.hex('#06B6D4').underline(label)} ${color.dim(`(${url})`)}`
-  );
+  t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => `${chalk.hex('#06B6D4').underline(label)} ${color.dim(`(${url})`)}`);
   return t;
 }

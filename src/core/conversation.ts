@@ -3,7 +3,8 @@
  * Maintains conversation context across multiple orchestration requests.
  */
 
-import { OrchestrationResult, SubTaskResult } from './types.js';
+import type { OrchestrationResult } from './types.js';
+import { SubTaskResult } from './types.js';
 
 export interface ConversationTurn {
   requestId: string;
@@ -24,9 +25,9 @@ export interface ConversationContext {
 }
 
 export class ConversationManager {
-  private conversations: Map<string, ConversationContext> = new Map();
-  private maxTurnsPerConversation: number;
-  private maxContextTokens: number;
+  private readonly conversations: Map<string, ConversationContext> = new Map();
+  private readonly maxTurnsPerConversation: number;
+  private readonly maxContextTokens: number;
 
   constructor(maxTurns = 20, maxContextTokens = 50000) {
     this.maxTurnsPerConversation = maxTurns;
@@ -62,9 +63,7 @@ export class ConversationManager {
       modelsUsed: result.modelsUsed,
       qualityScore: result.qualityScore,
       timestamp: Date.now(),
-      subtaskSummary: result.subTaskResults
-        .filter(r => r.success)
-        .map(r => `[${r.modelId}] ${r.output.slice(0, 100)}...`),
+      subtaskSummary: result.subTaskResults.filter(r => r.success).map(r => `[${r.modelId}] ${r.output.slice(0, 100)}...`),
     };
 
     conv.turns.push(turn);

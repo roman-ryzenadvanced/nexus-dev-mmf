@@ -66,20 +66,22 @@ export async function runWebServer(opts: WebServerOptions = {}): Promise<void> {
 
       if (path === '/api/config' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          version: config.version,
-          activeProviderId: config.activeProviderId,
-          activeModelId: config.activeModelId,
-          mode: config.mode,
-          useMMFE: config.useMMFE,
-          providers: config.providers.map((p) => ({
-            id: p.id,
-            name: p.name,
-            kind: p.kind,
-            mmfe: p.mmfe,
-            hasKey: !!p.apiKey,
-          })),
-        }));
+        res.end(
+          JSON.stringify({
+            version: config.version,
+            activeProviderId: config.activeProviderId,
+            activeModelId: config.activeModelId,
+            mode: config.mode,
+            useMMFE: config.useMMFE,
+            providers: config.providers.map(p => ({
+              id: p.id,
+              name: p.name,
+              kind: p.kind,
+              mmfe: p.mmfe,
+              hasKey: !!p.apiKey,
+            })),
+          })
+        );
         return;
       }
 
@@ -125,7 +127,7 @@ export async function runWebServer(opts: WebServerOptions = {}): Promise<void> {
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
         });
 
         try {
@@ -134,14 +136,14 @@ export async function runWebServer(opts: WebServerOptions = {}): Promise<void> {
             mode: reqConfig.mode,
             model: reqConfig.activeModelId,
             noMMFE: !reqConfig.useMMFE,
-            tools: toolRegistry.list().map((t) => ({
+            tools: toolRegistry.list().map(t => ({
               name: t.name,
               description: t.description,
               parameters: t.parameters as Record<string, unknown>,
             })),
             maxToolRounds: 5,
             toolRegistry,
-            onDelta: (delta) => {
+            onDelta: delta => {
               res.write(`data: ${JSON.stringify({ type: 'delta', delta })}\n\n`);
             },
           });
@@ -199,7 +201,7 @@ export async function runWebServer(opts: WebServerOptions = {}): Promise<void> {
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', (chunk) => (data += chunk));
+    req.on('data', chunk => (data += chunk));
     req.on('end', () => resolve(data));
     req.on('error', reject);
   });

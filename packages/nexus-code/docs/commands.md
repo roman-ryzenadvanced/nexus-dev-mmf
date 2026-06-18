@@ -99,10 +99,10 @@ twice.
 
 ## Keyboard shortcuts
 
-| Key | Action |
-|---|---|
-| `Enter` | Submit prompt or slash command |
-| `↑` / `↓` | Navigate input history |
-| `Backspace` | Delete one character |
-| `Ctrl+C` (once, while streaming) | Abort current request |
-| `Ctrl+C` (twice, idle) | Quit |
+| Key                              | Action                         |
+| -------------------------------- | ------------------------------ |
+| `Enter`                          | Submit prompt or slash command |
+| `↑` / `↓`                        | Navigate input history         |
+| `Backspace`                      | Delete one character           |
+| `Ctrl+C` (once, while streaming) | Abort current request          |
+| `Ctrl+C` (twice, idle)           | Quit                           |

@@ -12,11 +12,11 @@
  * Supported LLM provider identifiers.
  */
 export type ProviderId =
-  | 'zai'           // z-ai-web-dev-sdk, OpenAI-compatible coding endpoint (GLM models)
+  | 'zai' // z-ai-web-dev-sdk, OpenAI-compatible coding endpoint (GLM models)
   | 'zai-anthropic' // ZAI Anthropic-compatible endpoint (https://api.z.ai/api/anthropic) — GLM via Messages API
-  | 'openai'        // OpenAI API (GPT-4o, o3, o4-mini, etc.)
-  | 'anthropic'     // Anthropic API (Claude 4, Sonnet 4, Haiku 3.5, etc.)
-  | 'google';       // Google AI / Vertex AI (Gemini 2.5 Pro/Flash, etc.)
+  | 'openai' // OpenAI API (GPT-4o, o3, o4-mini, etc.)
+  | 'anthropic' // Anthropic API (Claude 4, Sonnet 4, Haiku 3.5, etc.)
+  | 'google'; // Google AI / Vertex AI (Gemini 2.5 Pro/Flash, etc.)
 
 /**
  * A single message in a chat completion request.
@@ -122,11 +122,7 @@ export interface LLMProvider {
   /**
    * Execute a chat completion request.
    */
-  complete(
-    model: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult>;
+  complete(model: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult>;
 
   /**
    * Test connectivity and authentication.

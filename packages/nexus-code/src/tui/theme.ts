@@ -97,32 +97,20 @@ export function getTheme(): ThemeTokens {
 // Chalk color helpers — getters resolved at access time so setTheme() takes
 // effect immediately. We define them directly on the exported `color` object
 // (enumerable) so `color.dim`, `color.accent`, etc. are always present.
-const COLOR_KEYS = [
-  'user',
-  'assistant',
-  'system',
-  'tool',
-  'muted',
-  'dim',
-  'accent',
-  'accent2',
-  'success',
-  'warn',
-  'danger',
-] as const;
+const COLOR_KEYS = ['user', 'assistant', 'system', 'tool', 'muted', 'dim', 'accent', 'accent2', 'success', 'warn', 'danger'] as const;
 
 const COLOR_MAP: Record<string, (t: ThemeTokens) => string> = {
-  user: (t) => t.accent,
-  assistant: (t) => t.primary,
-  system: (t) => t.primaryDim,
-  tool: (t) => t.warn,
-  muted: (t) => t.primaryMute,
-  dim: (t) => t.primaryDim,
-  accent: (t) => t.accent,
-  accent2: (t) => t.accent2,
-  success: (t) => t.success,
-  warn: (t) => t.warn,
-  danger: (t) => t.danger,
+  user: t => t.accent,
+  assistant: t => t.primary,
+  system: t => t.primaryDim,
+  tool: t => t.warn,
+  muted: t => t.primaryMute,
+  dim: t => t.primaryDim,
+  accent: t => t.accent,
+  accent2: t => t.accent2,
+  success: t => t.success,
+  warn: t => t.warn,
+  danger: t => t.danger,
 };
 
 type ColorHelpers = Record<(typeof COLOR_KEYS)[number], ReturnType<typeof chalk.hex>>;

@@ -13,6 +13,8 @@
  * 5. Concurrent Quality Scoring — score quality in parallel with ongoing synthesis
  */
 
+import type { RoutingDecision } from './types.js';
+
 /**
  * MTP Pipeline Thread — represents an independent execution lane
  * that can run concurrently with other lanes.
@@ -46,25 +48,25 @@ export interface MTPThread {
  * Types of MTP threads.
  */
 export type MTPThreadType =
-  | 'decompose-flagship'   // Full decomposition via glm-5.2
-  | 'decompose-fast'       // Speculative fast decomposition via glm-5
-  | 'route'                // Adaptive routing computation
-  | 'execute-primary'      // Primary subtask execution
-  | 'execute-speculative'  // Speculative pre-execution by fast model
-  | 'synthesize-partial'   // Incremental partial synthesis
-  | 'synthesize-final'     // Final full synthesis
-  | 'quality-score'        // Quality scoring pass
-  | 'quality-refine';      // Quality refinement pass
+  | 'decompose-flagship' // Full decomposition via glm-5.2
+  | 'decompose-fast' // Speculative fast decomposition via glm-5
+  | 'route' // Adaptive routing computation
+  | 'execute-primary' // Primary subtask execution
+  | 'execute-speculative' // Speculative pre-execution by fast model
+  | 'synthesize-partial' // Incremental partial synthesis
+  | 'synthesize-final' // Final full synthesis
+  | 'quality-score' // Quality scoring pass
+  | 'quality-refine'; // Quality refinement pass
 
 /**
  * State of an MTP thread.
  */
 export type MTPThreadState =
-  | 'pending'     // Waiting to be scheduled
-  | 'running'     // Currently executing
-  | 'completed'   // Successfully finished
-  | 'failed'      // Execution failed
-  | 'cancelled'   // Cancelled (e.g., speculative draft discarded)
+  | 'pending' // Waiting to be scheduled
+  | 'running' // Currently executing
+  | 'completed' // Successfully finished
+  | 'failed' // Execution failed
+  | 'cancelled' // Cancelled (e.g., speculative draft discarded)
   | 'superseded'; // A better result replaced this one
 
 /**
@@ -86,7 +88,7 @@ export interface MTPThreadResult {
   /** Subtask decomposition (for decompose threads) */
   decomposedSubtasks?: MTPDecomposedSubtask[];
   /** Routing decisions (for route threads) */
-  routingDecisions?: import('./types.js').RoutingDecision[];
+  routingDecisions?: RoutingDecision[];
 }
 
 /**
@@ -133,14 +135,14 @@ export interface MTPPipelineSnapshot {
  * MTP Pipeline phases — note these overlap, unlike the sequential pipeline.
  */
 export type MTPPipelinePhase =
-  | 'initializing'       // Setting up threads
-  | 'dual-decomposing'   // Both flagship and fast decomposers running
-  | 'routing-executing'  // Routing and executing overlap
-  | 'incremental-synth'  // Results arriving + incremental synthesis
-  | 'final-synthesis'    // All results in, final synthesis
-  | 'quality-pass'       // Quality scoring in progress
-  | 'completed'          // Pipeline complete
-  | 'failed';            // Pipeline failed
+  | 'initializing' // Setting up threads
+  | 'dual-decomposing' // Both flagship and fast decomposers running
+  | 'routing-executing' // Routing and executing overlap
+  | 'incremental-synth' // Results arriving + incremental synthesis
+  | 'final-synthesis' // All results in, final synthesis
+  | 'quality-pass' // Quality scoring in progress
+  | 'completed' // Pipeline complete
+  | 'failed'; // Pipeline failed
 
 /**
  * MTP Performance Metrics — measures the hyperthreading efficiency.

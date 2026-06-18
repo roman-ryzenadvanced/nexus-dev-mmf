@@ -17,13 +17,8 @@ export async function fetchModelsFromProvider(provider: Provider): Promise<Model
   return provider.fetchModels();
 }
 
-export async function fetchAllModels(
-  providers: Map<string, Provider>,
-  opts: { onlyIds?: string[]; signal?: AbortSignal } = {}
-): Promise<FetchResult[]> {
-  const targets = opts.onlyIds
-    ? Array.from(providers.entries()).filter(([id]) => opts.onlyIds!.includes(id))
-    : Array.from(providers.entries());
+export async function fetchAllModels(providers: Map<string, Provider>, opts: { onlyIds?: string[]; signal?: AbortSignal } = {}): Promise<FetchResult[]> {
+  const targets = opts.onlyIds ? Array.from(providers.entries()).filter(([id]) => opts.onlyIds!.includes(id)) : Array.from(providers.entries());
 
   return Promise.all(
     targets.map(async ([id, provider]) => {
@@ -34,10 +29,7 @@ export async function fetchAllModels(
         const models = await provider.fetchModels();
         return { providerId: id, ok: true, models };
       } catch (err) {
-        const msg =
-          err instanceof ProviderError
-            ? err.message
-            : (err as Error).message || 'unknown error';
+        const msg = err instanceof ProviderError ? err.message : (err as Error).message || 'unknown error';
         return { providerId: id, ok: false, error: msg };
       }
     })

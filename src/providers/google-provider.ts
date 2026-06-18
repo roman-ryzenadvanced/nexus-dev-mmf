@@ -10,24 +10,12 @@
  * @version 4.0.0
  */
 
-import {
-  LLMProvider,
-  ProviderId,
-  ProviderConfig,
-  ProviderMessage,
-  ProviderCompletionOptions,
-  ProviderCompletionResult,
-} from './types.js';
+import type { LLMProvider, ProviderCompletionOptions, ProviderCompletionResult, ProviderConfig, ProviderId, ProviderMessage } from './types.js';
 
 export class GoogleProvider implements LLMProvider {
   readonly providerId: ProviderId = 'google';
   readonly name = 'Google AI (Gemini)';
-  readonly supportedModels: string[] = [
-    'gemini-2.5-pro-preview-06-05',
-    'gemini-2.5-flash-preview-05-20',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-  ];
+  readonly supportedModels: string[] = ['gemini-2.5-pro-preview-06-05', 'gemini-2.5-flash-preview-05-20', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
 
   // Friendly aliases
   private static readonly MODEL_ALIASES: Record<string, string> = {
@@ -63,11 +51,7 @@ export class GoogleProvider implements LLMProvider {
     return GoogleProvider.MODEL_ALIASES[modelId] ?? modelId;
   }
 
-  async complete(
-    model: string,
-    messages: ProviderMessage[],
-    options?: ProviderCompletionOptions
-  ): Promise<ProviderCompletionResult> {
+  async complete(model: string, messages: ProviderMessage[], options?: ProviderCompletionOptions): Promise<ProviderCompletionResult> {
     if (!this._isReady) {
       throw new Error('Google provider not initialized');
     }
@@ -80,9 +64,7 @@ export class GoogleProvider implements LLMProvider {
 
     for (const msg of messages) {
       if (msg.role === 'system') {
-        systemInstruction = systemInstruction
-          ? `${systemInstruction}\n\n${msg.content}`
-          : msg.content;
+        systemInstruction = systemInstruction ? `${systemInstruction}\n\n${msg.content}` : msg.content;
       } else {
         contents.push({
           role: msg.role === 'assistant' ? 'model' : 'user',
@@ -139,7 +121,7 @@ export class GoogleProvider implements LLMProvider {
       throw new Error(`Google AI API error (${response.status}): ${errorText}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json();
 
     // Extract text from Gemini's candidates format
     let content = '';
@@ -155,11 +137,13 @@ export class GoogleProvider implements LLMProvider {
       content,
       model: data.modelVersion ?? resolvedModel,
       provider: 'google',
-      usage: data.usageMetadata ? {
-        promptTokens: data.usageMetadata.promptTokenCount ?? 0,
-        completionTokens: data.usageMetadata.candidatesTokenCount ?? 0,
-        totalTokens: data.usageMetadata.totalTokenCount ?? 0,
-      } : undefined,
+      usage: data.usageMetadata
+        ? {
+            promptTokens: data.usageMetadata.promptTokenCount ?? 0,
+            completionTokens: data.usageMetadata.candidatesTokenCount ?? 0,
+            totalTokens: data.usageMetadata.totalTokenCount ?? 0,
+          }
+        : undefined,
       thinkingUsed: options?.enableThinking && resolvedModel.includes('2.5'),
       metadata: {
         finishReason: data.candidates?.[0]?.finishReason,
@@ -185,8 +169,7 @@ export class GoogleProvider implements LLMProvider {
   }
 
   supportsModel(modelId: string): boolean {
-    return this.supportedModels.includes(modelId) ||
-           modelId in GoogleProvider.MODEL_ALIASES;
+    return this.supportedModels.includes(modelId) || modelId in GoogleProvider.MODEL_ALIASES;
   }
 
   async shutdown(): Promise<void> {

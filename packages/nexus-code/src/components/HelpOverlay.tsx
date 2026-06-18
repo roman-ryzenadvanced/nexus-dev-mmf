@@ -12,9 +12,11 @@ export function HelpOverlay() {
   return (
     <Box flexDirection="column" paddingX={1} borderStyle="round" borderColor={t.accent}>
       <Box marginBottom={1}>
-        <Text color={t.accent} bold>nexus-code — slash commands</Text>
+        <Text color={t.accent} bold>
+          nexus-code — slash commands
+        </Text>
       </Box>
-      {REGISTRY.map((cmd) => (
+      {REGISTRY.map(cmd => (
         <Box key={cmd.name} gap={1}>
           <Text color={t.accent2}>{`/${cmd.name}`.padEnd(14)}</Text>
           <Text color={t.primaryDim}>{cmd.description}</Text>

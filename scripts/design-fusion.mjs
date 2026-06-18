@@ -65,26 +65,58 @@ let verbose = false;
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
-  if (arg === '--mode' && args[i + 1]) { mode = args[i + 1]; i++; }
-  else if (arg === '--no-slope') { enableSlope = false; }
-  else if (arg === '--no-design-system') { enableDesignSystem = false; }
-  else if (arg === '--product' && args[i + 1]) { productType = args[i + 1]; i++; }
-  else if (arg === '--brand' && args[i + 1]) { brandName = args[i + 1]; i++; }
-  else if (arg === '--industry' && args[i + 1]) { industry = args[i + 1]; i++; }
-  else if (arg === '--stack' && args[i + 1]) { techStack = args[i + 1]; i++; }
-  else if (arg === '--persist') { persist = true; }
-  else if (arg === '--page' && args[i + 1]) { pageName = args[i + 1]; i++; }
-  else if (arg === '--verbose') { verbose = true; }
-  else if (!arg.startsWith('--')) { query += (query ? ' ' : '') + arg; }
+  if (arg === '--mode' && args[i + 1]) {
+    mode = args[i + 1];
+    i++;
+  } else if (arg === '--no-slope') {
+    enableSlope = false;
+  } else if (arg === '--no-design-system') {
+    enableDesignSystem = false;
+  } else if (arg === '--product' && args[i + 1]) {
+    productType = args[i + 1];
+    i++;
+  } else if (arg === '--brand' && args[i + 1]) {
+    brandName = args[i + 1];
+    i++;
+  } else if (arg === '--industry' && args[i + 1]) {
+    industry = args[i + 1];
+    i++;
+  } else if (arg === '--stack' && args[i + 1]) {
+    techStack = args[i + 1];
+    i++;
+  } else if (arg === '--persist') {
+    persist = true;
+  } else if (arg === '--page' && args[i + 1]) {
+    pageName = args[i + 1];
+    i++;
+  } else if (arg === '--verbose') {
+    verbose = true;
+  } else if (!arg.startsWith('--')) {
+    query += (query ? ' ' : '') + arg;
+  }
 }
 
 // ============ BM25 SEARCH (inline for .mjs) ============
 class BM25 {
-  constructor(k1 = 1.5, b = 0.75) { this.k1 = k1; this.b = b; }
-  k1; b; corpus = []; docLengths = []; avgdl = 0; idf = {}; docFreqs = {}; N = 0;
+  constructor(k1 = 1.5, b = 0.75) {
+    this.k1 = k1;
+    this.b = b;
+  }
+  k1;
+  b;
+  corpus = [];
+  docLengths = [];
+  avgdl = 0;
+  idf = {};
+  docFreqs = {};
+  N = 0;
 
   tokenize(text) {
-    return text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2);
   }
 
   fit(documents) {
@@ -97,7 +129,10 @@ class BM25 {
     for (const doc of this.corpus) {
       const seen = new Set();
       for (const word of doc) {
-        if (!seen.has(word)) { this.docFreqs[word] = (this.docFreqs[word] ?? 0) + 1; seen.add(word); }
+        if (!seen.has(word)) {
+          this.docFreqs[word] = (this.docFreqs[word] ?? 0) + 1;
+          seen.add(word);
+        }
       }
     }
     this.idf = {};
@@ -114,12 +149,14 @@ class BM25 {
       let score = 0;
       const docLen = this.docLengths[idx];
       const termFreqs = {};
-      for (const word of doc) { termFreqs[word] = (termFreqs[word] ?? 0) + 1; }
+      for (const word of doc) {
+        termFreqs[word] = (termFreqs[word] ?? 0) + 1;
+      }
       for (const token of queryTokens) {
         if (token in this.idf) {
           const tf = termFreqs[token] ?? 0;
           const idf = this.idf[token];
-          score += idf * (tf * (this.k1 + 1)) / (tf + this.k1 * (1 - this.b + this.b * docLen / this.avgdl));
+          score += (idf * (tf * (this.k1 + 1))) / (tf + this.k1 * (1 - this.b + (this.b * docLen) / this.avgdl));
         }
       }
       scores.push([idx, score]);
@@ -138,7 +175,9 @@ function loadCSV(filepath) {
   return lines.slice(1).map(line => {
     const values = parseCSVLine(line);
     const row = {};
-    headers.forEach((h, i) => { row[h.trim()] = (values[i] ?? '').trim(); });
+    headers.forEach((h, i) => {
+      row[h.trim()] = (values[i] ?? '').trim();
+    });
     return row;
   });
 }
@@ -149,9 +188,14 @@ function parseCSVLine(line) {
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    if (char === '"') { inQuotes = !inQuotes; }
-    else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
-    else { current += char; }
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
   }
   result.push(current);
   return result;
@@ -178,7 +222,12 @@ function generateDesignSystem(query, productType) {
   const fullQuery = `${productType} ${query}`;
 
   // Search across domains
-  const productResults = searchCSV(resolve(DATA_DIR, 'products.csv'), ['Product Type', 'Keywords', 'Primary Style Recommendation', 'Key Considerations'], fullQuery, 1);
+  const productResults = searchCSV(
+    resolve(DATA_DIR, 'products.csv'),
+    ['Product Type', 'Keywords', 'Primary Style Recommendation', 'Key Considerations'],
+    fullQuery,
+    1
+  );
   const styleResults = searchCSV(resolve(DATA_DIR, 'styles.csv'), ['Style Category', 'Keywords', 'Best For', 'AI Prompt Keywords'], fullQuery, 2);
   const colorResults = searchCSV(resolve(DATA_DIR, 'colors.csv'), ['Product Type', 'Notes'], fullQuery, 1);
   const typographyResults = searchCSV(resolve(DATA_DIR, 'typography.csv'), ['Font Pairing Name', 'Category', 'Mood/Style Keywords', 'Best For'], fullQuery, 1);
@@ -209,7 +258,10 @@ function generateDesignSystem(query, productType) {
       mood: typography['Mood/Style Keywords'] ?? 'modern, professional',
     },
     effects: (style['Effects & Animation'] ?? 'Subtle hover (200-250ms)').split(',').map(s => s.trim()),
-    antiPatterns: (reasoning['Anti_Patterns'] ?? '').split('+').map(s => s.trim()).filter(Boolean),
+    antiPatterns: (reasoning['Anti_Patterns'] ?? '')
+      .split('+')
+      .map(s => s.trim())
+      .filter(Boolean),
     slopeAntiPatterns: [
       'Avoid AI purple (#6366F1) as primary',
       'No centered hero + 3-column features + CTA template',
@@ -251,16 +303,30 @@ function detectSlopePatterns(output) {
       if (category === 'overused-effects') {
         const count = (output.match(new RegExp(indicator, 'gi')) ?? []).length;
         if (count > (config.threshold ?? 3)) {
-          issues.push({ category, description: `Excessive ${indicator} usage (${count}x)`, severity: 'medium', fixes: config.fixes });
+          issues.push({
+            category,
+            description: `Excessive ${indicator} usage (${count}x)`,
+            severity: 'medium',
+            fixes: config.fixes,
+          });
         }
       } else if (outputLower.includes(indicator.toLowerCase())) {
-        issues.push({ category, description: `Detected: ${indicator}`, severity: 'high', fixes: config.fixes });
+        issues.push({
+          category,
+          description: `Detected: ${indicator}`,
+          severity: 'high',
+          fixes: config.fixes,
+        });
       }
     }
   }
 
   const slopeScore = Math.min(100, issues.filter(i => i.severity === 'high').length * 25 + issues.length * 8);
-  return { slopeScore, issues, originalityScore: Math.max(0, 100 - slopeScore) };
+  return {
+    slopeScore,
+    issues,
+    originalityScore: Math.max(0, 100 - slopeScore),
+  };
 }
 
 // ============ MAIN PIPELINE ============
@@ -292,8 +358,8 @@ async function run() {
 
   // Phase 2: Multi-model design generation
   const MODEL_SETS = {
-    speed:    ['glm-5', 'glm-5v-turbo', 'glm-5.1'],
-    quality:  ['glm-5.2', 'glm-5.2-1m', 'glm-4.7'],
+    speed: ['glm-5', 'glm-5v-turbo', 'glm-5.1'],
+    quality: ['glm-5.2', 'glm-5.2-1m', 'glm-4.7'],
     balanced: ['glm-5.2', 'glm-5.1', 'glm-4.7'],
     creative: ['glm-4.7', 'glm-5.1', 'glm-5.2'],
   };
@@ -303,7 +369,8 @@ async function run() {
     ? `DESIGN SYSTEM:\n  Pattern: ${designSystem.pattern}\n  Style: ${designSystem.style}\n  Primary Color: ${designSystem.colors.primary}\n  Secondary: ${designSystem.colors.secondary}\n  Accent: ${designSystem.colors.accent}\n  Heading Font: ${designSystem.typography.heading}\n  Body Font: ${designSystem.typography.body}\n  Effects: ${designSystem.effects.join(', ')}\n  Anti-Patterns: ${designSystem.antiPatterns.join('; ')}\n  SLOPE Anti-Patterns: ${designSystem.slopeAntiPatterns.join('; ')}`
     : 'No design system. Use best practices.';
 
-  const slopeWarnings = enableSlope ? `
+  const slopeWarnings = enableSlope
+    ? `
 CRITICAL ANTI-AI-SLOPE RULES:
 1. DO NOT use default blue (#3B82F6) or AI purple (#6366F1) as primary colors
 2. DO NOT create a centered hero + 3-column features + CTA template
@@ -312,7 +379,8 @@ CRITICAL ANTI-AI-SLOPE RULES:
 5. DO NOT use uniform spacing — create visual rhythm
 6. MUST create a SIGNATURE VISUAL ELEMENT unique to this brand
 7. MUST use dramatic typography contrast (weight + size)
-8. MUST vary border-radius (sharp for some, rounded for others)` : '';
+8. MUST vary border-radius (sharp for some, rounded for others)`
+    : '';
 
   const designPrompt = `You are an expert UI/UX designer. Generate a complete, production-ready design.
 
@@ -358,12 +426,30 @@ The design must look HANDCRAFTED and BRAND-SPECIFIC, not AI-generated.`;
             temperature: mode === 'creative' ? 0.8 : 0.5,
           });
           const output = retryResp.choices?.[0]?.message?.content ?? '';
-          return { model: modelId, output, time: Date.now() - t0, success: true, retried: true };
+          return {
+            model: modelId,
+            output,
+            time: Date.now() - t0,
+            success: true,
+            retried: true,
+          };
         } catch {
-          return { model: modelId, output: '', time: Date.now() - t0, success: false, error: err.message };
+          return {
+            model: modelId,
+            output: '',
+            time: Date.now() - t0,
+            success: false,
+            error: err.message,
+          };
         }
       }
-      return { model: modelId, output: '', time: Date.now() - t0, success: false, error: err.message };
+      return {
+        model: modelId,
+        output: '',
+        time: Date.now() - t0,
+        success: false,
+        error: err.message,
+      };
     }
   });
 
@@ -403,9 +489,9 @@ The design must look HANDCRAFTED and BRAND-SPECIFIC, not AI-generated.`;
     if (slopeResult.slopeScore > 40) {
       if (verbose) process.stderr.write(`\n🧹 Running AI SLOPE Elimination (score > 40)...\n`);
 
-      const slopeIssues = slopeResult.issues.map(i =>
-        `[${i.severity.toUpperCase()}] ${i.category}: ${i.description}\n  Fixes: ${i.fixes.join('; ')}`
-      ).join('\n');
+      const slopeIssues = slopeResult.issues
+        .map(i => `[${i.severity.toUpperCase()}] ${i.category}: ${i.description}\n  Fixes: ${i.fixes.join('; ')}`)
+        .join('\n');
 
       const eliminationPrompt = `You are an AI SLOPE elimination specialist. The following design has been flagged for AI SLOPE patterns. Revise it to eliminate ALL detected SLOPE issues while preserving the design intent.
 
@@ -436,7 +522,10 @@ Generate the complete revised design now.`;
           model: 'glm-5.2',
           messages: [
             { role: 'system', content: eliminationPrompt },
-            { role: 'user', content: 'Eliminate all AI SLOPE patterns from this design.' },
+            {
+              role: 'user',
+              content: 'Eliminate all AI SLOPE patterns from this design.',
+            },
           ],
           temperature: 0.6,
         });
@@ -461,7 +550,8 @@ Generate the complete revised design now.`;
   if (successful.length > 1) {
     if (verbose) process.stderr.write(`\n🔀 Synthesizing ${successful.length} model outputs...\n`);
 
-    const synthInput = `ORIGINAL QUERY:\n${query}\n\nDESIGN OUTPUTS FROM MULTIPLE MODELS:\n${'='.repeat(50)}\n\n` +
+    const synthInput =
+      `ORIGINAL QUERY:\n${query}\n\nDESIGN OUTPUTS FROM MULTIPLE MODELS:\n${'='.repeat(50)}\n\n` +
       successful.map(r => `[${r.model} — ${r.time}ms]\n${r.output.substring(0, 2500)}\n${'─'.repeat(40)}\n`).join('\n') +
       `\nSYNTHESIZE the best elements into one polished, SLOPE-free design. Prioritize ORIGINALITY and BRAND SPECIFICITY.`;
 

@@ -41,29 +41,29 @@ This release consolidates all work from v1.1.0 through v1.1.7 into a single PR. 
 
 ## Quality gates — all green
 
-| Gate | Result |
-|---|---|
-| TypeScript strict typecheck | **0 errors** |
-| `npm run build` | **40 JS files, clean output** |
-| `npm run lint` | **0 problems** |
-| `npm test` | **230 passing + 8 skipped** (env-gated) |
-| `npm run test:coverage` | **64.65% lines** (threshold 40%) |
-| CLI boot | `nexus --version` → **`1.1.7`** |
+| Gate                        | Result                                  |
+| --------------------------- | --------------------------------------- |
+| TypeScript strict typecheck | **0 errors**                            |
+| `npm run build`             | **40 JS files, clean output**           |
+| `npm run lint`              | **0 problems**                          |
+| `npm test`                  | **230 passing + 8 skipped** (env-gated) |
+| `npm run test:coverage`     | **64.65% lines** (threshold 40%)        |
+| CLI boot                    | `nexus --version` → **`1.1.7`**         |
 
 ---
 
 ## Test growth across versions
 
-| Version | Tests | Suites | Lint | Coverage |
-|---|---|---|---|---|
-| v1.1.0 | 0 | 0 | n/a | n/a |
-| v1.1.1 | 78 | 7 | n/a | n/a |
-| v1.1.2 | 114 | 11 | n/a | n/a |
-| v1.1.3 | 123 | 13 | 0 | n/a |
-| v1.1.4 | 152 | 16 | 0 | 61% |
-| v1.1.5 | 196 | 20 | 0 | 56% |
-| v1.1.6 | 230 | 23 | 0 | 65% |
-| **v1.1.7** | **230 + 8 skipped** | **23** | **0** | **65%** |
+| Version    | Tests               | Suites | Lint  | Coverage |
+| ---------- | ------------------- | ------ | ----- | -------- |
+| v1.1.0     | 0                   | 0      | n/a   | n/a      |
+| v1.1.1     | 78                  | 7      | n/a   | n/a      |
+| v1.1.2     | 114                 | 11     | n/a   | n/a      |
+| v1.1.3     | 123                 | 13     | 0     | n/a      |
+| v1.1.4     | 152                 | 16     | 0     | 61%      |
+| v1.1.5     | 196                 | 20     | 0     | 56%      |
+| v1.1.6     | 230                 | 23     | 0     | 65%      |
+| **v1.1.7** | **230 + 8 skipped** | **23** | **0** | **65%**  |
 
 ---
 
@@ -71,15 +71,15 @@ This release consolidates all work from v1.1.0 through v1.1.7 into a single PR. 
 
 See [`docs/ROOT-CAUSE-ANALYSIS.md`](./ROOT-CAUSE-ANALYSIS.md) for the full root-cause analysis of every bug fixed across v1.1.0 → v1.1.7.
 
-| Version | Bugs fixed | Key fixes |
-|---|---|---|
-| v1.1.1 | 8 | Z.ai SDK API, Anthropic fetchModels, OpenAI types, Ink dim prop, diff count, App.tsx imports, implicit anys, Vite resolver |
-| v1.1.2 | 4 | OpenAI tool_calls parsing, Anthropic tool_use blocks, input_schema type, streamChat return type |
-| v1.1.3 | 2 | MCPClient EPIPE, unused autoModels state |
-| v1.1.4 | 2 | bin/nexus.js TS syntax, eager SDK construction |
-| v1.1.5 | 1 | color.dim Proxy + JSX interaction |
-| v1.1.6 | 3 | Plugin commands not wired, web test race condition, test assertion misuse |
-| v1.1.7 | 1 | Missed second MCP clientInfo during rebrand |
+| Version | Bugs fixed | Key fixes                                                                                                                  |
+| ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| v1.1.1  | 8          | Z.ai SDK API, Anthropic fetchModels, OpenAI types, Ink dim prop, diff count, App.tsx imports, implicit anys, Vite resolver |
+| v1.1.2  | 4          | OpenAI tool_calls parsing, Anthropic tool_use blocks, input_schema type, streamChat return type                            |
+| v1.1.3  | 2          | MCPClient EPIPE, unused autoModels state                                                                                   |
+| v1.1.4  | 2          | bin/nexus.js TS syntax, eager SDK construction                                                                             |
+| v1.1.5  | 1          | color.dim Proxy + JSX interaction                                                                                          |
+| v1.1.6  | 3          | Plugin commands not wired, web test race condition, test assertion misuse                                                  |
+| v1.1.7  | 1          | Missed second MCP clientInfo during rebrand                                                                                |
 
 ---
 

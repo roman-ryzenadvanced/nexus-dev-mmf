@@ -3,7 +3,8 @@
  * Updated for v4.0.0 with multi-provider support.
  */
 
-import { MultiProviderConfig, DEFAULT_MULTI_PROVIDER_CONFIG } from '../providers/types.js';
+import type { MultiProviderConfig } from '../providers/types.js';
+import { DEFAULT_MULTI_PROVIDER_CONFIG } from '../providers/types.js';
 
 export interface NexusDevConfig {
   /** Default execution mode */

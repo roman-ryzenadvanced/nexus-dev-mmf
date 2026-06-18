@@ -11,7 +11,9 @@ import ZAI from 'z-ai-web-dev-sdk';
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.error('Usage: node direct-fusion.mjs "<query>" [--mode <speed|quality|balanced|creative>]\n       Start your message with /nexus to auto-trigger this.');
+  console.error(
+    'Usage: node direct-fusion.mjs "<query>" [--mode <speed|quality|balanced|creative>]\n       Start your message with /nexus to auto-trigger this.'
+  );
   process.exit(1);
 }
 
@@ -30,8 +32,8 @@ for (let i = 0; i < args.length; i++) {
 
 // Model selection based on mode
 const MODEL_SETS = {
-  speed:    ['glm-5', 'glm-5v-turbo', 'glm-5.1'],
-  quality:  ['glm-5.2', 'glm-5.2-1m', 'glm-4.7'],
+  speed: ['glm-5', 'glm-5v-turbo', 'glm-5.1'],
+  quality: ['glm-5.2', 'glm-5.2-1m', 'glm-4.7'],
   balanced: ['glm-5.2', 'glm-5.1', 'glm-4.7'],
   creative: ['glm-4.7', 'glm-5.1', 'glm-5.2'],
 };
@@ -40,11 +42,11 @@ const models = MODEL_SETS[mode] || MODEL_SETS.balanced;
 
 const SYSTEM_PROMPTS = {
   'glm-5.2-1m': 'You are an advanced reasoning specialist. Provide deep, thorough analysis with step-by-step logical reasoning. Be comprehensive and precise.',
-  'glm-5.2':     'You are a high-performance task executor. Provide robust, accurate, and well-structured answers. Focus on correctness and completeness.',
-  'glm-5.1':     'You are a language and context specialist. Focus on nuance, clarity, and precise communication. Ensure smooth, well-articulated responses.',
-  'glm-5':       'You are a rapid-response specialist. Provide concise, efficient, and direct answers. Prioritize speed without sacrificing accuracy.',
-  'glm-5v-turbo':'You are a quick-iteration specialist. Provide fast, focused, and practical responses. Cut to the essentials.',
-  'glm-4.7':     'You are a creative synthesis specialist. Provide elegant, well-crafted, and insightful responses. Focus on originality and depth of thought.',
+  'glm-5.2': 'You are a high-performance task executor. Provide robust, accurate, and well-structured answers. Focus on correctness and completeness.',
+  'glm-5.1': 'You are a language and context specialist. Focus on nuance, clarity, and precise communication. Ensure smooth, well-articulated responses.',
+  'glm-5': 'You are a rapid-response specialist. Provide concise, efficient, and direct answers. Prioritize speed without sacrificing accuracy.',
+  'glm-5v-turbo': 'You are a quick-iteration specialist. Provide fast, focused, and practical responses. Cut to the essentials.',
+  'glm-4.7': 'You are a creative synthesis specialist. Provide elegant, well-crafted, and insightful responses. Focus on originality and depth of thought.',
 };
 
 const SYNTHESIS_PROMPT = `You are a master synthesis engine. Combine the following outputs from multiple specialized AI models into a single, coherent, comprehensive answer.
@@ -71,7 +73,10 @@ async function run() {
       const response = await zai.chat.completions.create({
         model: modelId,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPTS[modelId] || 'You are a helpful assistant.' },
+          {
+            role: 'system',
+            content: SYSTEM_PROMPTS[modelId] || 'You are a helpful assistant.',
+          },
           { role: 'user', content: query },
         ],
         temperature: mode === 'creative' ? 0.7 : 0.4,
@@ -86,18 +91,39 @@ async function run() {
           const retryResp = await zai.chat.completions.create({
             model: modelId,
             messages: [
-              { role: 'system', content: SYSTEM_PROMPTS[modelId] || 'You are a helpful assistant.' },
+              {
+                role: 'system',
+                content: SYSTEM_PROMPTS[modelId] || 'You are a helpful assistant.',
+              },
               { role: 'user', content: query },
             ],
             temperature: mode === 'creative' ? 0.7 : 0.4,
           });
           const output = retryResp.choices?.[0]?.message?.content ?? '';
-          return { model: modelId, output, time: Date.now() - t0, success: true, retried: true };
+          return {
+            model: modelId,
+            output,
+            time: Date.now() - t0,
+            success: true,
+            retried: true,
+          };
         } catch {
-          return { model: modelId, output: '', time: Date.now() - t0, success: false, error: err.message };
+          return {
+            model: modelId,
+            output: '',
+            time: Date.now() - t0,
+            success: false,
+            error: err.message,
+          };
         }
       }
-      return { model: modelId, output: '', time: Date.now() - t0, success: false, error: err.message };
+      return {
+        model: modelId,
+        output: '',
+        time: Date.now() - t0,
+        success: false,
+        error: err.message,
+      };
     }
   });
 
@@ -115,7 +141,8 @@ async function run() {
     console.log(successful[0].output);
   } else {
     // Merge multiple model outputs
-    const synthesisInput = `ORIGINAL QUERY:\n${query}\n\nMODEL OUTPUTS:\n${'='.repeat(50)}\n\n` +
+    const synthesisInput =
+      `ORIGINAL QUERY:\n${query}\n\nMODEL OUTPUTS:\n${'='.repeat(50)}\n\n` +
       successful.map(r => `[${r.model} — ${r.time}ms]\n${r.output}\n${'─'.repeat(40)}\n`).join('\n') +
       `\nSYNTHESIZE the above into one comprehensive answer.`;
 
@@ -134,7 +161,10 @@ async function run() {
 
   const totalTime = Date.now() - startTime;
   const modelInfo = successful.map(r => `${r.model}(${r.time}ms)`).join(', ');
-  const failedInfo = results.filter(r => !r.success).map(r => `${r.model}(FAILED)`).join(', ');
+  const failedInfo = results
+    .filter(r => !r.success)
+    .map(r => `${r.model}(FAILED)`)
+    .join(', ');
   process.stderr.write(`\n🔧 Fusion: ${modelInfo}${failedInfo ? ' | ' + failedInfo : ''} | Total: ${totalTime}ms | Mode: ${mode}\n`);
 }
 

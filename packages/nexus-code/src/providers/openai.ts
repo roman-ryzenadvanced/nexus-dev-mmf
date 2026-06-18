@@ -10,13 +10,7 @@
 
 import OpenAI from 'openai';
 import { BaseProvider, ProviderError } from './base.js';
-import type {
-  ChatMessage,
-  ChatRequestOptions,
-  ChatResponse,
-  ModelDescriptor,
-  ToolCall,
-} from '../types.js';
+import type { ChatMessage, ChatRequestOptions, ChatResponse, ModelDescriptor, ToolCall } from '../types.js';
 
 type OpenAIMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 type OpenAITool = OpenAI.Chat.Completions.ChatCompletionTool;
@@ -28,12 +22,7 @@ export class OpenAIProvider extends BaseProvider {
   private _client: OpenAI | null = null;
   private _clientOpts: { baseURL: string; apiKey?: string };
 
-  constructor(opts: {
-    id: string;
-    name: string;
-    baseURL?: string;
-    apiKey?: string;
-  }) {
+  constructor(opts: { id: string; name: string; baseURL?: string; apiKey?: string }) {
     super(opts);
     this.id = opts.id;
     this.name = opts.name;
@@ -56,7 +45,7 @@ export class OpenAIProvider extends BaseProvider {
     try {
       const list = await this.client.models.list();
       const now = Date.now();
-      return Array.from(list.data).map((m) => ({
+      return Array.from(list.data).map(m => ({
         id: m.id,
         providerId: this.id,
         label: m.id,
@@ -65,12 +54,7 @@ export class OpenAIProvider extends BaseProvider {
         capabilities: { streaming: true, tools: true },
       }));
     } catch (err) {
-      throw new ProviderError(
-        `Failed to fetch models from ${this.name}: ${(err as Error).message}`,
-        this.id,
-        undefined,
-        err
-      );
+      throw new ProviderError(`Failed to fetch models from ${this.name}: ${(err as Error).message}`, this.id, undefined, err);
     }
   }
 
@@ -80,7 +64,7 @@ export class OpenAIProvider extends BaseProvider {
 
     const payload: OpenAIMessage[] = this.toOpenAIMessages(messages);
     const tools: OpenAITool[] | undefined = opts.tools?.length
-      ? opts.tools.map((t) => ({
+      ? opts.tools.map(t => ({
           type: 'function' as const,
           function: {
             name: t.name,
@@ -110,32 +94,27 @@ export class OpenAIProvider extends BaseProvider {
         provider: this.id,
         elapsedMs: Date.now() - start,
         tokens: completion.usage
-          ? { input: completion.usage.prompt_tokens, output: completion.usage.completion_tokens }
+          ? {
+              input: completion.usage.prompt_tokens,
+              output: completion.usage.completion_tokens,
+            }
           : undefined,
         toolCalls: toolCalls.length ? toolCalls : undefined,
         ts: Date.now(),
       };
       return { message: assistantMsg, raw: completion };
     } catch (err) {
-      throw new ProviderError(
-        `Chat failed on ${this.name}: ${(err as Error).message}`,
-        this.id,
-        (err as { status?: number }).status,
-        err
-      );
+      throw new ProviderError(`Chat failed on ${this.name}: ${(err as Error).message}`, this.id, (err as { status?: number }).status, err);
     }
   }
 
   /** Stream tokens via onDelta. Returns the full message at the end. */
-  async *streamChat(
-    messages: ChatMessage[],
-    opts: ChatRequestOptions = {}
-  ): AsyncGenerator<string, ChatResponse, unknown> {
+  async *streamChat(messages: ChatMessage[], opts: ChatRequestOptions = {}): AsyncGenerator<string, ChatResponse, unknown> {
     this.assertKey();
     const model = opts.model || messages[0]?.model || 'gpt-4o';
     const payload = this.toOpenAIMessages(messages);
     const tools: OpenAITool[] | undefined = opts.tools?.length
-      ? opts.tools.map((t) => ({
+      ? opts.tools.map(t => ({
           type: 'function' as const,
           function: {
             name: t.name,
@@ -156,10 +135,7 @@ export class OpenAIProvider extends BaseProvider {
     const start = Date.now();
     // Accumulate tool calls across chunks — OpenAI streams them in pieces:
     // first chunk has the id + name, subsequent chunks append to arguments.
-    const toolCallAccumulator = new Map<
-      number,
-      { id: string; name: string; arguments: string }
-    >();
+    const toolCallAccumulator = new Map<number, { id: string; name: string; arguments: string }>();
 
     for await (const chunk of stream) {
       const choice = chunk.choices[0];
@@ -236,7 +212,7 @@ export class OpenAIProvider extends BaseProvider {
         out.push({
           role: 'assistant',
           content: m.content || null,
-          tool_calls: m.toolCalls.map((tc) => ({
+          tool_calls: m.toolCalls.map(tc => ({
             id: tc.id,
             type: 'function' as const,
             function: {
@@ -256,14 +232,16 @@ export class OpenAIProvider extends BaseProvider {
   }
 
   private parseToolCalls(
-    raw: Array<{
-      id: string;
-      type: 'function';
-      function: { name: string; arguments: string };
-    }> | undefined
+    raw:
+      | Array<{
+          id: string;
+          type: 'function';
+          function: { name: string; arguments: string };
+        }>
+      | undefined
   ): ToolCall[] {
     if (!raw?.length) return [];
-    return raw.map((tc) => {
+    return raw.map(tc => {
       let args: Record<string, unknown> = {};
       try {
         args = JSON.parse(tc.function.arguments || '{}');
@@ -279,12 +257,7 @@ export class OpenAIProvider extends BaseProvider {
     });
   }
 
-  private async streamChatInternal(
-    payload: OpenAIMessage[],
-    model: string,
-    opts: ChatRequestOptions,
-    tools: OpenAITool[] | undefined
-  ): Promise<ChatResponse> {
+  private async streamChatInternal(payload: OpenAIMessage[], model: string, opts: ChatRequestOptions, tools: OpenAITool[] | undefined): Promise<ChatResponse> {
     const stream = await this.client.chat.completions.create({
       model,
       messages: payload,

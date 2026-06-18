@@ -32,16 +32,25 @@ let background = '';
 // Parse flags
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
-  if (arg === '--diff' && args[i + 1]) { diffRef = args[++i]; }
-  else if (arg === '--file' && args[i + 1]) { filePath = args[++i]; }
-  else if (arg === '--mode' && args[i + 1]) { mode = args[++i]; }
-  else if (arg === '--no-filter') { enableFilter = false; }
-  else if (arg === '--no-plan') { enablePlan = false; }
-  else if (arg === '--plan') { enablePlan = true; }
-  else if (arg === '--mtp') { enableMTP = true; }
-  else if (arg === '--rule' && args[i + 1]) { customRule = args[++i]; }
-  else if (arg === '--background' && args[i + 1]) { background = args[++i]; }
-  else if (arg === '--help' || arg === '-h') {
+  if (arg === '--diff' && args[i + 1]) {
+    diffRef = args[++i];
+  } else if (arg === '--file' && args[i + 1]) {
+    filePath = args[++i];
+  } else if (arg === '--mode' && args[i + 1]) {
+    mode = args[++i];
+  } else if (arg === '--no-filter') {
+    enableFilter = false;
+  } else if (arg === '--no-plan') {
+    enablePlan = false;
+  } else if (arg === '--plan') {
+    enablePlan = true;
+  } else if (arg === '--mtp') {
+    enableMTP = true;
+  } else if (arg === '--rule' && args[i + 1]) {
+    customRule = args[++i];
+  } else if (arg === '--background' && args[i + 1]) {
+    background = args[++i];
+  } else if (arg === '--help' || arg === '-h') {
     console.log(`
 Nexus-Dev Code Review — Multi-Model Code Review Engine
 
@@ -74,13 +83,22 @@ Examples:
 function getDiff() {
   try {
     if (diffRef) {
-      return execSync(`git diff ${diffRef}`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      return execSync(`git diff ${diffRef}`, {
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
+      });
     }
     // Default: staged changes
-    const staged = execSync('git diff --cached', { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+    const staged = execSync('git diff --cached', {
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024,
+    });
     if (staged.trim()) return staged;
     // Fallback: unstaged changes
-    return execSync('git diff', { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+    return execSync('git diff', {
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024,
+    });
   } catch (e) {
     console.error('Error: Could not get git diff. Make sure you are in a git repository.');
     process.exit(1);
@@ -140,9 +158,18 @@ async function runReview() {
   if (!rule && currentFile) {
     const ext = currentFile.split('.').pop()?.toLowerCase() ?? '';
     const ruleMap = {
-      'ts': 'typescript', 'tsx': 'typescript', 'js': 'javascript', 'jsx': 'javascript',
-      'java': 'java', 'kt': 'kotlin', 'rs': 'rust', 'cpp': 'cpp', 'cc': 'cpp',
-      'c': 'c', 'go': 'go', 'py': 'python',
+      ts: 'typescript',
+      tsx: 'typescript',
+      js: 'javascript',
+      jsx: 'javascript',
+      java: 'java',
+      kt: 'kotlin',
+      rs: 'rust',
+      cpp: 'cpp',
+      cc: 'cpp',
+      c: 'c',
+      go: 'go',
+      py: 'python',
     };
     // Use default rule for now - the engine handles language detection
     rule = '';
@@ -188,9 +215,7 @@ async function runReview() {
   });
 
   const reviewResults = await Promise.allSettled(reviewPromises);
-  const successfulReviews = reviewResults
-    .filter(r => r.status === 'fulfilled' && r.value.content)
-    .map(r => r.value);
+  const successfulReviews = reviewResults.filter(r => r.status === 'fulfilled' && r.value.content).map(r => r.value);
 
   console.log('  └─────────────────────────────────────────────────────');
 

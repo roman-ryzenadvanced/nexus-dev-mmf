@@ -125,7 +125,9 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           if (restored.mode) setConfig({ mode: restored.mode });
           if (typeof restored.useMMFE === 'boolean') setConfig({ useMMFE: restored.useMMFE });
           setRestoredFrom(restored.name && restored.name !== '__current__' ? restored.name : 'last session');
-          setTimeout(() => { if (!cancelled) setRestoredFrom(null); }, 4000);
+          setTimeout(() => {
+            if (!cancelled) setRestoredFrom(null);
+          }, 4000);
         }
         if (!cancelled) setBooting(false);
         return;
@@ -136,42 +138,45 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       if (cancelled) return;
       if (all.length > 0) {
         // Mark the auto-saved slot so the picker labels it "last session".
-        setBootChoice(all.map((s) => ({ name: s.name, updatedAt: s.updatedAt, isCurrent: s.name === '__current__' })));
+        setBootChoice(
+          all.map(s => ({
+            name: s.name,
+            updatedAt: s.updatedAt,
+            isCurrent: s.name === '__current__',
+          }))
+        );
         setBooting(false);
         return;
       }
       // Nothing saved — go straight in.
       setBooting(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle a selection from the boot session picker.
-  const handleBootChoice = useCallback(
-    async (choice: PickerChoice) => {
-      setBootChoice(null);
-      if (choice.action === 'new') {
-        void clearCurrentSession();
-        return;
-      }
-      // Resume the chosen session.
-      const restored = choice.name === '__current__'
-        ? await loadCurrentSession()
-        : await loadSession(choice.name!);
-      if (restored && Array.isArray(restored.messages) && restored.messages.length > 0) {
-        setSession(restored);
-        setMessages(restored.messages);
-        if (restored.providerId) setConfig({ activeProviderId: restored.providerId });
-        if (restored.modelId) setConfig({ activeModelId: restored.modelId });
-        if (restored.mode) setConfig({ mode: restored.mode });
-        if (typeof restored.useMMFE === 'boolean') setConfig({ useMMFE: restored.useMMFE });
-        setRestoredFrom(restored.name && restored.name !== '__current__' ? restored.name : 'last session');
-        setTimeout(() => setRestoredFrom(null), 4000);
-      }
-    },
-    []
-  );
+  const handleBootChoice = useCallback(async (choice: PickerChoice) => {
+    setBootChoice(null);
+    if (choice.action === 'new') {
+      void clearCurrentSession();
+      return;
+    }
+    // Resume the chosen session.
+    const restored = choice.name === '__current__' ? await loadCurrentSession() : await loadSession(choice.name!);
+    if (restored && Array.isArray(restored.messages) && restored.messages.length > 0) {
+      setSession(restored);
+      setMessages(restored.messages);
+      if (restored.providerId) setConfig({ activeProviderId: restored.providerId });
+      if (restored.modelId) setConfig({ activeModelId: restored.modelId });
+      if (restored.mode) setConfig({ mode: restored.mode });
+      if (typeof restored.useMMFE === 'boolean') setConfig({ useMMFE: restored.useMMFE });
+      setRestoredFrom(restored.name && restored.name !== '__current__' ? restored.name : 'last session');
+      setTimeout(() => setRestoredFrom(null), 4000);
+    }
+  }, []);
 
   // Debounced auto-save: whenever messages change, persist to the __current__
   // slot (max once per ~800ms so rapid streaming doesn't hammer disk).
@@ -179,7 +184,11 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     if (messages.length === 0) return; // don't write an empty session over a real one
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => {
-      const snap: Session = { ...sessionRef.current, messages: messagesRef.current, updatedAt: Date.now() };
+      const snap: Session = {
+        ...sessionRef.current,
+        messages: messagesRef.current,
+        updatedAt: Date.now(),
+      };
       void saveCurrentSession(snap);
     }, 800);
     return () => {
@@ -191,7 +200,11 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
   useEffect(() => {
     return () => {
       if (messagesRef.current.length > 0) {
-        void saveCurrentSession({ ...sessionRef.current, messages: messagesRef.current, updatedAt: Date.now() });
+        void saveCurrentSession({
+          ...sessionRef.current,
+          messages: messagesRef.current,
+          updatedAt: Date.now(),
+        });
       }
     };
   }, []);
@@ -245,7 +258,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
   useEffect(() => {
     (async () => {
       const results = await fetchAllModels(providers);
-      const flat = results.flatMap((r) => r.models || []);
+      const flat = results.flatMap(r => r.models || []);
       setAutoModels(flat);
     })();
   }, []);
@@ -289,7 +302,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
   }, []);
 
   const pushMessage = useCallback((msg: ChatMessage) => {
-    setMessages((m) => [...m, msg]);
+    setMessages(m => [...m, msg]);
   }, []);
 
   const clearMessages = useCallback(() => {
@@ -325,8 +338,12 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       // Exclude the internal auto-restore slot from the user-facing list,
       // and enrich with message counts.
       return all
-        .filter((s) => s.name !== '__current__')
-        .map((s) => ({ name: s.name, updatedAt: s.updatedAt, messageCount: 0 }));
+        .filter(s => s.name !== '__current__')
+        .map(s => ({
+          name: s.name,
+          updatedAt: s.updatedAt,
+          messageCount: 0,
+        }));
     },
     startNewSession: () => {
       void clearCurrentSession();
@@ -350,15 +367,17 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       return flat;
     },
     addModel: (providerId: string, modelId: string, label?: string) => {
-      setConfig({ manualModels: addManualModel(config, providerId, modelId, label).manualModels });
+      setConfig({
+        manualModels: addManualModel(config, providerId, modelId, label).manualModels,
+      });
     },
     quit: () => exit(),
     getProviderInfo: () => {
-      const p = config.providers.find((x) => x.id === config.activeProviderId);
+      const p = config.providers.find(x => x.id === config.activeProviderId);
       const all = [...config.manualModels, ...autoModels];
       // Dedupe by providerId::id
       const seen = new Set<string>();
-      const deduped = all.filter((m) => {
+      const deduped = all.filter(m => {
         const k = `${m.providerId}::${m.id}`;
         if (seen.has(k)) return false;
         seen.add(k);
@@ -373,7 +392,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       };
     },
     getMcpStatuses: () =>
-      mcpStatuses.map((s) => ({
+      mcpStatuses.map(s => ({
         id: s.id,
         connected: s.connected,
         toolCount: s.tools.length,
@@ -384,17 +403,14 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
   const handleSlash = useCallback(
     async (input: string) => {
       if (input === '/help' || input === '/?') {
-        setShowHelp((v) => !v);
+        setShowHelp(v => !v);
         return;
       }
       if (input === '/mcp') {
         if (!mcpStatuses.length) return 'No MCP servers configured.';
         return mcpStatuses
           .map(
-            (s) =>
-              `  ${s.id.padEnd(16)} ${s.transport.padEnd(6)} ${s.connected ? '✓' : '✗'}  ${s.tools.length} tools${
-                s.lastError ? `  (${s.lastError})` : ''
-              }`
+            s => `  ${s.id.padEnd(16)} ${s.transport.padEnd(6)} ${s.connected ? '✓' : '✗'}  ${s.tools.length} tools${s.lastError ? `  (${s.lastError})` : ''}`
           )
           .join('\n');
       }
@@ -402,22 +418,24 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       // These four commands open a scrollable OptionPicker when invoked
       // with no argument, instead of printing a text list. An explicit
       // argument still works (e.g. "/model glm-5.2") and bypasses the menu.
-      const pickerMatch =
-        input === '/provider' || input === '/model' ||
-        input === '/mode' || input === '/theme';
+      const pickerMatch = input === '/provider' || input === '/model' || input === '/mode' || input === '/theme';
       if (pickerMatch) {
         if (input === '/provider') {
           setOpenPicker({
             title: 'Switch provider',
             currentId: config.activeProviderId,
-            options: config.providers.map((p) => ({
+            options: config.providers.map(p => ({
               id: p.id,
               label: p.id,
               detail: `${p.name} ${p.mmfe ? '[mmfe]' : '[direct]'}${p.id === config.activeProviderId ? ' (active)' : ''}`,
             })),
-            onPick: (id) => {
-              const p = config.providers.find((x) => x.id === id);
-              if (p) setConfig({ activeProviderId: p.id, activeModelId: p.defaultModel || '' });
+            onPick: id => {
+              const p = config.providers.find(x => x.id === id);
+              if (p)
+                setConfig({
+                  activeProviderId: p.id,
+                  activeModelId: p.defaultModel || '',
+                });
               setOpenPicker(null);
             },
           });
@@ -437,15 +455,21 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
             title: `Models for ${config.activeProviderId}`,
             currentId: config.activeModelId,
             options: all.length
-              ? all.map((m) => ({
+              ? all.map(m => ({
                   id: m.id,
                   label: m.id,
                   detail: `[${m.source}]${m.id === config.activeModelId ? ' (active)' : ''}${m.label ? ' ' + m.label : ''}`,
                   meta: m.contextWindow ? `${m.contextWindow} ctx` : undefined,
                 }))
-              : [{ id: '', label: '(no models — use /fetch or /add)', detail: '' }],
+              : [
+                  {
+                    id: '',
+                    label: '(no models — use /fetch or /add)',
+                    detail: '',
+                  },
+                ],
             hint: '↑↓ move · ↵ select · /fetch to load more · esc cancel',
-            onPick: (id) => {
+            onPick: id => {
               if (id) setConfig({ activeModelId: id });
               setOpenPicker(null);
             },
@@ -456,12 +480,12 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           setOpenPicker({
             title: 'MMFE execution mode',
             currentId: config.mode,
-            options: ALL_MODES.map((m) => ({
+            options: ALL_MODES.map(m => ({
               id: m,
               label: m,
               detail: MODE_METADATA[m].tagline + (m === config.mode ? ' (active)' : ''),
             })),
-            onPick: (id) => {
+            onPick: id => {
               setConfig({ mode: id as never });
               setOpenPicker(null);
             },
@@ -472,12 +496,12 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           setOpenPicker({
             title: 'Color theme',
             currentId: getThemeName(),
-            options: listThemes().map((t) => ({
+            options: listThemes().map(t => ({
               id: t,
               label: t,
               detail: t === getThemeName() ? '(active)' : '',
             })),
-            onPick: (id) => {
+            onPick: id => {
               setTheme(id as never);
               setConfig({ ui: { ...(config.ui || {}), theme: id as never } });
               setOpenPicker(null);
@@ -489,7 +513,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       if (input === '/tools') {
         const tools = toolRegistry.list();
         if (!tools.length) return 'No tools registered.';
-        return tools.map((t) => `  ${t.name.padEnd(24)}  ${t.description.slice(0, 60)}`).join('\n');
+        return tools.map(t => `  ${t.name.padEnd(24)}  ${t.description.slice(0, 60)}`).join('\n');
       }
       // /observer — toggle the side-channel Observer on/off, or set its model.
       // Inline (not in REGISTRY) so the command-palette count stays at 20.
@@ -499,11 +523,23 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           return `Observer is ${config.observer?.enabled ? 'ON' : 'OFF'} (model: ${config.observer?.modelId || 'glm-4.5-flash'}). Usage: /observer [on|off|<model>]`;
         }
         if (arg === 'on' || arg === 'off') {
-          setConfig({ observer: { enabled: arg === 'on', modelId: config.observer?.modelId || 'glm-4.5-flash', intervalMs: config.observer?.intervalMs || 8000 } });
+          setConfig({
+            observer: {
+              enabled: arg === 'on',
+              modelId: config.observer?.modelId || 'glm-4.5-flash',
+              intervalMs: config.observer?.intervalMs || 8000,
+            },
+          });
           return `Observer ${arg === 'on' ? 'ON — type while streaming to choose queue-or-observer' : 'OFF'}.`;
         }
         // Otherwise treat as a model id.
-        setConfig({ observer: { enabled: true, modelId: arg, intervalMs: config.observer?.intervalMs || 8000 } });
+        setConfig({
+          observer: {
+            enabled: true,
+            modelId: arg,
+            intervalMs: config.observer?.intervalMs || 8000,
+          },
+        });
         return `Observer model → ${arg}.`;
       }
       // /sessions — list saved conversations (inline so the command palette
@@ -598,7 +634,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
         const elapsedMs = Date.now() - streamStartRef.current;
         const tokens = Math.max(0, Math.round(streamCharsRef.current / 4));
         const secs = elapsedMs / 1000;
-        setMetrics((prev) => ({
+        setMetrics(prev => ({
           elapsedMs,
           tokens,
           tps: secs > 0 ? tokens / secs : 0,
@@ -625,35 +661,37 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           tools,
           maxToolRounds: 5,
           toolRegistry,
-          onDelta: (delta) => {
-            setStreamBuffer((b) => b + delta);
+          onDelta: delta => {
+            setStreamBuffer(b => b + delta);
             // Update live metrics: ~4 chars ≈ 1 token for approximation.
             streamCharsRef.current += delta.length;
             const elapsedMs = Date.now() - streamStartRef.current;
             const tokens = Math.max(1, Math.round(streamCharsRef.current / 4));
             const secs = elapsedMs / 1000;
-            setMetrics({ elapsedMs, tokens, tps: secs > 0 ? tokens / secs : 0 });
+            setMetrics({
+              elapsedMs,
+              tokens,
+              tps: secs > 0 ? tokens / secs : 0,
+            });
           },
-          onRouting: (decisions) => {
+          onRouting: decisions => {
             pendingRoutingRef.current = decisions;
           },
-          onProgress: (progress) => {
+          onProgress: progress => {
             // Real MMFE pipeline progress — surface it so the status bar shows
             // stage + subtask throughput instead of zeroed metrics.
             const elapsedMs = Date.now() - streamStartRef.current;
-            setMetrics((prev) => ({
+            setMetrics(prev => ({
               elapsedMs,
               tokens: prev?.tokens ?? 0,
               tps: prev?.tps ?? 0,
               progress,
             }));
           },
-          onToolCall: (call) => {
+          onToolCall: call => {
             setToolCallInfo(
               `${call.name}(${Object.keys(call.args).join(', ')}) → ${call.status}${
-                call.status === 'error' && call.result
-                  ? `: ${(call.result as { error?: string }).error || 'failed'}`
-                  : ''
+                call.status === 'error' && call.result ? `: ${(call.result as { error?: string }).error || 'failed'}` : ''
               }`
             );
           },
@@ -679,7 +717,9 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
         if (next) {
           setPendingCount(pendingQueueRef.current.length);
           // Defer so React commits the idle state before the next turn starts.
-          setTimeout(() => { void handleSubmit(next); }, 0);
+          setTimeout(() => {
+            void handleSubmit(next);
+          }, 0);
         }
       } catch (err) {
         setStreaming(false);
@@ -701,10 +741,9 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     (currentInput: string): string[] => {
       if (currentInput.startsWith('/')) {
         const q = currentInput.slice(1).toLowerCase();
-        return REGISTRY
-          .filter((c) => c.name.startsWith(q) || c.aliases?.some((a) => a.startsWith(q)))
-          .flatMap((c) => [`/${c.name}`, ...(c.aliases?.map((a) => `/${a}`) || [])])
-          .filter((s) => s.toLowerCase().startsWith(currentInput.toLowerCase()))
+        return REGISTRY.filter(c => c.name.startsWith(q) || c.aliases?.some(a => a.startsWith(q)))
+          .flatMap(c => [`/${c.name}`, ...(c.aliases?.map(a => `/${a}`) || [])])
+          .filter(s => s.toLowerCase().startsWith(currentInput.toLowerCase()))
           .slice(0, 8);
       }
       // History-based completion for free text
@@ -825,7 +864,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       return; // swallow all other keys while the choice is up
     }
     if (key.ctrl && input === 'p' && !streaming) {
-      setShowPalette((v) => !v);
+      setShowPalette(v => !v);
     }
   });
 
@@ -837,65 +876,67 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
         <SessionPicker sessions={bootChoice} onPick={handleBootChoice} />
       ) : (
         <>
-      <Header config={config} mcpCount={mcpStatuses.length} toolCount={toolRegistry.list().length} />
-      <Box flexGrow={1} flexDirection="column" overflowY="hidden">
-        <ChatView
-          messages={messages}
-          streaming={streaming}
-          streamBuffer={streamBuffer}
-          showRouting={config.ui?.showRouting ?? true}
-          showTokens={config.ui?.showTokens ?? true}
-        />
-        {showHelp && <HelpOverlay />}
-        {openPicker && (
-          <OptionPicker
-            title={openPicker.title}
-            options={openPicker.options}
-            currentId={openPicker.currentId}
-            hint={openPicker.hint}
-            onPick={openPicker.onPick}
-            onClose={() => setOpenPicker(null)}
-          />
-        )}
-        {showPalette && (
-          <CommandPalette
-            onPick={(cmd) => {
-              setShowPalette(false);
-              void handleSlash(cmd);
-            }}
-            onClose={() => setShowPalette(false)}
-          />
-        )}
-        {(pendingChoice || restoredFrom || error || retryInfo || toolCallInfo) && (
-          <Box marginTop={1} paddingX={1} flexDirection="column">
-            {pendingChoice && (
-              <Box flexDirection="column">
-                <Text color="#8B5CF6" bold>👁 Observer or ⏳ Queue?</Text>
-                <Text color="#E2E8F0">  “{pendingChoice.slice(0, 80)}”</Text>
-                <Text color="#06B6D4">  [o] Observer answers now</Text>
-                <Text color="#94A3B8">  [q] Queue for the main agent</Text>
-                <Text color="#475569">  [esc] cancel</Text>
+          <Header config={config} mcpCount={mcpStatuses.length} toolCount={toolRegistry.list().length} />
+          <Box flexGrow={1} flexDirection="column" overflowY="hidden">
+            <ChatView
+              messages={messages}
+              streaming={streaming}
+              streamBuffer={streamBuffer}
+              showRouting={config.ui?.showRouting ?? true}
+              showTokens={config.ui?.showTokens ?? true}
+            />
+            {showHelp && <HelpOverlay />}
+            {openPicker && (
+              <OptionPicker
+                title={openPicker.title}
+                options={openPicker.options}
+                currentId={openPicker.currentId}
+                hint={openPicker.hint}
+                onPick={openPicker.onPick}
+                onClose={() => setOpenPicker(null)}
+              />
+            )}
+            {showPalette && (
+              <CommandPalette
+                onPick={cmd => {
+                  setShowPalette(false);
+                  void handleSlash(cmd);
+                }}
+                onClose={() => setShowPalette(false)}
+              />
+            )}
+            {(pendingChoice || restoredFrom || error || retryInfo || toolCallInfo) && (
+              <Box marginTop={1} paddingX={1} flexDirection="column">
+                {pendingChoice && (
+                  <Box flexDirection="column">
+                    <Text color="#8B5CF6" bold>
+                      👁 Observer or ⏳ Queue?
+                    </Text>
+                    <Text color="#E2E8F0"> “{pendingChoice.slice(0, 80)}”</Text>
+                    <Text color="#06B6D4"> [o] Observer answers now</Text>
+                    <Text color="#94A3B8"> [q] Queue for the main agent</Text>
+                    <Text color="#475569"> [esc] cancel</Text>
+                  </Box>
+                )}
+                {restoredFrom && <Text color="#10B981">↺ continued from {restoredFrom}</Text>}
+                {toolCallInfo && <Text color="#06B6D4">⚙ {toolCallInfo}</Text>}
+                {retryInfo && <Text color="#F59E0B">↻ {retryInfo}</Text>}
+                {error && <Text color="#EF4444">✗ {error}</Text>}
               </Box>
             )}
-            {restoredFrom && <Text color="#10B981">↺ continued from {restoredFrom}</Text>}
-            {toolCallInfo && <Text color="#06B6D4">⚙ {toolCallInfo}</Text>}
-            {retryInfo && <Text color="#F59E0B">↻ {retryInfo}</Text>}
-            {error && <Text color="#EF4444">✗ {error}</Text>}
           </Box>
-        )}
-      </Box>
-      <StatusBar config={config} streaming={streaming} lastMessage={messages[messages.length - 1]} metrics={metrics} />
-      <InputBox
-        onSubmit={handleSubmit}
-        onSlash={handleSlash}
-        onAbort={handleAbort}
-        busy={streaming}
-        pendingCount={pendingCount}
-        providerId={config.activeProviderId}
-        onTab={handleTab}
-        history={historyState}
-        onHistoryAppend={appendHistoryState}
-      />
+          <StatusBar config={config} streaming={streaming} lastMessage={messages[messages.length - 1]} metrics={metrics} />
+          <InputBox
+            onSubmit={handleSubmit}
+            onSlash={handleSlash}
+            onAbort={handleAbort}
+            busy={streaming}
+            pendingCount={pendingCount}
+            providerId={config.activeProviderId}
+            onTab={handleTab}
+            history={historyState}
+            onHistoryAppend={appendHistoryState}
+          />
         </>
       )}
     </Box>
@@ -906,7 +947,9 @@ function Header({ config, mcpCount, toolCount }: { config: AppConfig; mcpCount: 
   return (
     <Box flexDirection="row" justifyContent="space-between" paddingX={1} paddingBottom={0}>
       <Box gap={1}>
-        <Text color="#06B6D4" bold>nexus-code</Text>
+        <Text color="#06B6D4" bold>
+          nexus-code
+        </Text>
         <Text color="#475569">v{config.version}</Text>
       </Box>
       <Text color="#475569">

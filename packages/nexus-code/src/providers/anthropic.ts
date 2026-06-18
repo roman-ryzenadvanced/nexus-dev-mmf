@@ -13,12 +13,7 @@ export class AnthropicProvider extends BaseProvider {
   private _client: Anthropic | null = null;
   private _clientOpts: { baseURL?: string; apiKey?: string };
 
-  constructor(opts: {
-    id: string;
-    name: string;
-    baseURL?: string;
-    apiKey?: string;
-  }) {
+  constructor(opts: { id: string; name: string; baseURL?: string; apiKey?: string }) {
     super(opts);
     this.id = opts.id;
     this.name = opts.name;
@@ -42,11 +37,7 @@ export class AnthropicProvider extends BaseProvider {
     // Some Anthropic-compatible endpoints don't expose it — return empty
     // so users can register models manually via /add.
     if (!this.apiKey) {
-      throw new ProviderError(
-        `Cannot fetch models from ${this.name} without an API key. ` +
-        `Add models manually via /add ${this.id} <model-id>.`,
-        this.id
-      );
+      throw new ProviderError(`Cannot fetch models from ${this.name} without an API key. ` + `Add models manually via /add ${this.id} <model-id>.`, this.id);
     }
     try {
       const base = this.baseURL || 'https://api.anthropic.com';
@@ -60,27 +51,31 @@ export class AnthropicProvider extends BaseProvider {
       });
       if (!res.ok) {
         throw new ProviderError(
-          `Failed to fetch models from ${this.name}: HTTP ${res.status} ${res.statusText}. ` +
-          `Add models manually via /add ${this.id} <model-id>.`,
+          `Failed to fetch models from ${this.name}: HTTP ${res.status} ${res.statusText}. ` + `Add models manually via /add ${this.id} <model-id>.`,
           this.id,
           res.status
         );
       }
-      const json = (await res.json()) as { data?: Array<{ id: string; display_name?: string }> };
+      const json = (await res.json()) as {
+        data?: Array<{ id: string; display_name?: string }>;
+      };
       const now = Date.now();
-      return (json.data || []).map((m) => ({
+      return (json.data || []).map(m => ({
         id: m.id,
         providerId: this.id,
         label: m.display_name || m.id,
         source: 'auto' as const,
         fetchedAt: now,
-        capabilities: { streaming: true, tools: true, thinking: m.id.includes('opus') },
+        capabilities: {
+          streaming: true,
+          tools: true,
+          thinking: m.id.includes('opus'),
+        },
       }));
     } catch (err) {
       if (err instanceof ProviderError) throw err;
       throw new ProviderError(
-        `Failed to fetch models from ${this.name}: ${(err as Error).message}. ` +
-        `Add models manually via /add ${this.id} <model-id>.`,
+        `Failed to fetch models from ${this.name}: ${(err as Error).message}. ` + `Add models manually via /add ${this.id} <model-id>.`,
         this.id,
         undefined,
         err
@@ -93,10 +88,10 @@ export class AnthropicProvider extends BaseProvider {
     const model = opts.model || messages[0]?.model || 'claude-3-5-sonnet-20241022';
 
     // Anthropic separates system from the message stream.
-    const system = messages.find((m) => m.role === 'system')?.content || '';
-    const turns = this.toAnthropicTurns(messages.filter((m) => m.role !== 'system'));
+    const system = messages.find(m => m.role === 'system')?.content || '';
+    const turns = this.toAnthropicTurns(messages.filter(m => m.role !== 'system'));
     const tools = opts.tools?.length
-      ? opts.tools.map((t) => ({
+      ? opts.tools.map(t => ({
           name: t.name,
           description: t.description,
           input_schema: {
@@ -120,12 +115,10 @@ export class AnthropicProvider extends BaseProvider {
       });
       const text = res.content
         .filter((c): c is Anthropic.Messages.TextBlock => c.type === 'text')
-        .map((c) => c.text)
+        .map(c => c.text)
         .join('');
-      const toolUses = res.content.filter(
-        (c): c is Anthropic.Messages.ToolUseBlock => c.type === 'tool_use'
-      );
-      const toolCalls = toolUses.map((tu) => ({
+      const toolUses = res.content.filter((c): c is Anthropic.Messages.ToolUseBlock => c.type === 'tool_use');
+      const toolCalls = toolUses.map(tu => ({
         id: tu.id,
         name: tu.name,
         args: (tu.input as Record<string, unknown>) || {},
@@ -138,32 +131,27 @@ export class AnthropicProvider extends BaseProvider {
         model,
         provider: this.id,
         elapsedMs: Date.now() - start,
-        tokens: { input: res.usage.input_tokens, output: res.usage.output_tokens },
+        tokens: {
+          input: res.usage.input_tokens,
+          output: res.usage.output_tokens,
+        },
         toolCalls: toolCalls.length ? toolCalls : undefined,
         ts: Date.now(),
       };
       return { message: assistantMsg, raw: res };
     } catch (err) {
-      throw new ProviderError(
-        `Chat failed on ${this.name}: ${(err as Error).message}`,
-        this.id,
-        (err as { status?: number }).status,
-        err
-      );
+      throw new ProviderError(`Chat failed on ${this.name}: ${(err as Error).message}`, this.id, (err as { status?: number }).status, err);
     }
   }
 
   /** Stream tokens via onDelta. Returns full message at the end. */
-  async *streamChat(
-    messages: ChatMessage[],
-    opts: ChatRequestOptions = {}
-  ): AsyncGenerator<string, ChatResponse, unknown> {
+  async *streamChat(messages: ChatMessage[], opts: ChatRequestOptions = {}): AsyncGenerator<string, ChatResponse, unknown> {
     this.assertKey();
     const model = opts.model || messages[0]?.model || 'claude-3-5-sonnet-20241022';
-    const system = messages.find((m) => m.role === 'system')?.content || '';
-    const turns = this.toAnthropicTurns(messages.filter((m) => m.role !== 'system'));
+    const system = messages.find(m => m.role === 'system')?.content || '';
+    const turns = this.toAnthropicTurns(messages.filter(m => m.role !== 'system'));
     const tools = opts.tools?.length
-      ? opts.tools.map((t) => ({
+      ? opts.tools.map(t => ({
           name: t.name,
           description: t.description,
           input_schema: {
@@ -183,7 +171,7 @@ export class AnthropicProvider extends BaseProvider {
 
     let full = '';
     const start = Date.now();
-    stream.on('text', (delta) => {
+    stream.on('text', delta => {
       full += delta;
       opts.onDelta?.(delta);
     });
@@ -192,10 +180,8 @@ export class AnthropicProvider extends BaseProvider {
     const final = await stream.finalMessage();
 
     // Extract tool_use blocks from the final message.
-    const toolUses = final.content.filter(
-      (c): c is Anthropic.Messages.ToolUseBlock => c.type === 'tool_use'
-    );
-    const toolCalls = toolUses.map((tu) => ({
+    const toolUses = final.content.filter((c): c is Anthropic.Messages.ToolUseBlock => c.type === 'tool_use');
+    const toolCalls = toolUses.map(tu => ({
       id: tu.id,
       name: tu.name,
       args: (tu.input as Record<string, unknown>) || {},
@@ -209,7 +195,10 @@ export class AnthropicProvider extends BaseProvider {
       model,
       provider: this.id,
       elapsedMs: Date.now() - start,
-      tokens: { input: final.usage.input_tokens, output: final.usage.output_tokens },
+      tokens: {
+        input: final.usage.input_tokens,
+        output: final.usage.output_tokens,
+      },
       toolCalls: toolCalls.length ? toolCalls : undefined,
       ts: Date.now(),
     };
@@ -217,10 +206,8 @@ export class AnthropicProvider extends BaseProvider {
   }
 
   /** Convert internal ChatMessage[] to Anthropic's message format (with tool_use / tool_result blocks). */
-  private toAnthropicTurns(
-    messages: ChatMessage[]
-  ): Array<Anthropic.Messages.MessageParam> {
-    return messages.map((m) => {
+  private toAnthropicTurns(messages: ChatMessage[]): Array<Anthropic.Messages.MessageParam> {
+    return messages.map(m => {
       if (m.role === 'tool') {
         // Tool result — Anthropic expects a user message with tool_result content
         const toolUseId = m.toolCalls?.[0]?.id || 'unknown';
@@ -279,7 +266,7 @@ export class AnthropicProvider extends BaseProvider {
 
     let full = '';
     const start = Date.now();
-    stream.on('text', (delta) => {
+    stream.on('text', delta => {
       full += delta;
       opts.onDelta?.(delta);
     });

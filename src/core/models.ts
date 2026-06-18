@@ -4,7 +4,7 @@
  * and routing weights. Updated for v4.0.0 with multi-provider support.
  */
 
-import { ProviderId } from '../providers/types.js';
+import type { ProviderId } from '../providers/types.js';
 
 export interface ModelProfile {
   id: string;
@@ -14,9 +14,9 @@ export interface ModelProfile {
   tier: 'flagship' | 'standard' | 'fast' | 'creative' | 'vision';
   capabilities: ModelCapability[];
   contextWindow: number;
-  speedRank: number;       // 1 = fastest, 5 = slowest
-  qualityRank: number;     // 1 = highest quality, 5 = lowest
-  costWeight: number;      // relative cost multiplier
+  speedRank: number; // 1 = fastest, 5 = slowest
+  qualityRank: number; // 1 = highest quality, 5 = lowest
+  costWeight: number; // relative cost multiplier
   maxTokens: number;
   supportsThinking: boolean;
   supportsVision: boolean;
@@ -70,7 +70,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 8192,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Advanced reasoning model with 1M token context window. Best for complex problem decomposition, long-document analysis, deep multi-step reasoning, and AI SLOPE detection/elimination.',
+    description:
+      'Advanced reasoning model with 1M token context window. Best for complex problem decomposition, long-document analysis, deep multi-step reasoning, and AI SLOPE detection/elimination.',
   },
   'glm-5.2': {
     id: 'glm-5.2',
@@ -85,7 +86,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 8192,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Baseline high-performance model. Excellent for robust task execution, complex reasoning, design generation, and balanced quality-speed tradeoffs.',
+    description:
+      'Baseline high-performance model. Excellent for robust task execution, complex reasoning, design generation, and balanced quality-speed tradeoffs.',
   },
   'glm-5.1': {
     id: 'glm-5.1',
@@ -100,7 +102,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 4096,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Nuanced language understanding and context sensitivity. Ideal for content refinement, summarization, design copy, and contextual awareness tasks.',
+    description:
+      'Nuanced language understanding and context sensitivity. Ideal for content refinement, summarization, design copy, and contextual awareness tasks.',
   },
   'glm-5': {
     id: 'glm-5',
@@ -115,7 +118,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 4096,
     supportsThinking: false,
     supportsVision: false,
-    description: 'Speed and efficiency specialist. Best for rapid drafts, quick iterations, boilerplate generation, and high-throughput tasks where latency matters.',
+    description:
+      'Speed and efficiency specialist. Best for rapid drafts, quick iterations, boilerplate generation, and high-throughput tasks where latency matters.',
   },
   'glm-5v-turbo': {
     id: 'glm-5v-turbo',
@@ -145,7 +149,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 8192,
     supportsThinking: true,
     supportsVision: false,
-    description: 'State-of-the-art creative generation, deep knowledge retrieval, and sophisticated code synthesis. Excels at producing elegant, well-structured outputs.',
+    description:
+      'State-of-the-art creative generation, deep knowledge retrieval, and sophisticated code synthesis. Excels at producing elegant, well-structured outputs.',
   },
 
   // ========================================================================
@@ -196,7 +201,7 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     supportsVision: false,
     description: 'Balanced intelligence and speed with 1M context. Good for most tasks at lower cost than flagship models.',
   },
-  'o3': {
+  o3: {
     id: 'o3',
     name: 'o3',
     provider: 'openai',
@@ -235,7 +240,18 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     name: 'Claude Opus 4',
     provider: 'anthropic',
     tier: 'flagship',
-    capabilities: ['reasoning', 'code', 'creative-writing', 'analysis', 'planning', 'long-context', 'code-review', 'design', 'slope-detection', 'design-system'],
+    capabilities: [
+      'reasoning',
+      'code',
+      'creative-writing',
+      'analysis',
+      'planning',
+      'long-context',
+      'code-review',
+      'design',
+      'slope-detection',
+      'design-system',
+    ],
     contextWindow: 200_000,
     speedRank: 5,
     qualityRank: 1,
@@ -243,7 +259,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 16384,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Anthropic most capable model. Exceptional at complex reasoning, nuanced analysis, creative writing, and code review. Best quality but highest cost.',
+    description:
+      'Anthropic most capable model. Exceptional at complex reasoning, nuanced analysis, creative writing, and code review. Best quality but highest cost.',
   },
   'claude-sonnet-4': {
     id: 'claude-sonnet-4',
@@ -258,7 +275,8 @@ export const MODEL_REGISTRY: Record<string, ModelProfile> = {
     maxTokens: 16384,
     supportsThinking: true,
     supportsVision: false,
-    description: 'Balanced performance and intelligence. Excellent for code, reasoning, and creative tasks at moderate cost. The go-to Claude model for most uses.',
+    description:
+      'Balanced performance and intelligence. Excellent for code, reasoning, and creative tasks at moderate cost. The go-to Claude model for most uses.',
   },
   'claude-haiku-3.5': {
     id: 'claude-haiku-3.5',

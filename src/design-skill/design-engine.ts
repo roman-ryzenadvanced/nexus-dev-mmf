@@ -15,27 +15,27 @@
  * 8. SYNTHESIZE — Merge best elements from all model outputs
  */
 
-import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+
 import { uuidv4 } from '../core/utils/uuid.js';
-import { searchDomain, multiDomainSearch, searchStack, detectDomain } from './search-engine.js';
-import {
+import { loadZAIClient, type ZAI } from '../providers/zai-loader.js';
+import { detectDomain, multiDomainSearch, searchDomain, searchStack } from './search-engine.js';
+import type {
+  AISlopeCategory,
+  AISlopeIssue,
+  AISlopeReport,
+  DesignRoutingDecision,
+  DesignSkillConfig,
   DesignSkillRequest,
   DesignSkillResult,
-  DesignSystemRecommendation,
-  DesignSystemColors,
-  DesignSystemTypography,
-  DesignRoutingDecision,
   DesignSubDomain,
-  AISlopeReport,
-  AISlopeIssue,
-  AISlopeCategory,
-  AI_SLOPE_PATTERNS,
-  DesignSkillConfig,
-  DEFAULT_DESIGN_SKILL_CONFIG,
+  DesignSystemColors,
+  DesignSystemRecommendation,
+  DesignSystemTypography,
 } from './types.js';
+import { AI_SLOPE_PATTERNS, DEFAULT_DESIGN_SKILL_CONFIG } from './types.js';
 
 // ============ SYSTEM PROMPTS ============
 
@@ -152,7 +152,7 @@ Generate the complete revised design now.`;
 
 export class DesignSkillEngine {
   private zai: Awaited<ReturnType<typeof loadZAIClient>> | null = null;
-  private config: DesignSkillConfig;
+  private readonly config: DesignSkillConfig;
 
   constructor(config?: Partial<DesignSkillConfig>) {
     this.config = { ...DEFAULT_DESIGN_SKILL_CONFIG, ...config };
@@ -179,38 +179,32 @@ export class DesignSkillEngine {
     const detectedProductType = request.productType ?? analysis.productType ?? 'SaaS (General)';
 
     // Phase 2: SEARCH — BM25 search across design knowledge base
-    const searchResults = multiDomainSearch(
-      `${detectedProductType} ${request.industry ?? ''} ${(request.styleKeywords ?? []).join(' ')} ${request.query}`,
-      2
-    );
+    const searchResults = multiDomainSearch(`${detectedProductType} ${request.industry ?? ''} ${(request.styleKeywords ?? []).join(' ')} ${request.query}`, 2);
 
     // Phase 3: GENERATE DESIGN SYSTEM — Aggregate search results with reasoning
     let designSystem: DesignSystemRecommendation | undefined;
     if (request.enableDesignSystem) {
-      designSystem = this.generateDesignSystem(
-        searchResults,
-        request.brandName ?? 'Project',
-        detectedProductType
-      );
+      designSystem = this.generateDesignSystem(searchResults, request.brandName ?? 'Project', detectedProductType);
     }
 
     // Phase 4: PROMPT ENGINEERING — Build slope-aware prompts
     const slopeWarnings = this.buildSlopeWarnings(detectedSubDomain);
-    const designSystemContext = designSystem
-      ? this.designSystemToContext(designSystem)
-      : 'No design system generated. Use best practices.';
+    const designSystemContext = designSystem ? this.designSystemToContext(designSystem) : 'No design system generated. Use best practices.';
     const productContext = `Product: ${detectedProductType}\nIndustry: ${request.industry ?? 'tech'}\nBrand: ${request.brandName ?? 'N/A'}`;
 
     // Phase 5: EXECUTE — Multi-model parallel design generation
     const models = this.selectModels(request.mode, detectedSubDomain);
-    const designOutputs: Array<{ model: string; output: string; time: number }> = [];
+    const designOutputs: Array<{
+      model: string;
+      output: string;
+      time: number;
+    }> = [];
 
     const generationPromises = models.map(async (modelId, index) => {
       if (index > 0) await new Promise(r => setTimeout(r, index * 300));
       const t0 = Date.now();
       try {
-        const prompt = DESIGN_GENERATION_PROMPT
-          .replace('{designSystemContext}', designSystemContext)
+        const prompt = DESIGN_GENERATION_PROMPT.replace('{designSystemContext}', designSystemContext)
           .replace('{productContext}', productContext)
           .replace('{slopeWarnings}', slopeWarnings);
 
@@ -267,12 +261,7 @@ export class DesignSkillEngine {
       if (slopeReport.slopeScore > this.config.slopeThreshold) {
         let retryCount = 0;
         while (retryCount < this.config.maxSlopeRetries && slopeReport.slopeScore > this.config.slopeThreshold) {
-          const eliminated = await this.eliminateSlope(
-            client,
-            bestDesign,
-            slopeReport.issues,
-            designSystemContext
-          );
+          const eliminated = await this.eliminateSlope(client, bestDesign, slopeReport.issues, designSystemContext);
 
           if (eliminated) {
             bestDesign = eliminated;
@@ -286,7 +275,8 @@ export class DesignSkillEngine {
 
     // Phase 8: SYNTHESIZE — If multiple successful outputs, merge best elements
     if (successful.length > 1) {
-      const synthesisInput = `ORIGINAL QUERY:\n${request.query}\n\nMODEL DESIGN OUTPUTS:\n${'='.repeat(50)}\n\n` +
+      const synthesisInput =
+        `ORIGINAL QUERY:\n${request.query}\n\nMODEL DESIGN OUTPUTS:\n${'='.repeat(50)}\n\n` +
         successful.map(r => `[${r.model} — ${r.time}ms]\n${r.output.substring(0, 3000)}\n${'─'.repeat(40)}\n`).join('\n') +
         `\nSYNTHESIZE the best elements from all designs into one polished, SLOPE-free design.`;
 
@@ -304,7 +294,7 @@ export class DesignSkillEngine {
         });
 
         const synthesized = synthResponse.choices?.[0]?.message?.content;
-        if (synthesized && synthesized.trim()) {
+        if (synthesized?.trim()) {
           bestDesign = synthesized;
         }
       } catch {
@@ -339,10 +329,7 @@ export class DesignSkillEngine {
 
   // ============ PHASE 1: ANALYZE ============
 
-  private async analyzeDesignRequest(
-    client: ZAI,
-    request: DesignSkillRequest
-  ): Promise<Record<string, any>> {
+  private async analyzeDesignRequest(client: ZAI, request: DesignSkillRequest): Promise<Record<string, any>> {
     try {
       const response = await client.chat.completions.create({
         model: 'glm-5',
@@ -376,11 +363,7 @@ export class DesignSkillEngine {
 
   // ============ PHASE 3: GENERATE DESIGN SYSTEM ============
 
-  private generateDesignSystem(
-    searchResults: Record<string, Record<string, string>[]>,
-    projectName: string,
-    productType: string
-  ): DesignSystemRecommendation {
+  private generateDesignSystem(searchResults: Record<string, Record<string, string>[]>, projectName: string, productType: string): DesignSystemRecommendation {
     // Extract best results from each domain
     const productResults = searchResults['product']?.[0];
     const styleResults = searchResults['style']?.[0];
@@ -393,11 +376,10 @@ export class DesignSkillEngine {
     const matchedReasoning = this.matchReasoning(reasoning, productType);
 
     // Build design system from aggregated results
-    const pattern = landingResults?.['Pattern Name'] ??
-      matchedReasoning?.['Recommended_Pattern'] ??
-      'Hero + Features + CTA';
+    const pattern = landingResults?.['Pattern Name'] ?? matchedReasoning?.['Recommended_Pattern'] ?? 'Hero + Features + CTA';
 
-    const style = styleResults?.['Style Category'] ??
+    const style =
+      styleResults?.['Style Category'] ??
       productResults?.['Primary Style Recommendation'] ??
       matchedReasoning?.['Style_Priority'] ??
       'Minimalism + Swiss Style';
@@ -428,11 +410,9 @@ export class DesignSkillEngine {
     };
 
     const effects = styleResults?.['Effects & Animation']?.split(',').map(s => s.trim()) ??
-      matchedReasoning?.['Key_Effects']?.split(',').map(s => s.trim()) ??
-      ['Subtle hover (200-250ms)', 'Smooth transitions'];
+      matchedReasoning?.['Key_Effects']?.split(',').map(s => s.trim()) ?? ['Subtle hover (200-250ms)', 'Smooth transitions'];
 
-    const antiPatterns = matchedReasoning?.['Anti_Patterns']?.split('+').map(s => s.trim()) ??
-      ['Excessive animation', 'Dark mode by default'];
+    const antiPatterns = matchedReasoning?.['Anti_Patterns']?.split('+').map(s => s.trim()) ?? ['Excessive animation', 'Dark mode by default'];
 
     // AI SLOPE-specific anti-patterns
     const slopeAntiPatterns = [
@@ -475,16 +455,16 @@ export class DesignSkillEngine {
 
   private async detectSlope(client: ZAI, designOutput: string): Promise<AISlopeReport> {
     try {
-      const prompt = SLOPE_DETECTION_PROMPT.replace(
-        '{designOutput}',
-        designOutput.substring(0, 6000)
-      );
+      const prompt = SLOPE_DETECTION_PROMPT.replace('{designOutput}', designOutput.substring(0, 6000));
 
       const response = await client.chat.completions.create({
         model: 'glm-5.2',
         messages: [
           { role: 'system', content: prompt },
-          { role: 'user', content: 'Analyze this design for AI SLOPE patterns.' },
+          {
+            role: 'user',
+            content: 'Analyze this design for AI SLOPE patterns.',
+          },
         ],
         temperature: 0.2,
       });
@@ -588,24 +568,18 @@ export class DesignSkillEngine {
 
   // ============ PHASE 7: SLOPE ELIMINATION ============
 
-  private async eliminateSlope(
-    client: ZAI,
-    designOutput: string,
-    issues: AISlopeIssue[],
-    designSystemContext: string
-  ): Promise<string | null> {
+  private async eliminateSlope(client: ZAI, designOutput: string, issues: AISlopeIssue[], designSystemContext: string): Promise<string | null> {
     try {
-      const slopeIssues = issues.map(i =>
-        `[${i.severity.toUpperCase()}] ${i.category}: ${i.description}\n  Fix: ${i.suggestedFix}`
-      ).join('\n');
+      const slopeIssues = issues.map(i => `[${i.severity.toUpperCase()}] ${i.category}: ${i.description}\n  Fix: ${i.suggestedFix}`).join('\n');
 
-      const eliminationRules = issues.map(i => {
-        const patterns = AI_SLOPE_PATTERNS[i.category];
-        return patterns ? patterns.eliminationRules.join('\n  - ') : i.suggestedFix;
-      }).join('\n\n');
+      const eliminationRules = issues
+        .map(i => {
+          const patterns = AI_SLOPE_PATTERNS[i.category];
+          return patterns ? patterns.eliminationRules.join('\n  - ') : i.suggestedFix;
+        })
+        .join('\n\n');
 
-      const prompt = SLOPE_ELIMINATION_PROMPT
-        .replace('{slopeIssues}', slopeIssues)
+      const prompt = SLOPE_ELIMINATION_PROMPT.replace('{slopeIssues}', slopeIssues)
         .replace('{originalDesign}', designOutput.substring(0, 5000))
         .replace('{slopeEliminationRules}', eliminationRules)
         .replace('{designSystemContext}', designSystemContext);
@@ -614,7 +588,10 @@ export class DesignSkillEngine {
         model: 'glm-5.2',
         messages: [
           { role: 'system', content: prompt },
-          { role: 'user', content: 'Eliminate all AI SLOPE patterns from this design. Produce a revised, brand-specific design.' },
+          {
+            role: 'user',
+            content: 'Eliminate all AI SLOPE patterns from this design. Produce a revised, brand-specific design.',
+          },
         ],
         temperature: 0.6,
       });
@@ -630,8 +607,8 @@ export class DesignSkillEngine {
   private selectModels(mode: string, subDomain: DesignSubDomain): string[] {
     // Select models based on mode and sub-domain
     const modelSets: Record<string, string[]> = {
-      speed:    ['glm-5', 'glm-5v-turbo', 'glm-5.1'],
-      quality:  ['glm-5.2', 'glm-5.2-1m', 'glm-4.7'],
+      speed: ['glm-5', 'glm-5v-turbo', 'glm-5.1'],
+      quality: ['glm-5.2', 'glm-5.2-1m', 'glm-4.7'],
       balanced: ['glm-5.2', 'glm-5.1', 'glm-4.7'],
       creative: ['glm-4.7', 'glm-5.1', 'glm-5.2'],
     };
@@ -646,10 +623,7 @@ export class DesignSkillEngine {
 
   private buildSlopeWarnings(subDomain: DesignSubDomain): string {
     const domainSpecificWarnings: Record<DesignSubDomain, string[]> = {
-      brand: [
-        'NO generic brand voice — must be specific to the product/industry',
-        'NO "innovative", "cutting-edge", "next-generation" in brand messaging',
-      ],
+      brand: ['NO generic brand voice — must be specific to the product/industry', 'NO "innovative", "cutting-edge", "next-generation" in brand messaging'],
       'design-system': [
         'NO default blue (#3B82F6) as primary color',
         'NO AI purple (#6366F1) — this is the #1 indicator of AI-generated design',
@@ -665,32 +639,16 @@ export class DesignSkillEngine {
         'NO default color gradients',
         'MUST have a unique visual concept specific to the brand name',
       ],
-      cip: [
-        'NO template-looking business cards or letterheads',
-        'MUST incorporate brand-specific visual language in all deliverables',
-      ],
+      cip: ['NO template-looking business cards or letterheads', 'MUST incorporate brand-specific visual language in all deliverables'],
       slides: [
         'NO centered text on every slide',
         'NO "Thank You" as the last slide — use a memorable closing statement',
         'MUST use varied layouts across slides',
       ],
-      banner: [
-        'NO generic gradient backgrounds',
-        'NO stock photo placeholders',
-        'MUST use brand-specific visual elements',
-      ],
-      icon: [
-        'NO default Lucide style without customization',
-        'MUST match brand personality in icon style (rounded vs sharp, filled vs outlined)',
-      ],
-      'social-photos': [
-        'NO generic lifestyle stock images',
-        'MUST incorporate brand colors and visual language',
-      ],
-      'ux-audit': [
-        'Focus on identifying AI SLOPE in the existing design',
-        'Check all 10 SLOPE categories',
-      ],
+      banner: ['NO generic gradient backgrounds', 'NO stock photo placeholders', 'MUST use brand-specific visual elements'],
+      icon: ['NO default Lucide style without customization', 'MUST match brand personality in icon style (rounded vs sharp, filled vs outlined)'],
+      'social-photos': ['NO generic lifestyle stock images', 'MUST incorporate brand colors and visual language'],
+      'ux-audit': ['Focus on identifying AI SLOPE in the existing design', 'Check all 10 SLOPE categories'],
     };
 
     const warnings = domainSpecificWarnings[subDomain] ?? [];
@@ -775,7 +733,9 @@ ${antiPatterns.map(a => `- ${a}`).join('\n')}
 ${slopeAntiPatterns.map(a => `- [CRITICAL] ${a}`).join('\n')}
 
 ## Decision Rules
-${Object.entries(decisionRules).map(([k, v]) => `- **${k}**: ${v}`).join('\n')}
+${Object.entries(decisionRules)
+  .map(([k, v]) => `- **${k}**: ${v}`)
+  .join('\n')}
 `;
   }
 
@@ -791,15 +751,14 @@ ${Object.entries(decisionRules).map(([k, v]) => `- **${k}**: ${v}`).join('\n')}
     return lines.slice(1).map(line => {
       const values = line.split(',').map(v => v.trim());
       const row: Record<string, string> = {};
-      headers.forEach((h, i) => { row[h] = values[i] ?? ''; });
+      headers.forEach((h, i) => {
+        row[h] = values[i] ?? '';
+      });
       return row;
     });
   }
 
-  private matchReasoning(
-    rules: Record<string, string>[],
-    productType: string
-  ): Record<string, string> | null {
+  private matchReasoning(rules: Record<string, string>[], productType: string): Record<string, string> | null {
     const productLower = productType.toLowerCase();
     for (const rule of rules) {
       const category = (rule['UI_Category'] ?? '').toLowerCase();
@@ -807,7 +766,7 @@ ${Object.entries(decisionRules).map(([k, v]) => `- **${k}**: ${v}`).join('\n')}
         return rule;
       }
     }
-    return rules[0] ?? null;  // Default to first rule
+    return rules[0] ?? null; // Default to first rule
   }
 }
 

@@ -71,14 +71,14 @@ Specialized Pipelines:
 
 ## Available Models
 
-| Model | Tier | Strengths |
-|-------|------|-----------|
-| `glm-5.2-1m` | Flagship | Advanced reasoning, 1M context, complex decomposition, SLOPE detection |
-| `glm-5.2` | Flagship | Baseline high-performance, design generation, balanced quality-speed |
-| `glm-5.1` | Standard | Nuanced language, context sensitivity, design copy |
-| `glm-5` | Fast | Speed, efficiency, rapid drafts, high-throughput |
-| `glm-5v-turbo` | Fast | Accelerated feedback, vision support, quick iteration |
-| `glm-4.7` | Creative | Creative generation, deep knowledge, design systems |
+| Model          | Tier     | Strengths                                                              |
+| -------------- | -------- | ---------------------------------------------------------------------- |
+| `glm-5.2-1m`   | Flagship | Advanced reasoning, 1M context, complex decomposition, SLOPE detection |
+| `glm-5.2`      | Flagship | Baseline high-performance, design generation, balanced quality-speed   |
+| `glm-5.1`      | Standard | Nuanced language, context sensitivity, design copy                     |
+| `glm-5`        | Fast     | Speed, efficiency, rapid drafts, high-throughput                       |
+| `glm-5v-turbo` | Fast     | Accelerated feedback, vision support, quick iteration                  |
+| `glm-4.7`      | Creative | Creative generation, deep knowledge, design systems                    |
 
 ## Execution Modes
 
@@ -115,49 +115,49 @@ AI SLOPE is the generic, template-like quality that makes AI-generated designs i
 
 ### Design Sub-Domains
 
-| Sub-domain | Purpose |
-|------------|---------|
-| `brand` | Brand identity, voice, assets |
-| `design-system` | Token architecture, specs |
-| `ui-styling` | Component implementation (shadcn/ui, Tailwind) |
-| `logo` | AI logo generation |
-| `cip` | Corporate Identity Program deliverables |
-| `slides` | HTML presentations with Chart.js |
-| `banner` | Banner design for social, ads, web, print |
-| `icon` | SVG icon generation |
-| `social-photos` | Social media images |
-| `ux-audit` | UX review, accessibility audit |
+| Sub-domain      | Purpose                                        |
+| --------------- | ---------------------------------------------- |
+| `brand`         | Brand identity, voice, assets                  |
+| `design-system` | Token architecture, specs                      |
+| `ui-styling`    | Component implementation (shadcn/ui, Tailwind) |
+| `logo`          | AI logo generation                             |
+| `cip`           | Corporate Identity Program deliverables        |
+| `slides`        | HTML presentations with Chart.js               |
+| `banner`        | Banner design for social, ads, web, print      |
+| `icon`          | SVG icon generation                            |
+| `social-photos` | Social media images                            |
+| `ux-audit`      | UX review, accessibility audit                 |
 
 ### AI SLOPE Detection Categories
 
-| Category | Severity | Key Indicator |
-|----------|----------|---------------|
-| `generic-colors` | High | Default blue (#3B82F6), AI purple (#6366F1) |
-| `template-layout` | High | Centered hero + 3-column features + CTA |
-| `missing-brand-identity` | High | No signature visual element |
-| `stock-imagery` | Medium | Generic hero images |
-| `flat-typography` | Medium | No hierarchy, Inter-only |
-| `overused-effects` | Medium | Backdrop-blur on everything |
-| `cliche-microcopy` | Low | "Empower your workflow" |
-| `uniform-spacing` | Low | Same padding everywhere |
-| `default-icon-sets` | Low | Lucide without customization |
-| `predictable-animations` | Low | Fade-in-up on everything |
+| Category                 | Severity | Key Indicator                               |
+| ------------------------ | -------- | ------------------------------------------- |
+| `generic-colors`         | High     | Default blue (#3B82F6), AI purple (#6366F1) |
+| `template-layout`        | High     | Centered hero + 3-column features + CTA     |
+| `missing-brand-identity` | High     | No signature visual element                 |
+| `stock-imagery`          | Medium   | Generic hero images                         |
+| `flat-typography`        | Medium   | No hierarchy, Inter-only                    |
+| `overused-effects`       | Medium   | Backdrop-blur on everything                 |
+| `cliche-microcopy`       | Low      | "Empower your workflow"                     |
+| `uniform-spacing`        | Low      | Same padding everywhere                     |
+| `default-icon-sets`      | Low      | Lucide without customization                |
+| `predictable-animations` | Low      | Fade-in-up on everything                    |
 
 ### Design Knowledge Base
 
 The design skill includes a comprehensive BM25-searchable knowledge base:
 
-| Domain | Rows | Content |
-|--------|------|---------|
-| Products | 161 | Product-specific style recommendations |
-| Styles | 84 | UI styles with colors, effects, accessibility |
-| Colors | 161 | Product-specific color palettes (17 tokens each) |
-| Typography | 73 | Font pairings with Google Fonts URLs |
-| Landing | 34 | Landing page patterns and CTA strategies |
-| Charts | 25 | Chart type recommendations by data type |
-| UX Guidelines | 99 | UX best practices with Do/Don't examples |
-| UI Reasoning | 161 | Decision rules and anti-patterns per product |
-| Stacks | 14 | React, Next.js, Vue, Svelte, Flutter, etc. |
+| Domain        | Rows | Content                                          |
+| ------------- | ---- | ------------------------------------------------ |
+| Products      | 161  | Product-specific style recommendations           |
+| Styles        | 84   | UI styles with colors, effects, accessibility    |
+| Colors        | 161  | Product-specific color palettes (17 tokens each) |
+| Typography    | 73   | Font pairings with Google Fonts URLs             |
+| Landing       | 34   | Landing page patterns and CTA strategies         |
+| Charts        | 25   | Chart type recommendations by data type          |
+| UX Guidelines | 99   | UX best practices with Do/Don't examples         |
+| UI Reasoning  | 161  | Decision rules and anti-patterns per product     |
+| Stacks        | 14   | React, Next.js, Vue, Svelte, Flutter, etc.       |
 
 ### Usage: Design Command
 
@@ -255,14 +255,14 @@ nexus-dev design "SaaS homepage" --verbose --mode creative
 
 ## Configuration Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `defaultMode` | `'balanced'` | Default execution mode |
-| `maxParallelSubTasks` | `6` | Maximum concurrent model calls |
-| `enableThinking` | `true` | Enable chain-of-thought reasoning |
-| `subTaskTimeout` | `120000` | Timeout per subtask (ms) |
-| `qualityThreshold` | `70` | Score threshold for re-synthesis |
-| `enableMTP` | `false` | Enable MTP hyperthreading |
-| `enableSlopeDetection` | `true` | Enable AI SLOPE detection in design |
-| `slopeThreshold` | `40` | SLOPE score threshold for re-generation |
-| `maxSlopeRetries` | `2` | Maximum SLOPE elimination attempts |
+| Option                 | Default      | Description                             |
+| ---------------------- | ------------ | --------------------------------------- |
+| `defaultMode`          | `'balanced'` | Default execution mode                  |
+| `maxParallelSubTasks`  | `6`          | Maximum concurrent model calls          |
+| `enableThinking`       | `true`       | Enable chain-of-thought reasoning       |
+| `subTaskTimeout`       | `120000`     | Timeout per subtask (ms)                |
+| `qualityThreshold`     | `70`         | Score threshold for re-synthesis        |
+| `enableMTP`            | `false`      | Enable MTP hyperthreading               |
+| `enableSlopeDetection` | `true`       | Enable AI SLOPE detection in design     |
+| `slopeThreshold`       | `40`         | SLOPE score threshold for re-generation |
+| `maxSlopeRetries`      | `2`          | Maximum SLOPE elimination attempts      |
