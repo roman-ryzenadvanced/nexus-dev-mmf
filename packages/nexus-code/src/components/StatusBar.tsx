@@ -5,6 +5,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { getTheme } from '../tui/theme.js';
+import { Spinner } from './Spinner.js';
 import type { AppConfig, ChatMessage } from '../types.js';
 
 /** Live, in-flight streaming metrics pushed from App on each delta. */
@@ -38,7 +39,8 @@ export function StatusBar({ config, streaming, lastMessage, metrics }: Props) {
   const mmfeLabel = config.useMMFE ? 'mmfe:on' : 'mmfe:off';
   const modeLabel = `mode:${config.mode}`;
   const providerLabel = `provider:${config.activeProviderId}`;
-  const modelLabel = `model:${config.activeModelId}`;
+  // Avoid a dangling "model:" label when a provider has no default model set.
+  const modelLabel = config.activeModelId ? `model:${config.activeModelId}` : 'model:(none)';
 
   // Live metrics take priority during streaming.
   // During MMFE fusion there is no token stream, so we show REAL pipeline
@@ -68,7 +70,7 @@ export function StatusBar({ config, streaming, lastMessage, metrics }: Props) {
         <Text color={t.primaryDim}>{modelLabel}</Text>
       </Box>
       <Box gap={1}>
-        {streaming && <Text color={t.warn}>● streaming</Text>}
+        {streaming && <Spinner color={t.warn} label="streaming" labelColor={t.warn} />}
         {progressLabel && <Text color={t.accent2}>{progressLabel}</Text>}
         {liveTps && <Text color={t.accent}>{liveTps}</Text>}
         {liveTokens && <Text color={t.primaryDim}>{liveTokens}</Text>}

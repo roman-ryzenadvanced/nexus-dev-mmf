@@ -5,6 +5,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { appConfigSchema, DEFAULT_PROVIDERS, BUILTIN_MODELS, DEFAULT_CONFIG_PATH, ensureDirs } from './schema.js';
+import { loadKeys } from './keys.js';
 import type { AppConfig, ModelDescriptor, ProviderConfig } from '../types.js';
 
 const ENV_KEYS: Record<string, { env: string; field: 'apiKey' }> = {
@@ -22,6 +23,21 @@ function applyEnv(config: AppConfig): AppConfig {
       return { ...p, apiKey: process.env[envKey] };
     }
     return p;
+  });
+  return { ...config, providers };
+}
+
+// Lowest-priority fallback: inject keys saved in the on-disk key store
+// (~/.nexus/keys.json, mode 0600). Runs AFTER applyEnv so an explicit env var
+// or in-config key always wins, but a previously-entered key is restored on
+// every boot even though config.json strips keys at save time.
+function applyKeyStore(config: AppConfig): AppConfig {
+  const store = loadKeys();
+  if (!store || Object.keys(store).length === 0) return config;
+  const providers = config.providers.map(p => {
+    if (p.apiKey) return p; // explicit/env already set — don't override
+    const saved = store[p.id];
+    return saved ? { ...p, apiKey: saved } : p;
   });
   return { ...config, providers };
 }
@@ -44,7 +60,7 @@ export async function loadConfig(path?: string): Promise<AppConfig> {
     ...appConfigSchema.parse(raw),
     providers: raw.providers?.length ? raw.providers : DEFAULT_PROVIDERS,
   };
-  return applyEnv(merged as AppConfig);
+  return applyKeyStore(applyEnv(merged as AppConfig));
 }
 
 export async function saveConfig(config: AppConfig, path?: string): Promise<void> {

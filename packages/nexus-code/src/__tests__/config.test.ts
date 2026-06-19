@@ -84,17 +84,25 @@ describe('config schema', () => {
     ).toThrow();
   });
 
-  it('DEFAULT_PROVIDERS has exactly 3 entries', () => {
-    expect(DEFAULT_PROVIDERS).toHaveLength(3);
+  it('DEFAULT_PROVIDERS has the expected entries', () => {
+    expect(DEFAULT_PROVIDERS.length).toBeGreaterThanOrEqual(3);
     const ids = DEFAULT_PROVIDERS.map(p => p.id).sort();
-    expect(ids).toEqual(['anthropic', 'openai', 'zai']);
+    expect(ids).toEqual(['anthropic', 'freemodel', 'openai', 'zai']);
   });
 
-  it('BUILTIN_MODELS has 6 GLM models', () => {
-    expect(BUILTIN_MODELS).toHaveLength(6);
-    for (const m of BUILTIN_MODELS) {
-      expect(m.providerId).toBe('zai');
+  it('BUILTIN_MODELS includes the GLM family', () => {
+    const glm = BUILTIN_MODELS.filter(m => m.providerId === 'zai');
+    expect(glm.length).toBeGreaterThanOrEqual(6);
+    for (const m of glm) {
       expect(m.id).toMatch(/^glm-/);
+    }
+  });
+
+  it('BUILTIN_MODELS includes the FreeModel GPT-5.x family', () => {
+    const fm = BUILTIN_MODELS.filter(m => m.providerId === 'freemodel');
+    expect(fm.length).toBeGreaterThanOrEqual(4);
+    for (const m of fm) {
+      expect(m.id).toMatch(/^gpt-5\./);
     }
   });
 });
@@ -115,7 +123,7 @@ describe('config load/save', () => {
     const config = await loadConfig(configPath);
     expect(config.activeProviderId).toBe('zai');
     expect(config.mode).toBe('balanced');
-    expect(config.providers).toHaveLength(3);
+    expect(config.providers.length).toBeGreaterThanOrEqual(3);
   });
 
   it('round-trips save → load', async () => {

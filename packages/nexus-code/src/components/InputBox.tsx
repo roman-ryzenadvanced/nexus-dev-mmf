@@ -28,6 +28,9 @@ interface Props {
   /** If provided, uses this history instead of loading its own. */
   history?: HistoryEntry[];
   onHistoryAppend?: (entry: HistoryEntry) => void;
+  /** Secret/entry mode: masks the typed value with dots, disables slash
+   *  menu + history (so an API key is never echoed or remembered). */
+  secret?: boolean;
 }
 
 const HISTORY_MAX = 500;
@@ -59,6 +62,7 @@ export function InputBox({
   onTab,
   history: externalHistory,
   onHistoryAppend,
+  secret = false,
 }: Props) {
   const [value, setValue] = useState('');
   const [localHistory, setLocalHistory] = useState<HistoryEntry[]>([]);
@@ -86,7 +90,9 @@ export function InputBox({
   }, [externalHistory]);
 
   const query = value.startsWith('/') ? value.slice(1) : '';
-  const menuOpen = menuActive && value.startsWith('/');
+  // In secret mode we never open the slash menu (an API key won't start with /
+  // and we don't want history navigation to surface past keys).
+  const menuOpen = !secret && menuActive && value.startsWith('/');
   // Reset selection + window to the top whenever the filter query changes.
   useEffect(() => {
     setMenuIdx(0);
@@ -107,6 +113,14 @@ export function InputBox({
   }
 
   useInput((input, key) => {
+    // ── Secret (API-key) entry mode ──
+    // Esc cancels immediately; Ctrl+C also aborts via the busy/general path
+    // below. We short-circuit before the slash-menu logic so a key that
+    // happens to start with `/` is never mistaken for a command.
+    if (secret && key.escape) {
+      onAbort();
+      return;
+    }
     // ── Slash menu navigation (highest priority when open) ──
     if (menuOpen) {
       if (key.escape) {
@@ -177,7 +191,10 @@ export function InputBox({
     if (key.return) {
       const text = value.trim();
       if (!text) return;
-      if (text.startsWith('/')) {
+      // In secret mode the input is always a raw value (e.g. an API key) —
+      // never route it through the slash-command handler, even if it starts
+      // with `/`.
+      if (!secret && text.startsWith('/')) {
         runSlash(text);
         return;
       }
@@ -217,7 +234,7 @@ export function InputBox({
       }
       return;
     }
-    if (key.upArrow && !menuOpen) {
+    if (key.upArrow && !menuOpen && !secret) {
       const next = Math.min(histIdx + 1, history.length - 1);
       if (history[history.length - 1 - next]) {
         setHistIdx(next);
@@ -225,7 +242,7 @@ export function InputBox({
       }
       return;
     }
-    if (key.downArrow && !menuOpen) {
+    if (key.downArrow && !menuOpen && !secret) {
       const next = histIdx - 1;
       if (next < 0) {
         setHistIdx(-1);
@@ -254,8 +271,8 @@ export function InputBox({
       setSlashResult(null);
       setTabCandidates(null);
       // Typing `/` as the first char opens the menu; any `/`-prefixed edit
-      // keeps it open.
-      setMenuActive(next.startsWith('/'));
+      // keeps it open. Disabled entirely in secret mode.
+      setMenuActive(!secret && next.startsWith('/'));
     }
   });
 
@@ -305,7 +322,7 @@ export function InputBox({
           {busy ? '…' : '❯'}
         </Text>
         <Text color={THEME.primary}>
-          {value}
+          {secret ? '•'.repeat(value.length) : value}
           <Text color={THEME.accent}>▋</Text>
         </Text>
         {pendingCount > 0 && <Text color={THEME.accent2}> [{pendingCount} queued]</Text>}
@@ -314,11 +331,13 @@ export function InputBox({
         <Text color={THEME.primaryMute} dimColor>
           {menuOpen
             ? 'Slash menu — ↵ run highlighted · ↑↓ move · esc close'
-            : busy
-              ? 'Streaming — type to queue follow-ups · Enter queues · Ctrl+C abort'
-              : isMultiLine
-                ? `${lineCount} lines · Shift+Enter for newline · Enter to submit · Ctrl+P palette · Ctrl+C quit`
-                : promptLabel || 'Enter a prompt, type / for commands · Ctrl+P palette · Ctrl+C quit'}
+            : secret
+              ? '🔒 Key entry — input is hidden · Enter to save · Esc to cancel · Ctrl+C quit'
+              : busy
+                ? 'Streaming — type to queue follow-ups · Enter queues · Ctrl+C abort'
+                : isMultiLine
+                  ? `${lineCount} lines · Shift+Enter for newline · Enter to submit · Ctrl+P palette · Ctrl+C quit`
+                  : promptLabel || 'Enter a prompt, type / for commands · Ctrl+P palette · Ctrl+C quit'}
         </Text>
       </Box>
     </Box>

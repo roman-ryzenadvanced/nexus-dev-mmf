@@ -147,6 +147,14 @@ describe('runSlash — provider command', () => {
     const out = await runSlash('/provider gemini', ctx);
     expect(out).toContain('Unknown provider');
   });
+
+  it('routes add/remove/edit to the interactive-overlay hint', async () => {
+    for (const sub of ['add', 'remove', 'edit'] as const) {
+      const ctx = makeCtx();
+      const out = await runSlash(`/provider ${sub}`, ctx);
+      expect(out).toContain('interactive overlay');
+    }
+  });
 });
 
 describe('runSlash — mmfe command', () => {

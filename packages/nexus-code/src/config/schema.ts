@@ -109,6 +109,16 @@ export const DEFAULT_PROVIDERS = [
     mmfe: false,
     defaultModel: 'claude-3-5-sonnet-20241022',
   },
+  // FreeModel — OpenAI-compatible gateway (https://api.freemodel.dev).
+  // Key is read from FREEMODEL_API_KEY / the on-disk key store, never config.json.
+  {
+    id: 'freemodel',
+    kind: 'openai' as const,
+    name: 'FreeModel',
+    baseURL: 'https://api.freemodel.dev/v1',
+    mmfe: false,
+    defaultModel: 'gpt-5.4-mini',
+  },
 ];
 
 export const BUILTIN_MODELS = [
@@ -181,6 +191,60 @@ export const BUILTIN_MODELS = [
     id: 'glm-4.7',
     providerId: 'zai',
     label: 'GLM 4.7 (creative)',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: false,
+      tools: true,
+      streaming: true,
+      thinking: true,
+    },
+  },
+  // FreeModel gateway (https://api.freemodel.dev/v1) — OpenAI-compatible.
+  // All four GPT-5.x models are free to use via the FreeModel provider.
+  {
+    id: 'gpt-5.5',
+    providerId: 'freemodel',
+    label: 'GPT 5.5 (flagship)',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: true,
+      tools: true,
+      streaming: true,
+      thinking: true,
+    },
+  },
+  {
+    id: 'gpt-5.4',
+    providerId: 'freemodel',
+    label: 'GPT 5.4',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: true,
+      tools: true,
+      streaming: true,
+      thinking: true,
+    },
+  },
+  {
+    id: 'gpt-5.4-mini',
+    providerId: 'freemodel',
+    label: 'GPT 5.4 Mini (fast)',
+    source: 'builtin' as const,
+    contextWindow: 128_000,
+    capabilities: {
+      vision: false,
+      tools: true,
+      streaming: true,
+      thinking: false,
+    },
+  },
+  {
+    id: 'gpt-5.3-codex',
+    providerId: 'freemodel',
+    label: 'GPT 5.3 Codex (coding)',
     source: 'builtin' as const,
     contextWindow: 128_000,
     capabilities: {

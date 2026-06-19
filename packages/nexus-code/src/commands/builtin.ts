@@ -85,10 +85,15 @@ const mode: SlashCommand = {
 
 const provider: SlashCommand = {
   name: 'provider',
-  description: 'Switch or list configured providers',
-  usage: '/provider [id]',
-  examples: ['/provider', '/provider openai'],
+  description: 'Switch, list, add, remove, or edit providers',
+  usage: '/provider [id | add | remove | edit]',
+  examples: ['/provider', '/provider openai', '/provider add', '/provider remove', '/provider edit'],
   async run(args, ctx) {
+    // `/provider add|remove|edit` are intercepted in App.tsx to open the
+    // ProviderManager overlay; reaching here means an unknown subcommand.
+    if (args[0] && ['add', 'remove', 'edit'].includes(args[0])) {
+      return `Use /provider ${args[0]} (interactive overlay) — it opens automatically in the TUI.`;
+    }
     if (!args[0]) {
       const lines = ['Providers:'];
       for (const p of ctx.config.providers) {
