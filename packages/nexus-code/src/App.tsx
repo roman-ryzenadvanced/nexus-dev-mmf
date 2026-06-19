@@ -13,6 +13,7 @@ import { BootAnimation } from './components/BootAnimation.js';
 import { SessionPicker, type PickerSession, type PickerChoice } from './components/SessionPicker.js';
 import { OptionPicker, type PickerOption } from './components/OptionPicker.js';
 import { ProviderManager, type ProviderManagerMode } from './components/ProviderManager.js';
+import { buildSettingsOptions, type SettingsAction } from './components/settings-options.js';
 import { saveKey, clearKey } from './config/keys.js';
 import { buildProviders } from './providers/index.js';
 import { sendChatStream } from './orchestrator/index.js';
@@ -81,6 +82,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     currentId?: string;
     onPick: (id: string) => void;
     hint?: string;
+    onClose?: () => void;
   } | null>(null);
   // Provider add/remove/edit overlay. Opened by `/provider add|remove|edit`.
   const [providerMgr, setProviderMgr] = useState<{ mode: ProviderManagerMode } | null>(null);
@@ -414,6 +416,165 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       })),
   };
 
+  // A provider needs an API key if it has none AND it isn't Z.ai (Z.ai
+  // resolves its key from ~/.z-ai-config via the loader, so it works without
+  // an apiKey field). All other kinds (openai / anthropic / freemodel / ...)
+  // require one before they can chat.
+  const needsKey = useCallback((p: AppConfig['providers'][number] | undefined): boolean => {
+    if (!p) return false;
+    if (p.apiKey && p.apiKey.trim().length > 0) return false;
+    return p.kind !== 'zai';
+  }, []);
+
+  function openSettingsHub() {
+    setOpenPicker({
+      title: 'Settings',
+      options: buildSettingsOptions(config),
+      hint: '↑↓ move · ↵ open setting · esc close',
+      onPick: id => {
+        switch (id as SettingsAction) {
+          case 'provider-switch':
+            openProviderPicker(true);
+            break;
+          case 'provider-add':
+            setOpenPicker(null);
+            setProviderMgr({ mode: 'add' });
+            break;
+          case 'provider-edit':
+            setOpenPicker(null);
+            setProviderMgr({ mode: 'edit' });
+            break;
+          case 'provider-remove':
+            setOpenPicker(null);
+            setProviderMgr({ mode: 'remove' });
+            break;
+          case 'model':
+            openModelPicker(true);
+            break;
+          case 'mode':
+            openModePicker(true);
+            break;
+          case 'theme':
+            openThemePicker(true);
+            break;
+        }
+      },
+      onClose: () => setOpenPicker(null),
+    });
+  }
+
+  function openProviderPicker(returnToSettings = false) {
+    setOpenPicker({
+      title: 'Switch provider',
+      currentId: config.activeProviderId,
+      options: config.providers.map(p => ({
+        id: p.id,
+        label: p.id,
+        detail: `${p.name} ${p.mmfe ? '[mmfe]' : '[direct]'}${p.id === config.activeProviderId ? ' (active)' : ''}`,
+      })),
+      hint: returnToSettings ? '↑↓ move · ↵ select · esc back' : undefined,
+      onPick: id => {
+        const p = config.providers.find(x => x.id === id);
+        if (p) {
+          setConfig({
+            activeProviderId: p.id,
+            activeModelId: p.defaultModel || '',
+          });
+          if (needsKey(p)) {
+            setKeyCapture({ providerId: p.id, providerName: p.name });
+          }
+        }
+        if (returnToSettings) openSettingsHub();
+        else setOpenPicker(null);
+      },
+      onClose: returnToSettings ? openSettingsHub : () => setOpenPicker(null),
+    });
+  }
+
+  function openModelPicker(returnToSettings = false) {
+    const seen = new Set<string>();
+    const all: ModelDescriptor[] = [];
+    for (const m of [...config.manualModels, ...autoModels]) {
+      if (m.providerId !== config.activeProviderId) continue;
+      if (seen.has(m.id)) continue;
+      seen.add(m.id);
+      all.push(m);
+    }
+    setOpenPicker({
+      title: `Models for ${config.activeProviderId}`,
+      currentId: config.activeModelId,
+      options: all.length
+        ? all.map(m => ({
+            id: m.id,
+            label: m.id,
+            detail: `[${m.source}]${m.id === config.activeModelId ? ' (active)' : ''}${m.label ? ' ' + m.label : ''}`,
+            meta: m.contextWindow ? `${m.contextWindow} ctx` : undefined,
+          }))
+        : [
+            {
+              id: '',
+              label: '(no models - use /fetch or /add)',
+              detail: '',
+            },
+          ],
+      hint: returnToSettings ? '↑↓ move · ↵ select · esc back' : '↑↓ move · ↵ select · /fetch to load more · esc cancel',
+      onPick: id => {
+        if (id) {
+          setConfig({ activeModelId: id });
+          const active = config.providers.find(p => p.id === config.activeProviderId);
+          if (needsKey(active)) {
+            setKeyCapture({
+              providerId: config.activeProviderId,
+              providerName: active?.name || config.activeProviderId,
+            });
+          }
+        }
+        if (returnToSettings) openSettingsHub();
+        else setOpenPicker(null);
+      },
+      onClose: returnToSettings ? openSettingsHub : () => setOpenPicker(null),
+    });
+  }
+
+  function openModePicker(returnToSettings = false) {
+    setOpenPicker({
+      title: 'MMFE execution mode',
+      currentId: config.mode,
+      options: ALL_MODES.map(m => ({
+        id: m,
+        label: m,
+        detail: MODE_METADATA[m].tagline + (m === config.mode ? ' (active)' : ''),
+      })),
+      hint: returnToSettings ? '↑↓ move · ↵ select · esc back' : undefined,
+      onPick: id => {
+        setConfig({ mode: id as never });
+        if (returnToSettings) openSettingsHub();
+        else setOpenPicker(null);
+      },
+      onClose: returnToSettings ? openSettingsHub : () => setOpenPicker(null),
+    });
+  }
+
+  function openThemePicker(returnToSettings = false) {
+    setOpenPicker({
+      title: 'Color theme',
+      currentId: getThemeName(),
+      options: listThemes().map(t => ({
+        id: t,
+        label: t,
+        detail: t === getThemeName() ? '(active)' : '',
+      })),
+      hint: returnToSettings ? '↑↓ move · ↵ select · esc back' : undefined,
+      onPick: id => {
+        setTheme(id as never);
+        setConfig({ ui: { ...(config.ui || {}), theme: id as never } });
+        if (returnToSettings) openSettingsHub();
+        else setOpenPicker(null);
+      },
+      onClose: returnToSettings ? openSettingsHub : () => setOpenPicker(null),
+    });
+  }
+
   const handleSlash = useCallback(
     async (input: string) => {
       if (input === '/help' || input === '/?') {
@@ -441,111 +602,19 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
       const pickerMatch = input === '/provider' || input === '/model' || input === '/mode' || input === '/theme';
       if (pickerMatch) {
         if (input === '/provider') {
-          setOpenPicker({
-            title: 'Switch provider',
-            currentId: config.activeProviderId,
-            options: config.providers.map(p => ({
-              id: p.id,
-              label: p.id,
-              detail: `${p.name} ${p.mmfe ? '[mmfe]' : '[direct]'}${p.id === config.activeProviderId ? ' (active)' : ''}`,
-            })),
-            onPick: id => {
-              const p = config.providers.find(x => x.id === id);
-              if (p) {
-                setConfig({
-                  activeProviderId: p.id,
-                  activeModelId: p.defaultModel || '',
-                });
-                // Switching to a provider that has no key yet prompts for it
-                // inline (masked entry) so the user can authenticate and start
-                // chatting immediately instead of hitting an auth error on send.
-                if (needsKey(p)) {
-                  setKeyCapture({ providerId: p.id, providerName: p.name });
-                }
-              }
-              setOpenPicker(null);
-            },
-          });
-          return; // picker owns the screen now
+          openSettingsHub();
+          return;
         }
         if (input === '/model') {
-          // Combine builtin + manual + auto-fetched models for the active provider.
-          const seen = new Set<string>();
-          const all: ModelDescriptor[] = [];
-          for (const m of [...config.manualModels, ...autoModels]) {
-            if (m.providerId !== config.activeProviderId) continue;
-            if (seen.has(m.id)) continue;
-            seen.add(m.id);
-            all.push(m);
-          }
-          setOpenPicker({
-            title: `Models for ${config.activeProviderId}`,
-            currentId: config.activeModelId,
-            options: all.length
-              ? all.map(m => ({
-                  id: m.id,
-                  label: m.id,
-                  detail: `[${m.source}]${m.id === config.activeModelId ? ' (active)' : ''}${m.label ? ' ' + m.label : ''}`,
-                  meta: m.contextWindow ? `${m.contextWindow} ctx` : undefined,
-                }))
-              : [
-                  {
-                    id: '',
-                    label: '(no models — use /fetch or /add)',
-                    detail: '',
-                  },
-                ],
-            hint: '↑↓ move · ↵ select · /fetch to load more · esc cancel',
-            onPick: id => {
-              if (id) {
-                setConfig({ activeModelId: id });
-                // Selecting a model whose provider lacks a key prompts for the
-                // key inline, so the user can authenticate and use the model
-                // right away rather than discovering the gap on first send.
-                const active = config.providers.find(p => p.id === config.activeProviderId);
-                if (needsKey(active)) {
-                  setKeyCapture({
-                    providerId: config.activeProviderId,
-                    providerName: active?.name || config.activeProviderId,
-                  });
-                }
-              }
-              setOpenPicker(null);
-            },
-          });
+          openModelPicker();
           return;
         }
         if (input === '/mode') {
-          setOpenPicker({
-            title: 'MMFE execution mode',
-            currentId: config.mode,
-            options: ALL_MODES.map(m => ({
-              id: m,
-              label: m,
-              detail: MODE_METADATA[m].tagline + (m === config.mode ? ' (active)' : ''),
-            })),
-            onPick: id => {
-              setConfig({ mode: id as never });
-              setOpenPicker(null);
-            },
-          });
+          openModePicker();
           return;
         }
         if (input === '/theme') {
-          setOpenPicker({
-            title: 'Color theme',
-            currentId: getThemeName(),
-            options: listThemes().map(t => ({
-              id: t,
-              label: t,
-              detail: t === getThemeName() ? '(active)' : '',
-            })),
-            onPick: id => {
-              setTheme(id as never);
-              setConfig({ ui: { ...(config.ui || {}), theme: id as never } });
-              setOpenPicker(null);
-            },
-          });
+          openThemePicker();
           return;
         }
       }
@@ -631,18 +700,8 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
         return `Error: ${(err as Error).message}`;
       }
     },
-    [ctx, mcpStatuses, toolRegistry]
+    [ctx, mcpStatuses, toolRegistry, config, autoModels, needsKey]
   );
-
-  // A provider needs an API key if it has none AND it isn't Z.ai (Z.ai
-  // resolves its key from ~/.z-ai-config via the loader, so it works without
-  // an apiKey field). All other kinds (openai / anthropic / freemodel / …)
-  // require one before they can chat.
-  const needsKey = useCallback((p: AppConfig['providers'][number] | undefined): boolean => {
-    if (!p) return false;
-    if (p.apiKey && p.apiKey.trim().length > 0) return false;
-    return p.kind !== 'zai';
-  }, []);
 
   const handleSubmit = useCallback(
     async (text: string) => {
@@ -1001,7 +1060,7 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
                 currentId={openPicker.currentId}
                 hint={openPicker.hint}
                 onPick={openPicker.onPick}
-                onClose={() => setOpenPicker(null)}
+                onClose={openPicker.onClose || (() => setOpenPicker(null))}
               />
             )}
             {providerMgr && (
