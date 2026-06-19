@@ -436,17 +436,8 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
           case 'provider-switch':
             openProviderPicker(true);
             break;
-          case 'provider-add':
-            setOpenPicker(null);
-            setProviderMgr({ mode: 'add' });
-            break;
-          case 'provider-edit':
-            setOpenPicker(null);
-            setProviderMgr({ mode: 'edit' });
-            break;
-          case 'provider-remove':
-            setOpenPicker(null);
-            setProviderMgr({ mode: 'remove' });
+          case 'provider-manage':
+            openProviderManageHub();
             break;
           case 'model':
             openModelPicker(true);
@@ -488,6 +479,25 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
         else setOpenPicker(null);
       },
       onClose: returnToSettings ? openSettingsHub : () => setOpenPicker(null),
+    });
+  }
+
+  function openProviderManageHub() {
+    setOpenPicker({
+      title: 'Manage providers',
+      options: [
+        { id: 'provider-add', label: 'Add provider', detail: `configured: ${config.providers.length}` },
+        { id: 'provider-edit', label: 'Edit provider', detail: `current: ${config.activeProviderId}` },
+        { id: 'provider-remove', label: 'Remove provider', detail: `${Math.max(0, config.providers.length - 1)} removable` },
+      ],
+      hint: '↑↓ move · ↵ select · esc back',
+      onPick: id => {
+        setOpenPicker(null);
+        if (id === 'provider-add') setProviderMgr({ mode: 'add' });
+        else if (id === 'provider-edit') setProviderMgr({ mode: 'edit' });
+        else if (id === 'provider-remove') setProviderMgr({ mode: 'remove' });
+      },
+      onClose: openSettingsHub,
     });
   }
 
@@ -579,6 +589,10 @@ export function App({ initialConfig, initialPrompt, resumeSession, noResume }: A
     async (input: string) => {
       if (input === '/help' || input === '/?') {
         setShowHelp(v => !v);
+        return;
+      }
+      if (input === '/settings') {
+        openSettingsHub();
         return;
       }
       if (input === '/mcp') {

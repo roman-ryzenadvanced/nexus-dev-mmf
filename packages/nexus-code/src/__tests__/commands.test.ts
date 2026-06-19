@@ -59,8 +59,8 @@ function makeCtx(overrides: Partial<SlashCommandContext> = {}): SlashCommandCont
 }
 
 describe('slash command registry', () => {
-  it('has 20 builtin commands', () => {
-    expect(REGISTRY).toHaveLength(20);
+  it('has 21 builtin commands', () => {
+    expect(REGISTRY).toHaveLength(21);
   });
 
   it('every command has name + description + usage', () => {

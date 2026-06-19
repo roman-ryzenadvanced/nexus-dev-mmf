@@ -35,11 +35,31 @@ function applyKeyStore(config: AppConfig): AppConfig {
   const store = loadKeys();
   if (!store || Object.keys(store).length === 0) return config;
   const providers = config.providers.map(p => {
-    if (p.apiKey) return p; // explicit/env already set — don't override
+    if (p.apiKey) return p;
     const saved = store[p.id];
     return saved ? { ...p, apiKey: saved } : p;
   });
   return { ...config, providers };
+}
+
+function providerHasKey(p: AppConfig['providers'][number]): boolean {
+  if (p.kind === 'zai') return true;
+  return !!(p.apiKey && p.apiKey.trim().length > 0);
+}
+
+function autoDetectActiveProvider(config: AppConfig): AppConfig {
+  if (process.env.NEXUS_DEFAULT_PROVIDER) return config;
+  const active = config.providers.find(p => p.id === config.activeProviderId);
+  if (active && providerHasKey(active)) return config;
+  const fallback = config.providers.find(p => providerHasKey(p));
+  if (fallback) {
+    return {
+      ...config,
+      activeProviderId: fallback.id,
+      activeModelId: config.activeModelId || fallback.defaultModel || '',
+    };
+  }
+  return config;
 }
 
 export async function loadConfig(path?: string): Promise<AppConfig> {
@@ -60,7 +80,9 @@ export async function loadConfig(path?: string): Promise<AppConfig> {
     ...appConfigSchema.parse(raw),
     providers: raw.providers?.length ? raw.providers : DEFAULT_PROVIDERS,
   };
-  return applyKeyStore(applyEnv(merged as AppConfig));
+  const withEnvKeys = applyEnv(merged as AppConfig);
+  const withKeyStore = applyKeyStore(withEnvKeys);
+  return autoDetectActiveProvider(withKeyStore);
 }
 
 export async function saveConfig(config: AppConfig, path?: string): Promise<void> {
