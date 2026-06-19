@@ -178,12 +178,17 @@ nexus
 ### Features
 
 - ✅ **Three provider kinds**: OpenAI-compatible, Anthropic, Z.ai (MMFE native)
+- ✅ **FreeModel provider** — free GPT-5.x models via `api.freemodel.dev`
+- ✅ **Auto-detect provider** — picks a working provider from saved keys on boot
 - ✅ **Auto-fetch models** via `/v1/models` for OpenAI + Anthropic
 - ✅ **Manual model add** via `/add` slash command or config file
 - ✅ **MMFE orchestrator** built in — mode switcher, routing panel, quality score
 - ✅ **Provider unlocked** — bypass MMFE with `/mmfe off` for direct provider calls
 - ✅ **Streaming responses** with token-by-token rendering
-- ✅ **Slash commands**: `/mode`, `/model`, `/provider`, `/clear`, `/save`, `/load`, `/fetch`, `/add`, `/mcp`, `/help`, `/exit`
+- ✅ **Settings hub** — `/settings` opens a mimo-style scrollable settings menu for provider/model/mode/theme
+- ✅ **Provider management** — Add/Edit/Remove providers via the `Manage providers` submenu
+- ✅ **Inline API-key capture** — masked key entry when switching to a provider with no key
+- ✅ **Slash commands**: `/settings`, `/mode`, `/model`, `/provider`, `/clear`, `/save`, `/load`, `/fetch`, `/add`, `/mcp`, `/help`, `/exit`
 - ✅ **Input history** (↑/↓ arrow navigation)
 - ✅ **Session persistence** — save and load chat transcripts
 - ✅ **File context** tools (`fs`, `shell`, `diff`)
@@ -224,6 +229,7 @@ Type **`/`** in the input box to auto-open a filterable command menu — keep ty
 **↑↓** to navigate, **↵** to run, **esc** to cancel.
 
 ```
+/settings                       Open the settings hub (providers, model, mode, theme)
 /help                          List all slash commands
 /mode [speed|balanced|quality|creative]
 /provider [id]                 Switch active provider
