@@ -124,7 +124,7 @@ Think of it as assembling a team of specialists: a reasoning expert, a speed dem
 
 ## Key Features
 
-- **Nexus Code TUI** — Terminal AI coding assistant with Ink + React, multi-provider chat, slash commands, streaming, tool calling, MCP support, and MMFE built in
+- **Nexus Code TUI** — Terminal AI coding assistant with Ink + React, multi-provider chat, slash commands, streaming, tool calling, MCP support, settings hub, provider management, and MMFE built in
 - **Adaptive Routing Layer (ARL)** — Weighted multi-factor scoring (capability 40pts, mode 30pts, complexity 20pts, load balance) routes each subtask to the optimal model
 - **Parallel Execution** — Dependency-aware wave-based parallel execution with automatic retry on alternative models
 - **Intelligent Synthesis** — Flagship model merges all subtask results with quality scoring and automatic refinement loops
@@ -582,13 +582,17 @@ node bin/nexus.js
 
 ### Features
 
-- **Three provider kinds**: OpenAI-compatible, Anthropic, Z.ai (MMFE native)
+- **Three provider kinds**: OpenAI-compatible, Anthropic, Z.ai (MMFE native), FreeModel
+- **Auto-detect provider** — picks a working provider from saved keys on boot (resolves #6)
+- **Settings hub** — `/settings` opens a mimo-style scrollable menu for provider/model/mode/theme
+- **Provider management** — Add/Edit/Remove providers via the `Manage providers` submenu
+- **Inline API-key capture** — masked key entry when switching to a provider with no key
 - **Auto-fetch models** via `/v1/models` for OpenAI + Anthropic
 - **Manual model add** via `/add` slash command or config file
 - **MMFE orchestrator built in** — mode switcher, routing panel, quality score
 - **Provider unlocked** — bypass MMFE with `/mmfe off` for direct provider calls
 - **Streaming responses** with token-by-token rendering
-- **20 slash commands**: `/mode`, `/model`, `/provider`, `/clear`, `/save`, `/load`, `/fetch`, `/add`, `/mcp`, `/diff`, `/init`, `/branch`, `/theme`, `/status`, `/history`, `/plugins`, `/help`, `/exit`, and more
+- **21 slash commands**: `/settings`, `/mode`, `/model`, `/provider`, `/clear`, `/save`, `/load`, `/fetch`, `/add`, `/mcp`, `/diff`, `/init`, `/branch`, `/theme`, `/status`, `/history`, `/plugins`, `/help`, `/exit`, and more
 - **Input history** (up/down arrow navigation, persisted to `~/.nexus/history.json`)
 - **Session persistence** — save and load chat transcripts
 - **File context tools** (`fs`, `shell`, `diff`, `apply_diff`)
