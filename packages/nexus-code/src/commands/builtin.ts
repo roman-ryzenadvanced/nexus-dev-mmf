@@ -85,7 +85,7 @@ const mode: SlashCommand = {
 
 const provider: SlashCommand = {
   name: 'provider',
-  description: 'Switch, list, add, remove, or edit providers',
+  description: 'Open the settings hub or switch, list, add, remove, or edit providers',
   usage: '/provider [id | add | remove | edit]',
   examples: ['/provider', '/provider openai', '/provider add', '/provider remove', '/provider edit'],
   async run(args, ctx) {
