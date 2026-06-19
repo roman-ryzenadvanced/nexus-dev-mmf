@@ -3,9 +3,7 @@ import type { AppConfig } from '../types.js';
 
 export type SettingsAction =
   | 'provider-switch'
-  | 'provider-add'
-  | 'provider-edit'
-  | 'provider-remove'
+  | 'provider-manage'
   | 'model'
   | 'mode'
   | 'theme';
@@ -21,19 +19,9 @@ export function buildSettingsOptions(config: AppConfig): PickerOption[] {
       detail: `current: ${config.activeProviderId}${activeProvider ? ` (${activeProvider.name})` : ''}`,
     },
     {
-      id: 'provider-add',
-      label: 'Add provider',
-      detail: `configured: ${config.providers.length}`,
-    },
-    {
-      id: 'provider-edit',
-      label: 'Edit provider',
-      detail: `current: ${config.activeProviderId}`,
-    },
-    {
-      id: 'provider-remove',
-      label: 'Remove provider',
-      detail: `${Math.max(0, config.providers.length - 1)} removable`,
+      id: 'provider-manage',
+      label: 'Manage providers',
+      detail: `add / edit / remove (${config.providers.length} configured)`,
     },
     {
       id: 'model',

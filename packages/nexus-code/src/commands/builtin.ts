@@ -473,8 +473,19 @@ const plugins: SlashCommand = {
   },
 };
 
+const settings: SlashCommand = {
+  name: 'settings',
+  description: 'Open the settings hub (providers, model, mode, theme)',
+  usage: '/settings',
+  examples: ['/settings'],
+  async run() {
+    return '(interactive overlay) — it opens automatically in the TUI.';
+  },
+};
+
 export const REGISTRY: SlashCommand[] = [
   help,
+  settings,
   mode,
   provider,
   model,

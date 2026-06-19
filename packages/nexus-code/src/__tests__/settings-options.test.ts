@@ -21,9 +21,7 @@ describe('buildSettingsOptions', () => {
     const options = buildSettingsOptions(config);
     expect(options.map(o => o.id)).toEqual([
       'provider-switch',
-      'provider-add',
-      'provider-edit',
-      'provider-remove',
+      'provider-manage',
       'model',
       'mode',
       'theme',

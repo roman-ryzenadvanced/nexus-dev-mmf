@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { PALETTE_ENTRIES, filterEntries, type PaletteEntry } from '../components/CommandPalette.js';
 
 describe('CommandPalette — pure logic', () => {
-  it('PALETTE_ENTRIES has 20 commands', () => {
-    expect(PALETTE_ENTRIES).toHaveLength(20);
+  it('PALETTE_ENTRIES has 21 commands', () => {
+    expect(PALETTE_ENTRIES).toHaveLength(21);
   });
 
   it('every entry has name + description + preview', () => {
@@ -21,7 +21,7 @@ describe('CommandPalette — pure logic', () => {
 
   it('filterEntries returns all entries when query is empty', () => {
     const filtered = filterEntries(PALETTE_ENTRIES, '');
-    expect(filtered).toHaveLength(20);
+    expect(filtered).toHaveLength(21);
   });
 
   it('filterEntries matches by name (case-insensitive)', () => {
